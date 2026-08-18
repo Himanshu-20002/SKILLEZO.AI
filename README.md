@@ -158,7 +158,7 @@ Future enhancements include:
 
 ---
 
-## 🎓 AI Career Coach
+## 🎓 AI Career Coach free
 
 An AI assistant providing:
 
