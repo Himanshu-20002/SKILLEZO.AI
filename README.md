@@ -351,7 +351,8 @@ Contributions are welcome!
 
 ---
 
-# 📄 License
+# 📄 License free
+
 
 This project is licensed under the MIT License.
 
