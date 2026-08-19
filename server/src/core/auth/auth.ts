@@ -4,6 +4,7 @@ import { toNodeHandler } from "better-auth/node";
 import mongoose from "mongoose";
 import { env } from "@/core/config/env";
 import { UserRole, AccountStatus } from "@/core/constants/enums";
+import { connectDatabase } from "@/database/connection/db";
 
 let _auth: any = null;
 
@@ -17,6 +18,11 @@ export function getAuth() {
       database: mongodbAdapter(mongoose.connection.db),
       secret: env.BETTER_AUTH_SECRET,
       baseURL: env.BETTER_AUTH_URL,
+      trustedOrigins: [
+        env.CLIENT_URL,
+        "https://skillezo-ai.vercel.app",
+        "http://localhost:3000",
+      ].filter(Boolean),
       advanced: {
         disableCSRFCheck: true,
       },
@@ -59,14 +65,31 @@ export const auth = new Proxy({} as any, {
   },
 });
 
-export const authHandler = (req: any, res: any) => {
-  if (!req.headers.origin && !req.headers.Origin) {
-    req.headers.origin = "http://localhost:5000";
+export const authHandler = async (req: any, res: any) => {
+  try {
+    if (!mongoose.connection.db) {
+      await connectDatabase();
+    }
+    if (!req.headers.origin && !req.headers.Origin) {
+      req.headers.origin = env.CLIENT_URL || "http://localhost:3000";
+    }
+    const handler = toNodeHandler(getAuth());
+    return await handler(req, res);
+  } catch (error: any) {
+    console.error("[Better Auth Error]:", error);
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: error?.message || "Authentication service error",
+        },
+      });
+    }
   }
-  const handler = toNodeHandler(getAuth());
-  return handler(req, res);
 };
 
 export type Auth = ReturnType<typeof getAuth>;
+
 
 
