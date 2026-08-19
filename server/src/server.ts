@@ -39,11 +39,17 @@ app.use(
 );
 
 // Better Auth handler mounted BEFORE express.json() for raw body access
-app.use("/api/auth", (req, res) => {
+app.all("/api/auth/*", (req, res, next) => {
   if (!req.headers.origin && !req.headers.Origin) {
     req.headers.origin = env.CLIENT_URL || "https://skillezo-ai.vercel.app";
   }
-  authHandler(req, res);
+  authHandler(req, res).catch(next);
+});
+app.use("/api/auth", (req, res, next) => {
+  if (!req.headers.origin && !req.headers.Origin) {
+    req.headers.origin = env.CLIENT_URL || "https://skillezo-ai.vercel.app";
+  }
+  authHandler(req, res).catch(next);
 });
 
 app.use(express.json({ limit: "1mb" }));

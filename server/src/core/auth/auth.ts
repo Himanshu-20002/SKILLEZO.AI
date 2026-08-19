@@ -73,10 +73,13 @@ export const authHandler = async (req: any, res: any) => {
     if (!req.headers.origin && !req.headers.Origin) {
       req.headers.origin = env.CLIENT_URL || "http://localhost:3000";
     }
+    if (req.originalUrl && req.url !== req.originalUrl) {
+      req.url = req.originalUrl;
+    }
     const handler = toNodeHandler(getAuth());
     return await handler(req, res);
   } catch (error: any) {
-    console.error("[Better Auth Error]:", error);
+    console.error("[Better Auth Fatal Error]:", error?.stack || error);
     if (!res.headersSent) {
       return res.status(500).json({
         success: false,
