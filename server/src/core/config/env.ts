@@ -6,7 +6,7 @@ dotenv.config();
 const normalizeUrl = (defaultVal: string) =>
   z.preprocess((val) => {
     if (!val || typeof val !== "string" || !val.trim()) return defaultVal;
-    const trimmed = val.trim();
+    let trimmed = val.trim().replace(/\/+$/, "");
     if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
       return trimmed;
     }
