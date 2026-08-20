@@ -30,10 +30,13 @@ export const authClient = createAuthClient({
       if (typeof window !== "undefined") {
         const token = localStorage.getItem("skillezo_token");
         if (token) {
-          context.headers = {
-            ...context.headers,
-            Authorization: `Bearer ${token}`,
-          };
+          if (context.headers instanceof Headers) {
+            context.headers.set("Authorization", `Bearer ${token}`);
+          } else if (context.headers && typeof context.headers === "object") {
+            (context.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+          } else {
+            context.headers = new Headers({ Authorization: `Bearer ${token}` });
+          }
         }
       }
     },
