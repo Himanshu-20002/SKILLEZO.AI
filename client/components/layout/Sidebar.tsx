@@ -171,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
     >
       {/* Header / Brand */}
       <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 shrink-0">
-        {!collapsed && <BrandLogo />}
+        {!collapsed && <BrandLogo href="/dashboard" />}
         {collapsed && (
           <div className="w-full flex justify-center">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3D5AFE] to-[#00D9C0] flex items-center justify-center text-white font-bold text-lg shadow-lg">

@@ -59,7 +59,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
       {/* Drawer */}
       <div className="relative w-4/5 max-w-xs bg-[#080D26] border-r border-slate-800 h-full flex flex-col z-10 p-4 shadow-2xl animate-in slide-in-from-left duration-300">
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800 shrink-0">
-          <BrandLogo />
+          <BrandLogo href="/dashboard" />
           <button
             onClick={onClose}
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"

@@ -46,14 +46,14 @@ export function Navbar({ onGetScore }: NavbarProps) {
       data-testid="navbar"
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between">
-        <a href="#top" className="flex items-center gap-2 group" data-testid="logo">
+        <Link href={isLoggedIn ? "/dashboard" : "/"} className="flex items-center gap-2 group" data-testid="logo">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#3D5AFE] shadow-[0_0_18px_rgba(61,90,254,0.5)] group-hover:scale-105 transition-transform">
             <Zap className="h-5 w-5 text-white" fill="white" />
           </span>
           <span className="font-display text-xl font-bold tracking-tight text-white">
             SKILL<span className="gradient-text">EZO</span>
           </span>
-        </a>
+        </Link>
 
         <nav className="hidden lg:flex items-center gap-8">
           {LINKS.map((l) => (
