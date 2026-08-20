@@ -21,6 +21,7 @@ const app: Application = express();
 
 const allowedOrigins = [
   env.CLIENT_URL,
+  "https://skillezo-ai-rho.vercel.app",
   "https://skillezo-ai.vercel.app",
   "http://localhost:3000",
 ].filter(Boolean);

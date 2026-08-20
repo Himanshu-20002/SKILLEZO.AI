@@ -20,6 +20,7 @@ export function getAuth() {
       baseURL: env.BETTER_AUTH_URL,
       trustedOrigins: [
         env.CLIENT_URL,
+        "https://skillezo-ai-rho.vercel.app",
         "https://skillezo-ai.vercel.app",
         "http://localhost:3000",
       ].filter(Boolean),
