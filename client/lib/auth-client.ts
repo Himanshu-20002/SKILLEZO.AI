@@ -26,6 +26,31 @@ export const authClient = createAuthClient({
   baseURL: getBaseUrl(),
   fetchOptions: {
     credentials: "include",
+    onRequest(context) {
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("skillezo_token");
+        if (token) {
+          context.headers = {
+            ...context.headers,
+            Authorization: `Bearer ${token}`,
+          };
+        }
+      }
+    },
+    onResponse(context) {
+      if (typeof window !== "undefined" && context.response) {
+        try {
+          const clone = context.response.clone();
+          clone.json().then((data) => {
+            if (data?.token) {
+              localStorage.setItem("skillezo_token", data.token);
+            } else if (data?.session?.token) {
+              localStorage.setItem("skillezo_token", data.session.token);
+            }
+          }).catch(() => {});
+        } catch (_) {}
+      }
+    },
   },
 });
 

@@ -51,6 +51,9 @@ export const UserMenu: React.FC = () => {
   const handleLogout = async () => {
     setIsOpen(false);
     try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("skillezo_token");
+      }
       await signOut();
       toast.success('Logged out successfully', {
         description: 'You have been safely signed out of SKILLEZO AI.',

@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { bearer } from "better-auth/plugins";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { toNodeHandler } from "better-auth/node";
 import mongoose from "mongoose";
@@ -32,6 +33,7 @@ export function getAuth() {
           secure: true,
         },
       },
+      plugins: [bearer()],
       checkOrigin: () => true,
       emailAndPassword: {
         enabled: true,
