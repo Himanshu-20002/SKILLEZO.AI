@@ -29,14 +29,26 @@ export const UserMenu: React.FC = () => {
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
 
+  const derivedName = session?.user?.name
+    || (session?.user?.email ? session.user.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '')
+    || 'Candidate';
+
+  const derivedEmail = session?.user?.email || '';
+  const derivedRole = (session?.user as any)?.role || 'Candidate';
+
   const user = session?.user
     ? {
-        name: session.user.name || mockCurrentUser.name,
-        email: session.user.email || mockCurrentUser.email,
-        role: (session.user as any).role || mockCurrentUser.role,
-        avatarUrl: session.user.image || mockCurrentUser.avatarUrl,
+        name: derivedName,
+        email: derivedEmail,
+        role: derivedRole,
+        avatarUrl: session.user.image || '',
       }
-    : mockCurrentUser;
+    : {
+        name: 'Candidate',
+        email: '',
+        role: 'Candidate',
+        avatarUrl: '',
+      };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

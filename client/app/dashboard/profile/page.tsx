@@ -17,7 +17,18 @@ import { useSession } from '@/lib/auth-client';
 
 export default function ProfilePage() {
   const { data: session } = useSession();
-  const [profileData, setProfileData] = useState<any>(mockExtendedProfile);
+
+  const derivedName = session?.user?.name
+    || (session?.user?.email ? session.user.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : '')
+    || 'Candidate';
+
+  const derivedEmail = session?.user?.email || '';
+
+  const [profileData, setProfileData] = useState<any>({
+    ...mockExtendedProfile,
+    name: derivedName,
+    email: derivedEmail,
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -25,46 +36,49 @@ export default function ProfilePage() {
       try {
         setIsLoading(true);
         const liveProfile = await profileService.getMyProfile();
-        if (liveProfile) {
-          // Merge live backend data with extended profile schema
-          const locationStr = liveProfile.location
-            ? [liveProfile.location.city, liveProfile.location.state, liveProfile.location.country].filter(Boolean).join(', ')
-            : mockExtendedProfile.location;
+        
+        const locationStr = liveProfile?.location
+          ? [liveProfile.location.city, liveProfile.location.state, liveProfile.location.country].filter(Boolean).join(', ')
+          : mockExtendedProfile.location;
 
-          setProfileData({
-            ...mockExtendedProfile,
-            name: session?.user?.name || mockExtendedProfile.name,
-            email: session?.user?.email || mockExtendedProfile.email,
-            bio: liveProfile.bio || mockExtendedProfile.bio,
-            location: locationStr || mockExtendedProfile.location,
-            skills: liveProfile.skills && liveProfile.skills.length > 0
-              ? liveProfile.skills.map((s, idx) => ({
-                  id: `skill-${idx}`,
-                  name: s.name,
-                  level: s.level ? `${s.level * 20}%` : '80%',
-                  verified: s.verified ?? true,
-                  category: 'Technical',
-                }))
-              : mockExtendedProfile.skills,
-            education: liveProfile.education && liveProfile.education.length > 0
-              ? liveProfile.education.map((e, idx) => ({
-                  id: `edu-${idx}`,
-                  degree: e.degree,
-                  institution: e.institution,
-                  year: e.startYear && e.endYear ? `${e.startYear} - ${e.endYear}` : '2020 - 2024',
-                  grade: '3.9 GPA',
-                }))
-              : mockExtendedProfile.education,
-            links: {
-              github: liveProfile.links?.github || mockExtendedProfile.links?.github,
-              linkedin: liveProfile.links?.linkedin || mockExtendedProfile.links?.linkedin,
-              portfolio: liveProfile.links?.portfolio || mockExtendedProfile.links?.portfolio,
-            },
-          });
-        }
+        setProfileData({
+          ...mockExtendedProfile,
+          name: session?.user?.name || derivedName,
+          email: session?.user?.email || derivedEmail,
+          bio: liveProfile?.bio || mockExtendedProfile.bio,
+          location: locationStr || mockExtendedProfile.location,
+          skills: liveProfile?.skills && liveProfile.skills.length > 0
+            ? liveProfile.skills.map((s, idx) => ({
+                id: `skill-${idx}`,
+                name: s.name,
+                level: s.level ? `${s.level * 20}%` : '80%',
+                verified: s.verified ?? true,
+                category: 'Technical',
+              }))
+            : mockExtendedProfile.skills,
+          education: liveProfile?.education && liveProfile.education.length > 0
+            ? liveProfile.education.map((e, idx) => ({
+                id: `edu-${idx}`,
+                degree: e.degree,
+                institution: e.institution,
+                year: e.startYear && e.endYear ? `${e.startYear} - ${e.endYear}` : '2020 - 2024',
+                grade: '3.9 GPA',
+              }))
+            : mockExtendedProfile.education,
+          links: {
+            github: liveProfile?.links?.github || mockExtendedProfile.links?.github,
+            linkedin: liveProfile?.links?.linkedin || mockExtendedProfile.links?.linkedin,
+            portfolio: liveProfile?.links?.portfolio || mockExtendedProfile.links?.portfolio,
+          },
+        });
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
-          toast.info('No profile created yet. Displaying setup defaults.');
+          // Keep derived name and email
+          setProfileData((prev: any) => ({
+            ...prev,
+            name: derivedName,
+            email: derivedEmail,
+          }));
         } else {
           console.error('[ProfilePage] Error fetching profile:', err);
         }
@@ -74,7 +88,7 @@ export default function ProfilePage() {
     }
 
     loadProfile();
-  }, [session]);
+  }, [session, derivedName, derivedEmail]);
 
   const handleEditProfile = () => {
     toast.info('Profile edits sync directly with backend via profileService');
