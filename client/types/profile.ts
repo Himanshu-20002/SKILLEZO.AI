@@ -43,4 +43,17 @@ export interface ExtendedUserProfile {
   skills: UserSkill[];
   certifications: UserCertification[];
   education: UserEducation[];
+  links?: {
+    github?: string;
+    linkedin?: string;
+    portfolio?: string;
+    twitter?: string;
+  };
+  socialLinks?: {
+    github?: string;
+    linkedin?: string;
+    portfolio?: string;
+    twitter?: string;
+  };
 }
+
