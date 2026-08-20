@@ -24,7 +24,7 @@ export function Navbar({ onGetScore }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
   const isLoggedIn = !!session?.user;
 
   useEffect(() => {
@@ -69,7 +69,9 @@ export function Navbar({ onGetScore }: NavbarProps) {
         </nav>
 
         <div className="hidden lg:flex items-center gap-3">
-          {isLoggedIn ? (
+          {isPending ? (
+            <div className="h-10 w-32 rounded-full bg-white/10 animate-pulse" />
+          ) : isLoggedIn ? (
             <Button
               onClick={() => router.push("/dashboard")}
               data-testid="nav-dashboard-btn"
@@ -99,7 +101,9 @@ export function Navbar({ onGetScore }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
-          {isLoggedIn ? (
+          {isPending ? (
+            <div className="h-8 w-24 rounded-lg bg-white/10 animate-pulse" />
+          ) : isLoggedIn ? (
             <Link
               href="/dashboard"
               data-testid="mobile-top-dashboard-btn"
