@@ -1,9 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Zap } from "lucide-react";
+import { Menu, X, Zap, LayoutDashboard, User } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
 
 interface NavbarProps {
   onGetScore: () => void;
@@ -21,6 +23,9 @@ const LINKS = [
 export function Navbar({ onGetScore }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -64,30 +69,54 @@ export function Navbar({ onGetScore }: NavbarProps) {
         </nav>
 
         <div className="hidden lg:flex items-center gap-3">
-        <Link
-  href="/login"
-  data-testid="login-btn"
-  className="text-sm text-white/80 hover:text-white transition-colors px-3 cursor-pointer"
->
-  Login
-</Link>
-          <Button
-            onClick={onGetScore}
-            data-testid="nav-cta-btn"
-            className="rounded-full bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 hover:shadow-[0_0_20px_rgba(61,90,254,0.45)] transition-all font-semibold"
-          >
-            Get started
-          </Button>
+          {isLoggedIn ? (
+            <Button
+              onClick={() => router.push("/dashboard")}
+              data-testid="nav-dashboard-btn"
+              className="rounded-full bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 hover:shadow-[0_0_20px_rgba(61,90,254,0.45)] transition-all font-semibold flex items-center gap-2"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Go to Dashboard
+            </Button>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                data-testid="login-btn"
+                className="text-sm text-white/80 hover:text-white transition-colors px-3 cursor-pointer"
+              >
+                Login
+              </Link>
+              <Button
+                onClick={() => router.push("/login")}
+                data-testid="nav-cta-btn"
+                className="rounded-full bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 hover:shadow-[0_0_20px_rgba(61,90,254,0.45)] transition-all font-semibold"
+              >
+                Get started
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
-          <Link
-            href="/login"
-            data-testid="mobile-top-login-btn"
-            className="text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-          >
-            Login
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              data-testid="mobile-top-dashboard-btn"
+              className="text-xs font-semibold text-white bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              Dashboard
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              data-testid="mobile-top-login-btn"
+              className="text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+            >
+              Login
+            </Link>
+          )}
           <button
             className="text-white p-1.5 rounded-lg cursor-pointer hover:bg-white/10 transition-colors"
             onClick={() => setOpen((v) => !v)}
@@ -121,24 +150,40 @@ export function Navbar({ onGetScore }: NavbarProps) {
               ))}
 
               <div className="flex flex-col gap-2.5 pt-3 border-t border-white/10 mt-1">
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  data-testid="mobile-drawer-login-btn"
-                  className="w-full text-center py-2.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-semibold text-sm transition-colors cursor-pointer"
-                >
-                  Login
-                </Link>
-                <Button
-                  onClick={() => {
-                    setOpen(false);
-                    onGetScore();
-                  }}
-                  className="w-full rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 py-2.5 text-white font-semibold"
-                  data-testid="mobile-cta-btn"
-                >
-                  Get started
-                </Button>
+                {isLoggedIn ? (
+                  <Button
+                    onClick={() => {
+                      setOpen(false);
+                      router.push("/dashboard");
+                    }}
+                    className="w-full rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 py-2.5 text-white font-semibold flex items-center justify-center gap-2"
+                    data-testid="mobile-cta-btn"
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    Go to Dashboard
+                  </Button>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setOpen(false)}
+                      data-testid="mobile-drawer-login-btn"
+                      className="w-full text-center py-2.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-semibold text-sm transition-colors cursor-pointer"
+                    >
+                      Login
+                    </Link>
+                    <Button
+                      onClick={() => {
+                        setOpen(false);
+                        router.push("/login");
+                      }}
+                      className="w-full rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 py-2.5 text-white font-semibold"
+                      data-testid="mobile-cta-btn"
+                    >
+                      Get started
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

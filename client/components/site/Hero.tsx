@@ -1,16 +1,37 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { MaskedLines, Reveal } from "@/components/site/Reveal";
 import { ScoreRing } from "@/components/site/ScoreRing";
-import { ArrowRight, Play, Sparkles, TrendingUp, Target } from "lucide-react";
+import { ArrowRight, Play, Sparkles, TrendingUp, Target, UploadCloud, LayoutDashboard } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
 
 interface HeroProps {
   onGetScore: () => void;
 }
 
 export function Hero({ onGetScore }: HeroProps) {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+
+  const handlePrimaryClick = () => {
+    if (isLoggedIn) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
+  };
+
+  const handleSecondaryClick = () => {
+    if (isLoggedIn) {
+      router.push("/dashboard/resume-intelligence");
+    } else {
+      onGetScore();
+    }
+  };
 
   return (
     <section
@@ -55,19 +76,37 @@ export function Hero({ onGetScore }: HeroProps) {
           <Reveal delay={1.05}>
             <div className="mt-8 sm:mt-9 flex flex-col sm:flex-row gap-3.5 justify-center sm:justify-start">
               <Button
-                onClick={onGetScore}
+                onClick={handlePrimaryClick}
                 data-testid="hero-primary-cta"
-                className="h-12 sm:h-14 rounded-full bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 hover:shadow-[0_0_28px_rgba(61,90,254,0.5)] transition-all px-6 sm:px-8 text-sm sm:text-base font-semibold group cursor-pointer w-full sm:w-auto"
+                className="h-12 sm:h-14 rounded-full bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 hover:shadow-[0_0_28px_rgba(61,90,254,0.5)] transition-all px-6 sm:px-8 text-sm sm:text-base font-semibold group cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2"
               >
-                Get your free Employability Score
-                <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5 group-hover:translate-x-1 transition-transform" />
+                {isLoggedIn ? (
+                  <>
+                    <LayoutDashboard className="h-4 sm:h-5 w-4 sm:w-5" />
+                    Go to Your Dashboard
+                  </>
+                ) : (
+                  <>
+                    Get your free Employability Score
+                    <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </Button>
               <Button
+                onClick={handleSecondaryClick}
                 variant="outline"
                 data-testid="hero-secondary-cta"
-                className="h-12 sm:h-14 rounded-full border-white/20 bg-transparent text-white hover:border-[#00D9C0] hover:text-[#00D9C0] hover:bg-transparent px-6 sm:px-8 text-sm sm:text-base font-semibold cursor-pointer w-full sm:w-auto"
+                className="h-12 sm:h-14 rounded-full border-white/20 bg-transparent text-white hover:border-[#00D9C0] hover:text-[#00D9C0] hover:bg-transparent px-6 sm:px-8 text-sm sm:text-base font-semibold cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2"
               >
-                <Play className="mr-2 h-4 w-4" /> Watch demo
+                {isLoggedIn ? (
+                  <>
+                    <UploadCloud className="h-4 w-4" /> Upload Resume
+                  </>
+                ) : (
+                  <>
+                    <Play className="mr-2 h-4 w-4" /> Watch demo
+                  </>
+                )}
               </Button>
             </div>
           </Reveal>

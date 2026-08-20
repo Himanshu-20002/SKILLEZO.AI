@@ -1,15 +1,29 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Reveal } from "@/components/site/Reveal";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LayoutDashboard } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
 
 interface FinalCTAProps {
   onGetScore: () => void;
 }
 
 export function FinalCTA({ onGetScore }: FinalCTAProps) {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+
+  const handleClick = () => {
+    if (isLoggedIn) {
+      router.push("/dashboard");
+    } else {
+      onGetScore();
+    }
+  };
+
   return (
     <section className="relative z-10 py-20 lg:py-32" data-testid="final-cta">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
@@ -35,19 +49,28 @@ export function FinalCTA({ onGetScore }: FinalCTAProps) {
 
             <div className="relative z-10">
               <h2 className="font-display text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white max-w-3xl mx-auto leading-tight">
-                Your Employability Score is waiting.
+                {isLoggedIn ? "Welcome back to SKILLEZO AI" : "Your Employability Score is waiting."}
               </h2>
               <p className="mt-4 sm:mt-6 text-white/90 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-                Join 50,000+ students who stopped guessing and started getting hired.
-                <br className="hidden sm:inline" /> It&apos;s free, and it takes two minutes.
+                {isLoggedIn
+                  ? "Access your candidate dashboard, resume intelligence tools, and personalized career roadmaps."
+                  : "Join 50,000+ students who stopped guessing and started getting hired. It's free, and it takes two minutes."}
               </p>
               <Button
-                onClick={onGetScore}
+                onClick={handleClick}
                 data-testid="final-cta-btn"
-                className="mt-8 sm:mt-10 h-14 rounded-full bg-white text-[#0B1130] hover:bg-white/90 px-9 text-base font-bold group shadow-2xl cursor-pointer"
+                className="mt-8 sm:mt-10 h-14 rounded-full bg-white text-[#0B1130] hover:bg-white/90 px-9 text-base font-bold group shadow-2xl cursor-pointer flex items-center justify-center gap-2 mx-auto"
               >
-                Get your free score
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                {isLoggedIn ? (
+                  <>
+                    <LayoutDashboard className="h-5 w-5" /> Go to Dashboard
+                  </>
+                ) : (
+                  <>
+                    Get your free score
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </Button>
             </div>
           </div>
