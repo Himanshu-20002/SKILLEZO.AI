@@ -25,6 +25,11 @@ export function getAuth() {
       ].filter(Boolean),
       advanced: {
         disableCSRFCheck: true,
+        useSecureCookies: true,
+        defaultCookieAttributes: {
+          sameSite: "none",
+          secure: true,
+        },
       },
       checkOrigin: () => true,
       emailAndPassword: {
