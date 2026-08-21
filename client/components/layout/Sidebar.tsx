@@ -332,12 +332,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
 
       {/* Footer Pro Banner */}
       {!collapsed && (
-        <div className="p-3 m-3 rounded-xl bg-slate-50 dark:bg-gradient-to-b dark:from-[#3D5AFE]/15 dark:to-transparent border border-slate-200 dark:border-[#3D5AFE]/20 text-center shrink-0">
-          <div className="inline-flex p-1.5 rounded-lg bg-[#3D5AFE]/15 text-[#3D5AFE] dark:text-[#00D9C0] mb-1">
-            <Zap className="w-3.5 h-3.5" />
+        <div className="p-3.5 m-3 rounded-2xl bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800/90 text-center shrink-0 shadow-sm transition-colors">
+          <div className="inline-flex p-2 rounded-xl bg-[#3D5AFE]/10 dark:bg-[#3D5AFE]/20 text-[#3D5AFE] dark:text-[#00D9C0] mb-1.5">
+            <Zap className="w-4 h-4" />
           </div>
-          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Student Portal</h4>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Career & Job Portal</p>
+          <h4 className="text-xs font-bold text-slate-900 dark:text-white">Student Portal</h4>
+          <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">Career & Job Portal</p>
         </div>
       )}
     </aside>

@@ -40,12 +40,6 @@ app.use(
 );
 
 // Better Auth handler mounted BEFORE express.json() for raw body access
-app.all("/api/auth/*", (req, res, next) => {
-  if (!req.headers.origin && !req.headers.Origin) {
-    req.headers.origin = env.CLIENT_URL || "https://skillezo-ai.vercel.app";
-  }
-  authHandler(req, res).catch(next);
-});
 app.use("/api/auth", (req, res, next) => {
   if (!req.headers.origin && !req.headers.Origin) {
     req.headers.origin = env.CLIENT_URL || "https://skillezo-ai.vercel.app";

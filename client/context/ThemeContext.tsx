@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 
@@ -13,6 +14,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const pathname = usePathname();
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('skillezo-theme') as ThemeMode) || 'dark';
@@ -30,7 +32,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const updateDOM = () => {
       let actualTheme: 'dark' | 'light' = 'dark';
-      if (theme === 'system') {
+      
+      // Landing page (`/`) is strictly single-theme (Dark mode only)
+      if (pathname === '/') {
+        actualTheme = 'dark';
+      } else if (theme === 'system') {
         const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         actualTheme = systemDark ? 'dark' : 'light';
       } else {
@@ -50,13 +56,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     updateDOM();
 
-    if (theme === 'system') {
+    if (theme === 'system' && pathname !== '/') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const listener = () => updateDOM();
       mediaQuery.addEventListener('change', listener);
       return () => mediaQuery.removeEventListener('change', listener);
     }
-  }, [theme]);
+  }, [theme, pathname]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme: setThemeState, resolvedTheme }}>
