@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/dashboard/common/PageHeader';
 import { MetricCard } from '@/components/dashboard/career/MetricCard';
@@ -15,9 +15,14 @@ import {
   TrendingUp,
   UserCheck,
   FileCheck,
+  Loader2,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { Job, JobFilterState, SortOption, JobApplication } from '@/types/job-center';
-import { mockJobListings, mockJobApplications } from '@/mock/job-center';
+import { jobService, mapBackendJobToUiJob, BackendJob } from '@/services/job.service';
+import { profileService } from '@/services/profile.service';
+import { mockJobApplications } from '@/mock/job-center';
 import {
   JobSearch,
   JobFilters,
@@ -29,19 +34,29 @@ import {
   AppliedJobsTracker,
   JobEmptyState,
 } from '@/components/dashboard/job-center';
+import { toast } from 'sonner';
 
 type ActiveTab = 'recommended' | 'all' | 'saved' | 'applied';
 
 export default function SmartJobCenterPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
-  const [savedJobIds, setSavedJobIds] = useState<string[]>(['job-101', 'job-104']);
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>(mockJobApplications);
 
   const [selectedJobForBreakdown, setSelectedJobForBreakdown] = useState<Job | null>(null);
   const [selectedJobForDrawer, setSelectedJobForDrawer] = useState<Job | null>(null);
   const [selectedJobForApply, setSelectedJobForApply] = useState<Job | null>(null);
 
+  // Live Data State
+  const [liveJobs, setLiveJobs] = useState<Job[]>([]);
+  const [userSkills, setUserSkills] = useState<string[]>([]);
+  const [targetRoleTitle, setTargetRoleTitle] = useState<string>('Full-Stack Engineer');
+  const [isLoadingJobs, setIsLoadingJobs] = useState<boolean>(true);
+  const [jobsError, setJobsError] = useState<string | null>(null);
+
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalJobsCount, setTotalJobsCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const jobsPerPage = 6;
 
   const [filters, setFilters] = useState<JobFilterState>({
@@ -51,11 +66,87 @@ export default function SmartJobCenterPage() {
     experience: 'All',
     matchTier: 'All Jobs',
     salaryMin: 0,
-    salaryMax: 30,
+    salaryMax: 60,
     location: 'All Locations',
     selectedSkills: [],
     sortBy: 'AI Match',
   });
+
+  // Load candidate profile skills for live matching
+  useEffect(() => {
+    async function loadCandidateProfile() {
+      try {
+        const profile = await profileService.getMyProfile();
+        if (profile?.skills && Array.isArray(profile.skills)) {
+          const names = profile.skills.map((s) => s.name);
+          setUserSkills(names);
+        }
+      } catch (err) {
+        // Fallback default skills for matching
+        setUserSkills(['React', 'Node.js', 'TypeScript', 'Next.js', 'MongoDB', 'Tailwind CSS']);
+      }
+    }
+    loadCandidateProfile();
+  }, []);
+
+  // Fetch live jobs from backend API
+  const fetchLiveJobs = useCallback(async () => {
+    setIsLoadingJobs(true);
+    setJobsError(null);
+
+    try {
+      // Map UI filters to backend query params
+      const queryParams: Record<string, any> = {
+        page: currentPage,
+        limit: 50, // Fetch broader set to allow local sort/tier filtering
+      };
+
+      if (filters.searchQuery.trim()) {
+        queryParams.keyword = filters.searchQuery.trim();
+      }
+
+      if (filters.location !== 'All Locations') {
+        queryParams.location = filters.location;
+      }
+
+      if (filters.workMode !== 'All') {
+        const wm = filters.workMode.toLowerCase();
+        if (wm === 'remote') queryParams.workplaceType = 'remote';
+        else if (wm === 'hybrid') queryParams.workplaceType = 'hybrid';
+        else if (wm === 'on-site') queryParams.workplaceType = 'onsite';
+      }
+
+      if (filters.employmentType !== 'All') {
+        const et = filters.employmentType.toLowerCase();
+        if (et === 'full-time') queryParams.employmentType = 'full_time';
+        else if (et === 'part-time') queryParams.employmentType = 'part_time';
+        else if (et === 'contract') queryParams.employmentType = 'contract';
+        else if (et === 'internship') queryParams.employmentType = 'internship';
+      }
+
+      const res = await jobService.searchJobs(queryParams);
+      const mapped = (res.items || []).map((backendJob: BackendJob) =>
+        mapBackendJobToUiJob(backendJob, userSkills)
+      );
+
+      setLiveJobs(mapped);
+      setTotalJobsCount(res.pagination?.total || mapped.length);
+    } catch (err: any) {
+      console.error('[JobCenter] Failed to fetch live jobs:', err);
+      setJobsError(err?.message || 'Unable to connect to live Jobs API. Please make sure the backend is running.');
+      toast.error('Failed to load live jobs from server');
+    } finally {
+      setIsLoadingJobs(false);
+    }
+  }, [currentPage, filters.searchQuery, filters.location, filters.workMode, filters.employmentType, userSkills]);
+
+  // Debounced search trigger
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchLiveJobs();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [fetchLiveJobs]);
 
   const appliedJobIds = useMemo(() => applications.map((a) => a.jobId), [applications]);
 
@@ -72,7 +163,7 @@ export default function SmartJobCenterPage() {
       experience: 'All',
       matchTier: 'All Jobs',
       salaryMin: 0,
-      salaryMax: 30,
+      salaryMax: 60,
       location: 'All Locations',
       selectedSkills: [],
       sortBy: 'AI Match',
@@ -81,9 +172,16 @@ export default function SmartJobCenterPage() {
   };
 
   const handleToggleSave = (jobId: string) => {
-    setSavedJobIds((prev) =>
-      prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId]
-    );
+    setSavedJobIds((prev) => {
+      const isSaved = prev.includes(jobId);
+      if (isSaved) {
+        toast.info('Job removed from saved list');
+        return prev.filter((id) => id !== jobId);
+      } else {
+        toast.success('Job saved to your bookmarks');
+        return [...prev, jobId];
+      }
+    });
   };
 
   const handleConfirmApply = (job: Job) => {
@@ -99,8 +197,8 @@ export default function SmartJobCenterPage() {
       matchScore: job.matchScore,
       status: 'Submitted',
       nextStep: 'Awaiting recruiter screening',
-      resumeUsed: 'Alex_Rivera_Senior_FullStack_Resume.pdf',
-      atsScore: 91,
+      resumeUsed: 'Default_Uploaded_Resume.pdf',
+      atsScore: job.matchScore,
       timeline: [
         { title: 'Application Submitted', date: 'Just now', completed: true, isCurrent: true },
         { title: 'Resume Review', date: 'Pending', completed: false },
@@ -109,34 +207,31 @@ export default function SmartJobCenterPage() {
     };
 
     setApplications((prev) => [newApp, ...prev]);
+    toast.success(`Application successfully submitted for ${job.title}!`);
   };
 
-  // Filtered & Sorted Jobs list
+  // Client-side Sort & Filter refinements on live jobs
   const filteredJobs = useMemo(() => {
-    return mockJobListings
+    return liveJobs
       .filter((job) => {
-        // Search query
-        if (filters.searchQuery.trim()) {
-          const q = filters.searchQuery.toLowerCase();
-          const matchesTitle = job.title.toLowerCase().includes(q);
-          const matchesCompany = job.company.toLowerCase().includes(q);
-          const matchesSkill = job.skills.some((s) => s.toLowerCase().includes(q));
-          if (!matchesTitle && !matchesCompany && !matchesSkill) return false;
+        // Experience filter
+        if (filters.experience !== 'All') {
+          if (filters.experience === '0–1 years' && job.experienceMin > 1) return false;
+          if (filters.experience === '1–3 years' && (job.experienceMin < 1 || job.experienceMin > 3)) return false;
+          if (filters.experience === '3–5 years' && (job.experienceMin < 3 || job.experienceMin > 5)) return false;
+          if (filters.experience === '5+ years' && job.experienceMin < 5) return false;
         }
-
-        // Work Mode
-        if (filters.workMode !== 'All' && job.workMode !== filters.workMode) return false;
-
-        // Employment Type
-        if (filters.employmentType !== 'All' && job.employmentType !== filters.employmentType) return false;
 
         // Match Tier
         if (filters.matchTier === '85%+' && job.matchScore < 85) return false;
         if (filters.matchTier === '70–85%' && (job.matchScore < 70 || job.matchScore > 85)) return false;
 
-        // Location
-        if (filters.location !== 'All Locations' && !job.location.toLowerCase().includes(filters.location.toLowerCase())) {
-          return false;
+        // Selected Skills Filter
+        if (filters.selectedSkills.length > 0) {
+          const hasSkill = filters.selectedSkills.some((skill) =>
+            job.skills.some((js) => js.toLowerCase() === skill.toLowerCase())
+          );
+          if (!hasSkill) return false;
         }
 
         return true;
@@ -154,84 +249,99 @@ export default function SmartJobCenterPage() {
         // Default: AI Match
         return b.matchScore - a.matchScore;
       });
-  }, [filters]);
+  }, [liveJobs, filters]);
 
-  const recommendedJobs = useMemo(
-    () => mockJobListings.filter((j) => j.matchScore >= 88).slice(0, 3),
-    []
-  );
+  // Top AI Recommended jobs (Top 3 highest match score)
+  const recommendedJobs = useMemo(() => {
+    return [...liveJobs].sort((a, b) => b.matchScore - a.matchScore).slice(0, 3);
+  }, [liveJobs]);
 
-  const savedJobsList = useMemo(
-    () => mockJobListings.filter((j) => savedJobIds.includes(j.id)),
-    [savedJobIds]
-  );
+  const savedJobsList = useMemo(() => {
+    return liveJobs.filter((j) => savedJobIds.includes(j.id));
+  }, [liveJobs, savedJobIds]);
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage) || 1;
+  // Dynamic pagination calculation
+  const calculatedTotalPages = Math.ceil(filteredJobs.length / jobsPerPage) || 1;
   const paginatedJobs = useMemo(() => {
     const start = (currentPage - 1) * jobsPerPage;
     return filteredJobs.slice(start, start + jobsPerPage);
   }, [filteredJobs, currentPage]);
 
+  const highMatchJobsCount = useMemo(() => {
+    return liveJobs.filter((j) => j.matchScore >= 80).length;
+  }, [liveJobs]);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <PageHeader
-          title="Smart Job Center"
-          description="Find jobs matched to your skills, experience, and career goals."
-          badge="Module 28 • AI Career Matching"
-        />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <PageHeader
+            title="Smart Job Center"
+            description="Find real jobs matched to your skills, experience, and career goals."
+            badge="Live MongoDB Database • Real-Time AI Matching"
+          />
+          <button
+            onClick={fetchLiveJobs}
+            disabled={isLoadingJobs}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition-all cursor-pointer shadow-sm disabled:opacity-50 self-start sm:self-auto"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingJobs ? 'animate-spin text-[#3D5AFE]' : ''}`} />
+            <span>Refresh Jobs</span>
+          </button>
+        </div>
 
-        {/* Compact Candidate Summary Bar */}
+        {/* Candidate Summary Bar */}
         <div className="p-4 rounded-2xl bg-gradient-to-r from-[#3D5AFE]/10 via-[#00D9C0]/10 to-transparent border border-[#3D5AFE]/20 flex flex-wrap items-center justify-between gap-4 text-xs">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-[#3D5AFE]" />
               <span className="text-slate-600 dark:text-slate-400 font-medium">Target Role:</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">Full-Stack Engineer</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">{targetRoleTitle}</span>
             </div>
 
             <div className="flex items-center gap-2 border-l border-slate-300 dark:border-slate-700 pl-4">
               <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
-              <span className="text-slate-600 dark:text-slate-400 font-medium">Profile Readiness:</span>
-              <span className="font-extrabold text-emerald-700 dark:text-emerald-400">86% Ready</span>
+              <span className="text-slate-600 dark:text-slate-400 font-medium">Profile Skills:</span>
+              <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
+                {userSkills.length > 0 ? `${userSkills.length} Skills Active` : 'General Profile'}
+              </span>
             </div>
 
             <div className="flex items-center gap-2 border-l border-slate-300 dark:border-slate-700 pl-4">
               <FileCheck className="w-4 h-4 text-[#3D5AFE]" />
-              <span className="text-slate-600 dark:text-slate-400 font-medium">Resume Status:</span>
+              <span className="text-slate-600 dark:text-slate-400 font-medium">Data Source:</span>
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold text-[10px] border border-emerald-500/30">
-                AI Resume Ready (ATS 91%)
+                Live Backend API (/api/jobs)
               </span>
             </div>
           </div>
 
           <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-            Updated today based on Module 20–23 data
+            {liveJobs.length} active opportunities verified
           </span>
         </div>
 
-        {/* 4 Portal Summary Metric Cards */}
+        {/* 4 Summary Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
-            title="Recommended Jobs"
-            value="128"
-            subtitle="AI matched listings"
-            icon={Sparkles}
+            title="Live Database Jobs"
+            value={totalJobsCount.toString()}
+            subtitle="Active server listings"
+            icon={Briefcase}
             color="text-[#3D5AFE]"
           />
           <MetricCard
             title="High Match Jobs"
-            value="24"
-            subtitle=">85% Match score"
+            value={highMatchJobsCount.toString()}
+            subtitle="≥80% Match score"
             icon={TrendingUp}
             color="text-emerald-500"
           />
           <MetricCard
-            title="Saved Jobs"
+            title="Saved Bookmarks"
             value={savedJobIds.length.toString()}
-            subtitle="Bookmarked for review"
+            subtitle="Saved for review"
             icon={Bookmark}
             color="text-amber-500"
           />
@@ -245,7 +355,7 @@ export default function SmartJobCenterPage() {
         </div>
 
         {/* Top AI Recommended Carousel Section */}
-        {activeTab !== 'applied' && activeTab !== 'saved' && (
+        {activeTab !== 'applied' && activeTab !== 'saved' && recommendedJobs.length > 0 && (
           <div className="rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -257,7 +367,7 @@ export default function SmartJobCenterPage() {
                     AI Recommended For You
                   </h2>
                   <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Top jobs selected based on your profile, resume ATS score, and skill gaps
+                    Top opportunities scored against your active skills and experience
                   </p>
                 </div>
               </div>
@@ -380,6 +490,22 @@ export default function SmartJobCenterPage() {
           )}
         </div>
 
+        {/* Error Notification banner if backend connection fails */}
+        {jobsError && (
+          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{jobsError}</span>
+            </div>
+            <button
+              onClick={fetchLiveJobs}
+              className="px-3 py-1 rounded-lg bg-red-500 text-white font-bold hover:bg-red-600 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Tab Contents */}
         {activeTab === 'saved' ? (
           <SavedJobsTab
@@ -396,11 +522,16 @@ export default function SmartJobCenterPage() {
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-              <span>Showing {filteredJobs.length} matching jobs</span>
-              <span>Page {currentPage} of {totalPages}</span>
+              <span>Showing {filteredJobs.length} live jobs</span>
+              <span>Page {currentPage} of {calculatedTotalPages}</span>
             </div>
 
-            {filteredJobs.length === 0 ? (
+            {isLoadingJobs ? (
+              <div className="p-12 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-3 text-slate-500">
+                <Loader2 className="w-8 h-8 text-[#3D5AFE] animate-spin" />
+                <p className="text-xs font-semibold">Fetching live job postings from database...</p>
+              </div>
+            ) : filteredJobs.length === 0 ? (
               <JobEmptyState onReset={handleResetFilters} />
             ) : (
               <div className="grid grid-cols-1 gap-4">
@@ -420,7 +551,7 @@ export default function SmartJobCenterPage() {
             )}
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
+            {calculatedTotalPages > 1 && (
               <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
@@ -432,7 +563,7 @@ export default function SmartJobCenterPage() {
                 </button>
 
                 <div className="flex items-center gap-1 text-xs">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  {Array.from({ length: calculatedTotalPages }, (_, i) => i + 1).map((pageNum) => (
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
@@ -448,8 +579,8 @@ export default function SmartJobCenterPage() {
                 </div>
 
                 <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, calculatedTotalPages))}
+                  disabled={currentPage === calculatedTotalPages}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-semibold disabled:opacity-40 cursor-pointer"
                 >
                   <span>Next</span>

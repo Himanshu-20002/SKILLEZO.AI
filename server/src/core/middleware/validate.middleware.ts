@@ -17,10 +17,22 @@ export const validate = (schemas: RequestSchemas) => {
         req.body = await schemas.body.parseAsync(req.body);
       }
       if (schemas.params) {
-        req.params = (await schemas.params.parseAsync(req.params)) as Record<string, string>;
+        const parsedParams = (await schemas.params.parseAsync(req.params)) as Record<string, string>;
+        Object.defineProperty(req, "params", {
+          value: parsedParams,
+          writable: true,
+          enumerable: true,
+          configurable: true,
+        });
       }
       if (schemas.query) {
-        req.query = (await schemas.query.parseAsync(req.query)) as Record<string, any>;
+        const parsedQuery = (await schemas.query.parseAsync(req.query)) as Record<string, any>;
+        Object.defineProperty(req, "query", {
+          value: parsedQuery,
+          writable: true,
+          enumerable: true,
+          configurable: true,
+        });
       }
       next();
     } catch (error) {

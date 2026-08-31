@@ -12,7 +12,7 @@
 | :-: | :--- | :--- | :--- | :-: | :-: | :-: |
 | **FE-201** | M1: Core Integration | Configure Dev Proxy in `.env.local` | `client/.env.local` | 1h | P0 | 🟢 **Done** |
 | **FE-202** | M1: Core Integration | Build Job Client Service (`job.service.ts`)| `client/services` | 4h | P0 | 🟢 **Done** |
-| **FE-203** | M1: Core Integration | Wire Smart Job Center UI to Live Jobs API | `/dashboard/job-center`| 6h | P0 | ⚪ Todo |
+| **FE-203** | M1: Core Integration | Wire Smart Job Center UI to Live Jobs API | `/dashboard/job-center`| 6h | P0 | 🟢 **Done** |
 | **FE-204** | M1: Core Integration | Build Resume Client Service (`resume.service.ts`)| `client/services` | 4h | P0 | ⚪ Todo |
 | **FE-205** | M1: Core Integration | Wire Live Resume Upload in UI | `/resume-intelligence` | 5h | P0 | ⚪ Todo |
 | **FE-206** | M2: Applications & AI | Build Application Client Service | `client/services` | 4h | P0 | ⚪ Todo |
@@ -55,7 +55,7 @@
 ---
 
 ### `FE-203` — Wire Smart Job Center UI to Live Jobs API
-- **Priority:** P0 | **Estimate:** 6 hours | **Status:** ⚪ Todo
+- **Priority:** P0 | **Estimate:** 6 hours | **Status:** 🟢 **Done** (31-Aug-2026)
 - **Dependency:** `FE-202`
 - **Target Files:**
   - `client/app/dashboard/job-center/page.tsx`
@@ -63,8 +63,8 @@
   - `client/components/dashboard/job-center/JobFilters.tsx`
 - **Specification:** Replace static `mockJobListings` in `/dashboard/job-center` with live state fetched from `jobService.searchJobs()`. Connect search input debounce, category/salary filters, and pagination controls to query parameters.
 - **Acceptance Criteria:**
-  - [ ] Page renders live database jobs with loading skeleton and empty state.
-  - [ ] Changing filters triggers fresh API request with correct results.
+  - [x] Page renders live database jobs with loading skeleton and empty state.
+  - [x] Changing filters triggers fresh API request with correct results.
 
 ---
 

@@ -46,12 +46,13 @@ export const errorMiddleware = (
   console.error("[Unhandled Error]:", err);
 
   // Return sanitized 500 internal server error
+  const message = err instanceof Error ? err.message : "An unexpected error occurred";
   res
     .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     .json(
       errorResponse(
         ERROR_CODES.INTERNAL_SERVER_ERROR,
-        "An unexpected error occurred"
+        message
       )
     );
 };

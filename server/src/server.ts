@@ -1,3 +1,13 @@
+import dns from "dns";
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+  if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder("ipv4first");
+  }
+} catch {
+  // Use default OS settings
+}
+
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import { authHandler } from "@/core/auth";

@@ -105,12 +105,12 @@ const jobSchema = new Schema<IJob>(
     },
     sourceProvider: {
       type: String,
-      default: null,
+      default: undefined,
       index: true,
     },
     externalId: {
       type: String,
-      default: null,
+      default: undefined,
       index: true,
     },
     sourceUrl: {
@@ -227,9 +227,16 @@ const jobSchema = new Schema<IJob>(
 
 jobSchema.index({ companyId: 1, status: 1 });
 jobSchema.index({ roleId: 1, status: 1 });
-jobSchema.index({ "location.city": 1 });
-jobSchema.index({ createdAt: -1 });
-jobSchema.index({ sourceProvider: 1, externalId: 1 }, { unique: true, sparse: true });
+jobSchema.index(
+  { sourceProvider: 1, externalId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      sourceProvider: { $type: "string" },
+      externalId: { $type: "string" },
+    },
+  }
+);
 jobSchema.index(
   {
     title: "text",

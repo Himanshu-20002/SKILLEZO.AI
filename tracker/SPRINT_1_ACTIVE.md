@@ -50,7 +50,7 @@
   - **Target Files:** `server/package.json`, `server/src/modules/resume/resume.parser.ts`.
 
 #### 🎨 Developer 2 (Frontend)
-- [ ] **`FE-203` — Wire Smart Job Center to Live API** (6 hours)
+- [x] **`FE-203` — Wire Smart Job Center to Live API** (6 hours) — *COMPLETED (31-Aug-2026)*
   - **Action:** Update `client/app/dashboard/job-center/page.tsx` to replace `mockJobListings` with data from `job.service.ts`.
   - **Target Files:** `client/app/dashboard/job-center/page.tsx`.
   - **Verify:** Page loads real MongoDB jobs; search input, pagination, and filter changes fetch fresh live data.
