@@ -10,13 +10,22 @@
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              DAY 1 ACTION ITEMS                             │
+│                            CURRENT ACTIVE PRIORITIES                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ 1. DEVELOPER 2: Execute FE-201 (Fix dev proxy in client/.env.local)         │
-│ 2. DEVELOPER 2: Start FE-202 (Build client/services/job.service.ts)         │
-│ 3. DEVELOPER 1: Execute BE-101 (Install Vitest & configure npm test)        │
+│ 1. DEVELOPER 1: Start BE-101 (Setup Vitest Automated Testing Suite)         │
+│ 2. DEVELOPER 2: Start FE-204 (Build Resume Client Service resume.service.ts)│
+│ 3. DEVELOPER 2: Start FE-205 (Wire Live Resume Upload in UI)                │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 📋 Completed Tasks in Sprint 1 (So Far)
+
+* ✅ `FE-201`: Configure Client Dev Proxy (`.env.local`)
+* ✅ `FE-202`: Build Job Client Service (`client/services/job.service.ts`)
+* ✅ `FE-203`: Wire Smart Job Center UI to Live Jobs API (103 real MongoDB jobs)
+* ✅ `BE-109`: Job Ingestion Background Cron & 3-Tier Lifecycle Engine (`node-cron` + 14-Day TTL)
 
 ---
 
