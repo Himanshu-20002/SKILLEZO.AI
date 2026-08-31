@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { extractSkillsFromText } from "./skill-extractor";
-import { CompetencyImportance } from "../constants/enums";
+import { extractSkillsFromText } from "@/core/utils/skill-extractor";
+import { CompetencyImportance } from "@/core/constants/enums";
 
 describe("Skill Extractor Utility", () => {
   it("should extract AI/ML skills from job title and description", () => {

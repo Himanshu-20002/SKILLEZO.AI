@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import express from "express";
 import request from "supertest";
-import healthRouter from "./health.routes";
+import healthRouter from "@/routes/health.routes";
 
 describe("Health Check API Routes", () => {
   const app = express();

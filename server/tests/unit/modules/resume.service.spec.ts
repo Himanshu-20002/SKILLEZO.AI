@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ResumeService } from "../resume.service";
+import { ResumeService } from "@/modules/resume/resume.service";
 import { ResumeRepository } from "@/database/repositories/resume/ResumeRepository";
 import { IResumeStorageService } from "@/core/storage/storage.service";
-import { Readable } from "stream";
 import { AppError } from "@/core/utils/AppError";
 import { ERROR_CODES } from "@/core/constants/error-codes";
 

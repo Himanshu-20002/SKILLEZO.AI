@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { validate } from "./validate.middleware";
+import { validate } from "@/core/middleware/validate.middleware";
 import { HTTP_STATUS } from "@/core/constants/http-status";
 
 describe("Validate Middleware", () => {

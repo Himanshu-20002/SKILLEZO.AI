@@ -10,7 +10,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["src/**/*.{test,spec}.ts"],
+    include: ["tests/**/*.{test,spec}.ts"],
     exclude: ["node_modules", "dist"],
     testTimeout: 15000,
     coverage: {

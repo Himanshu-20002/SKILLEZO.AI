@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { JobsService } from "./jobs.service";
+import { JobsService } from "@/modules/jobs/jobs.service";
 import { JobRepository } from "@/database/repositories/job/JobRepository";
 import { AppError } from "@/core/utils/AppError";
 

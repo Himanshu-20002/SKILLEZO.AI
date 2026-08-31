@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ApplicationService } from "../application.service";
+import { ApplicationService } from "@/modules/application/application.service";
 import { ApplicationRepository } from "@/database/repositories/application/ApplicationRepository";
 import { JobRepository } from "@/database/repositories/job/JobRepository";
 import { ResumeRepository } from "@/database/repositories/resume/ResumeRepository";
