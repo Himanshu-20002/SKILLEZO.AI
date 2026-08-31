@@ -13,6 +13,7 @@ import {
   Building2,
   GraduationCap,
   ShieldCheck,
+  ExternalLink,
 } from 'lucide-react';
 import { Job } from '@/types/job-center';
 import { JobMatchScore } from './JobMatchScore';
@@ -187,21 +188,35 @@ export const JobDetailsDrawer: React.FC<JobDetailsDrawerProps> = ({
             <span>{isSaved ? 'Saved Job' : 'Save Job'}</span>
           </button>
 
-          <button
-            onClick={() => {
-              onClose();
-              onApply(job);
-            }}
-            disabled={isApplied}
-            className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold shadow-md transition-all cursor-pointer ${
-              isApplied
-                ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 cursor-default'
-                : 'bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 text-white'
-            }`}
-          >
-            <Send className="w-4 h-4" />
-            <span>{isApplied ? 'Application Submitted ✓' : 'Apply with AI Resume'}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {job.sourceUrl && (
+              <a
+                href={job.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
+              >
+                <span>Original Link</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
+
+            <button
+              onClick={() => {
+                onClose();
+                onApply(job);
+              }}
+              disabled={isApplied}
+              className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold shadow-md transition-all cursor-pointer ${
+                isApplied
+                  ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 cursor-default'
+                  : 'bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 text-white'
+              }`}
+            >
+              <Send className="w-4 h-4" />
+              <span>{isApplied ? 'Application Submitted ✓' : 'Apply with AI Resume'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

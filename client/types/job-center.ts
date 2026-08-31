@@ -49,6 +49,8 @@ export interface Job {
   matchBreakdown: JobMatchBreakdown;
   postedDate: string;
   postedTimeAgo: string;
+  sourceUrl?: string | null;
+  sourceName?: string | null;
   isSaved?: boolean;
   isApplied?: boolean;
 }

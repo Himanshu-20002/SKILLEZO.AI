@@ -178,6 +178,8 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
     },
     postedDate: createdDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
     postedTimeAgo,
+    sourceUrl: job.sourceUrl || null,
+    sourceName: job.sourceName || (job.sourceType === "EXTERNAL" ? "Jooble" : null),
     isSaved: false,
     isApplied: false,
   };
