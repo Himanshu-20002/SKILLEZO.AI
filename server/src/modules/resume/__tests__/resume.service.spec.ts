@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ResumeService } from "../resume.service";
 import { ResumeRepository } from "@/database/repositories/resume/ResumeRepository";
 import { IResumeStorageService } from "@/core/storage/storage.service";
@@ -7,28 +8,28 @@ import { ERROR_CODES } from "@/core/constants/error-codes";
 
 describe("ResumeService Unit Tests", () => {
   let resumeService: ResumeService;
-  let mockRepository: jest.Mocked<ResumeRepository>;
-  let mockStorage: jest.Mocked<IResumeStorageService>;
+  let mockRepository: any;
+  let mockStorage: any;
 
   beforeEach(() => {
     mockRepository = {
-      findByUserId: jest.fn(),
-      findUserResumeById: jest.fn(),
-      findDefaultByUserId: jest.fn(),
-      clearDefaultFlag: jest.fn(),
-      setDefaultResume: jest.fn(),
-      countUserResumes: jest.fn(),
-      deleteUserResume: jest.fn(),
-      create: jest.fn(),
-      updateById: jest.fn(),
-    } as any;
+      findByUserId: vi.fn(),
+      findUserResumeById: vi.fn(),
+      findDefaultByUserId: vi.fn(),
+      clearDefaultFlag: vi.fn(),
+      setDefaultResume: vi.fn(),
+      countUserResumes: vi.fn(),
+      deleteUserResume: vi.fn(),
+      create: vi.fn(),
+      updateById: vi.fn(),
+    };
 
     mockStorage = {
-      save: jest.fn(),
-      getStream: jest.fn(),
-      delete: jest.fn(),
-      exists: jest.fn(),
-      getAbsolutePath: jest.fn(),
+      save: vi.fn(),
+      getStream: vi.fn(),
+      delete: vi.fn(),
+      exists: vi.fn(),
+      getAbsolutePath: vi.fn(),
     };
 
     resumeService = new ResumeService(mockRepository, mockStorage);

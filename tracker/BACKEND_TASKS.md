@@ -10,7 +10,7 @@
 
 | Task ID | Milestone | Task Title | Module | Est. | Priority | Status |
 | :-: | :--- | :--- | :--- | :-: | :-: | :-: |
-| **BE-101** | M1: Core Integration | Setup Vitest Automated Test Suite | `core/testing` | 4h | P0 | ⚪ Todo |
+| **BE-101** | M1: Core Integration | Setup Vitest Automated Test Suite | `core/testing` | 4h | P0 | 🟢 **Done** |
 | **BE-102** | M1: Core Integration | Resume PDF Text Extraction Service | `modules/resume` | 8h | P1 | ⚪ Todo |
 | **BE-103** | M1: Core Integration | AI ATS Scoring & Feedback Engine | `modules/resume` | 8h | P1 | ⚪ Todo |
 | **BE-104** | M2: Applications & AI | Skill Gap Calculation Engine | `modules/career-plan` | 8h | P1 | ⚪ Todo |
@@ -26,16 +26,21 @@
 ## 🔍 Detailed Task Specifications
 
 ### `BE-101` — Setup Vitest Automated Test Suite
-- **Priority:** P0 | **Estimate:** 4 hours | **Status:** ⚪ Todo
+- **Priority:** P0 | **Estimate:** 4 hours | **Status:** 🟢 **Done** (31-Aug-2026)
 - **Target Files:**
   - `server/package.json`
-  - `server/vitest.config.ts`
+  - `server/vitest.config.mts`
+  - `server/src/core/utils/skill-extractor.spec.ts`
+  - `server/src/core/middleware/validate.middleware.spec.ts`
+  - `server/src/modules/jobs/jobs.service.spec.ts`
+  - `server/src/routes/health.routes.spec.ts`
   - `server/src/modules/application/__tests__/application.service.spec.ts`
   - `server/src/modules/resume/__tests__/resume.service.spec.ts`
-- **Specification:** Install `vitest`, `@vitest/coverage-v8`, and `supertest`. Configure `vitest.config.ts` with path aliases matching `tsconfig.json`. Add `"test": "vitest run"` script to `package.json`.
+- **Specification:** Install `vitest`, `supertest`, and `vite-tsconfig-paths`. Configure `vitest.config.mts` with `@/` path alias. Add `"test": "vitest run"` and `"test:watch": "vitest"` scripts to `package.json`.
 - **Acceptance Criteria:**
-  - [ ] Running `npm test` from `/server` executes existing test specs.
-  - [ ] All unit and repository mock tests pass with green exit code 0.
+  - [x] `npm test` runs from `/server` with 100% green exit code.
+  - [x] Unit tests cover core services, middleware, and route integration. existing test specs.
+  - [x] All unit and repository mock tests pass with green exit code 0.
 
 ---
 

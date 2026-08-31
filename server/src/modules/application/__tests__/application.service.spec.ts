@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ApplicationService } from "../application.service";
 import { ApplicationRepository } from "@/database/repositories/application/ApplicationRepository";
 import { JobRepository } from "@/database/repositories/job/JobRepository";
@@ -7,28 +8,28 @@ import { ERROR_CODES } from "@/core/constants/error-codes";
 
 describe("ApplicationService Unit Tests", () => {
   let applicationService: ApplicationService;
-  let mockAppRepository: jest.Mocked<ApplicationRepository>;
-  let mockJobRepository: jest.Mocked<JobRepository>;
-  let mockResumeRepository: jest.Mocked<ResumeRepository>;
+  let mockAppRepository: any;
+  let mockJobRepository: any;
+  let mockResumeRepository: any;
 
   beforeEach(() => {
     mockAppRepository = {
-      create: jest.fn(),
-      findByIdAndUserId: jest.fn(),
-      findByUserAndJob: jest.fn(),
-      findPaginatedByUserId: jest.fn(),
-      findOne: jest.fn(),
-    } as any;
+      create: vi.fn(),
+      findByIdAndUserId: vi.fn(),
+      findByUserAndJob: vi.fn(),
+      findPaginatedByUserId: vi.fn(),
+      findOne: vi.fn(),
+    };
 
     mockJobRepository = {
-      findById: jest.fn(),
-    } as any;
+      findById: vi.fn(),
+    };
 
     mockResumeRepository = {
-      findUserResumeById: jest.fn(),
-      findDefaultByUserId: jest.fn(),
-      findByUserId: jest.fn(),
-    } as any;
+      findUserResumeById: vi.fn(),
+      findDefaultByUserId: vi.fn(),
+      findByUserId: vi.fn(),
+    };
 
     applicationService = new ApplicationService(
       mockAppRepository,

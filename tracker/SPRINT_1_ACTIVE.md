@@ -26,21 +26,19 @@
 * ✅ `FE-202`: Build Job Client Service (`client/services/job.service.ts`)
 * ✅ `FE-203`: Wire Smart Job Center UI to Live Jobs API (103 real MongoDB jobs)
 * ✅ `BE-109`: Job Ingestion Background Cron & 3-Tier Lifecycle Engine (`node-cron` + 14-Day TTL)
+* ✅ `BE-101`: Setup Vitest Automated Test Suite (`server/vitest.config.mts` — 18/18 passing)
 
 ---
-
-
-
 
 ## 📅 Day-by-Day Sprint Schedule
 
 ### 🗓️ DAY 1 (Tuesday, Sep 01)
 
 #### 🛠️ Developer 1 (Backend)
-- [ ] **`BE-101` — Setup Vitest Automated Test Suite** (4 hours)
-  - **Action:** Install `vitest` and `supertest` in `/server`. Create `server/vitest.config.ts`.
-  - **Target Files:** `server/package.json`, `server/vitest.config.ts`.
-  - **Verify:** Run `npm test` from `/server` and verify that unit tests pass.
+- [x] **`BE-101` — Setup Vitest Automated Test Suite** (4 hours) — *COMPLETED (31-Aug-2026)*
+  - **Action:** Install `vitest`, `supertest`, and `vite-tsconfig-paths` in `/server`. Create `server/vitest.config.mts`.
+  - **Target Files:** `server/package.json`, `server/vitest.config.mts`.
+  - **Verify:** Run `npm test` from `/server` and verify that unit tests pass (18/18 green).
 
 #### 🎨 Developer 2 (Frontend)
 - [x] **`FE-201` — Configure Client Dev Proxy** (1 hour) — *COMPLETED (31-Aug-2026)*

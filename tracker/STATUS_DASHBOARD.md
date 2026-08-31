@@ -36,8 +36,8 @@ AI Intelligence & Career Plan Engines  : [██░░░░░░░░░░�
 
 ### 🛠️ Developer 1 (Backend AI, Core Services & Security)
 - **Total Assigned Tasks:** 10 tasks (`BE-101` to `BE-110`) • **Total Effort:** ~58 hours
-- **Tasks Completed:** `1 / 10` (BE-109 Done ✅)
-- **Current Task:** `BE-101` (Setup Vitest Automated Test Suite)
+- **Tasks Completed:** `2 / 10` (BE-101, BE-109 Done ✅)
+- **Current Task:** `BE-102` (Resume PDF Text Extraction Service)
 - **Sprint 1 Target:** Finish `BE-101`, `BE-102` (Resume Parser), and `BE-103` (ATS Scorer).
 
 ### 🎨 Developer 2 (Frontend Integration & UI Engineering)
