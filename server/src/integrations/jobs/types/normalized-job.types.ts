@@ -22,4 +22,10 @@ export interface NormalizedExternalJob {
   sourceUrl: string;
   sourceName: string;
   sourceUpdatedAt?: Date;
+  requiredSkills?: Array<{
+    name: string;
+    requiredLevel: number;
+    importance: any;
+    minYearsOfExperience: number;
+  }>;
 }

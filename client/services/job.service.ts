@@ -138,16 +138,56 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
     }
   }
 
-  // 1. Determine Actual Job Skills
+  // 1. Determine Actual Job Skills (from structured array or NLP extraction from job text)
   let jobSkills: string[] = (job.requiredSkills || []).map((s) => s.name.trim()).filter(Boolean);
 
-  // For external jobs with no structured skills array, check if any of the candidate's profile skills exist in title/description
-  if (jobSkills.length === 0 && userSkills.length > 0) {
-    const jobText = `${cleanTitle} ${cleanDescription}`.toLowerCase();
-    jobSkills = userSkills.filter((userSkill) => {
-      const regex = new RegExp(`\\b${userSkill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      return regex.test(jobText);
-    });
+  if (jobSkills.length === 0) {
+    const combinedText = `${cleanTitle} ${cleanDescription}`.toLowerCase();
+    const taxonomyPatterns: Array<{ name: string; regexes: RegExp[] }> = [
+      { name: "Machine Learning", regexes: [/\bmachine\s+learning\b/i, /\bml\b/i] },
+      { name: "Generative AI", regexes: [/\bgenerative\s+ai\b/i, /\bgenai\b/i, /\bgen\s+ai\b/i] },
+      { name: "RAG", regexes: [/\brag\b/i, /\bretrieval[\s-]augmented\b/i] },
+      { name: "Dataiku", regexes: [/\bdataiku\b/i] },
+      { name: "LLMs", regexes: [/\bllms?\b/i, /\blarge\s+language\b/i] },
+      { name: "NLP", regexes: [/\bnlp\b/i, /\bnatural\s+language\b/i] },
+      { name: "PyTorch", regexes: [/\bpytorch\b/i] },
+      { name: "TensorFlow", regexes: [/\btensorflow\b/i] },
+      { name: "Python", regexes: [/\bpython\b/i] },
+      { name: "TypeScript", regexes: [/\btypescript\b/i, /\bts\b/i] },
+      { name: "JavaScript", regexes: [/\bjavascript\b/i, /\bjs\b/i] },
+      { name: "React", regexes: [/\breact(?:\.js)?\b/i] },
+      { name: "Next.js", regexes: [/\bnext(?:\.js)?\b/i] },
+      { name: "Node.js", regexes: [/\bnode(?:\.js)?\b/i] },
+      { name: "Express", regexes: [/\bexpress(?:\.js)?\b/i] },
+      { name: "Docker", regexes: [/\bdocker\b/i, /\bcontainers?\b/i] },
+      { name: "Kubernetes", regexes: [/\bkubernetes\b/i, /\bk8s\b/i] },
+      { name: "AWS", regexes: [/\baws\b/i, /\bamazon\s+web\s+services\b/i] },
+      { name: "GCP", regexes: [/\bgcp\b/i, /\bgoogle\s+cloud\b/i] },
+      { name: "Azure", regexes: [/\bazure\b/i] },
+      { name: "PostgreSQL", regexes: [/\bpostgres(?:ql)?\b/i] },
+      { name: "MongoDB", regexes: [/\bmongodb\b/i, /\bmongo\b/i] },
+      { name: "MySQL", regexes: [/\bmysql\b/i] },
+      { name: "Redis", regexes: [/\bredis\b/i] },
+      { name: "FastAPI", regexes: [/\bfastapi\b/i] },
+      { name: "Spring Boot", regexes: [/\bspring\s+boot\b/i, /\bspring\b/i] },
+      { name: "Java", regexes: [/\bjava\b/i] },
+      { name: "Go / Golang", regexes: [/\bgolang\b/i, /\bgo\b/i] },
+      { name: "Tailwind CSS", regexes: [/\btailwind\b/i] },
+      { name: "GraphQL", regexes: [/\bgraphql\b/i] },
+      { name: "REST API", regexes: [/\brest(?:ful)?\s+apis?\b/i] },
+      { name: "CI/CD", regexes: [/\bci[\/-]?cd\b/i] },
+      { name: "Microservices", regexes: [/\bmicroservices?\b/i] },
+      { name: "System Design", regexes: [/\bsystem\s+design\b/i] },
+      { name: "MLOps", regexes: [/\bmlops\b/i] },
+    ];
+
+    for (const item of taxonomyPatterns) {
+      if (item.regexes.some((r) => r.test(combinedText))) {
+        if (!jobSkills.includes(item.name)) {
+          jobSkills.push(item.name);
+        }
+      }
+    }
   }
 
   // 2. Real Skill Matching Overlap
@@ -166,15 +206,15 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
   // 3. Mathematical Match Score Calculation (0 - 100%)
   let matchScore = 0;
   if (userSkills.length === 0) {
-    matchScore = 0; // Candidate has not added any skills to their profile
+    matchScore = 0; // Candidate has not added skills yet
   } else if (jobSkills.length > 0) {
     matchScore = Math.round((matchedSkills.length / jobSkills.length) * 100);
   } else {
-    // If no specific skills could be determined, calculate general keyword overlap
-    const matchedKeywords = userSkills.filter((s) =>
+    // If no specific skills could be extracted from text, match against general title overlap
+    const matchedCount = userSkills.filter((s) =>
       `${cleanTitle} ${cleanDescription}`.toLowerCase().includes(s.toLowerCase())
-    );
-    matchScore = Math.round((matchedKeywords.length / userSkills.length) * 100);
+    ).length;
+    matchScore = Math.round((matchedCount / userSkills.length) * 100);
   }
 
   const matchTier: "Excellent Match" | "Good Match" | "Potential Match" =

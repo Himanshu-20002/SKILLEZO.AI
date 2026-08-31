@@ -15,6 +15,8 @@ function cleanHtmlSnippet(snippet?: string | null): string {
     .trim();
 }
 
+import { extractSkillsFromText } from "@/core/utils/skill-extractor";
+
 export class JoobleMapper {
   static toNormalized(job: ValidatedJoobleJob): NormalizedExternalJob {
     const rawLocation = (job.location || "").trim();
@@ -22,13 +24,18 @@ export class JoobleMapper {
     const parsedDate = job.updated ? new Date(job.updated) : undefined;
     const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
 
+    const title = cleanHtmlSnippet(job.title) || "Untitled Position";
+    const companyName = cleanHtmlSnippet(job.company || "Unknown Company");
+    const description = cleanHtmlSnippet(job.snippet);
+    const requiredSkills = extractSkillsFromText(title, description);
+
     return {
       externalId: String(job.id).trim(),
       sourceType: "external",
       sourceProvider: "jooble",
-      title: cleanHtmlSnippet(job.title) || "Untitled Position",
-      companyName: cleanHtmlSnippet(job.company || "Unknown Company"),
-      description: cleanHtmlSnippet(job.snippet),
+      title,
+      companyName,
+      description,
       location: {
         raw: rawLocation || "Not specified",
       },
@@ -37,6 +44,7 @@ export class JoobleMapper {
       sourceUrl: (job.link || "").trim(),
       sourceName: (job.source || "Jooble").trim(),
       sourceUpdatedAt: isValidDate ? parsedDate : undefined,
+      requiredSkills,
     };
   }
 }
