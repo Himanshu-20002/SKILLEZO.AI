@@ -1,6 +1,20 @@
 import { ValidatedJoobleJob } from "./jooble.schema";
 import { NormalizedExternalJob } from "../../types/normalized-job.types";
 
+function cleanHtmlSnippet(snippet?: string | null): string {
+  if (!snippet) return "No description provided";
+  return snippet
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export class JoobleMapper {
   static toNormalized(job: ValidatedJoobleJob): NormalizedExternalJob {
     const rawLocation = (job.location || "").trim();
@@ -12,9 +26,9 @@ export class JoobleMapper {
       externalId: String(job.id).trim(),
       sourceType: "external",
       sourceProvider: "jooble",
-      title: job.title.trim() || "Untitled Position",
-      companyName: (job.company || "Unknown Company").trim(),
-      description: job.snippet?.trim() || "No description provided",
+      title: cleanHtmlSnippet(job.title) || "Untitled Position",
+      companyName: cleanHtmlSnippet(job.company || "Unknown Company"),
+      description: cleanHtmlSnippet(job.snippet),
       location: {
         raw: rawLocation || "Not specified",
       },

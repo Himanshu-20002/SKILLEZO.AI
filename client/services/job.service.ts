@@ -82,7 +82,26 @@ export interface PaginatedJobsResponse {
  * Utility helper to map a backend Job model into the rich UI Job format
  * expected by JobCard, JobDetailsDrawer, and ApplyModal.
  */
+export function cleanHtmlText(text?: string | null): string {
+  if (!text) return "";
+  return text
+    .replace(/<[^>]*>/g, " ") // Strip HTML tags (<b>, </b>, <br>, <p>, etc.)
+    .replace(/&nbsp;/gi, " ") // Replace non-breaking spaces
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&bull;/gi, "•")
+    .replace(/\s+/g, " ") // Collapse whitespace
+    .trim();
+}
+
 export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = []): Job {
+  const cleanTitle = cleanHtmlText(job.title) || "Untitled Position";
+  const cleanCompany = cleanHtmlText(job.companyName) || "Skillezo Partner Company";
+  const cleanDescription = cleanHtmlText(job.description) || "No description provided";
+
   // Normalize workplace / workMode
   let workMode: WorkMode = "Remote";
   const rawWork = (job.workplaceType || "").toUpperCase();
@@ -124,7 +143,7 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
 
   // For external jobs with no structured skills array, check if any of the candidate's profile skills exist in title/description
   if (jobSkills.length === 0 && userSkills.length > 0) {
-    const jobText = `${job.title} ${job.description}`.toLowerCase();
+    const jobText = `${cleanTitle} ${cleanDescription}`.toLowerCase();
     jobSkills = userSkills.filter((userSkill) => {
       const regex = new RegExp(`\\b${userSkill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
       return regex.test(jobText);
@@ -153,7 +172,7 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
   } else {
     // If no specific skills could be determined, calculate general keyword overlap
     const matchedKeywords = userSkills.filter((s) =>
-      `${job.title} ${job.description}`.toLowerCase().includes(s.toLowerCase())
+      `${cleanTitle} ${cleanDescription}`.toLowerCase().includes(s.toLowerCase())
     );
     matchScore = Math.round((matchedKeywords.length / userSkills.length) * 100);
   }
@@ -170,8 +189,8 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
 
   return {
     id: job._id,
-    title: job.title,
-    company: job.companyName || "Skillezo Partner Company",
+    title: cleanTitle,
+    company: cleanCompany,
     companyLogo: "",
     verified: isPlatform,
     department: "Engineering",
@@ -185,7 +204,7 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
     experienceMax: (job.minExperienceYears || 0) + 3,
     experienceText: (job.minExperienceYears || 0) === 0 ? "Fresher / 0-1 Years" : `${job.minExperienceYears}+ Years`,
     skills: jobSkills.length > 0 ? jobSkills : (userSkills.length > 0 ? userSkills.slice(0, 3) : ["General Engineering"]),
-    description: job.description,
+    description: cleanDescription,
     responsibilities: [
       "Design, build, and maintain high-quality, scalable code.",
       "Collaborate with cross-functional teams to deliver key product initiatives.",
