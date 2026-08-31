@@ -18,6 +18,8 @@ import {
   Loader2,
   RefreshCw,
   AlertCircle,
+  Globe,
+  Building,
 } from 'lucide-react';
 import { Job, JobFilterState, SortOption, JobApplication } from '@/types/job-center';
 import { jobService, mapBackendJobToUiJob, BackendJob } from '@/services/job.service';
@@ -36,7 +38,7 @@ import {
 } from '@/components/dashboard/job-center';
 import { toast } from 'sonner';
 
-type ActiveTab = 'recommended' | 'all' | 'saved' | 'applied';
+type ActiveTab = 'all' | 'platform' | 'external' | 'recommended' | 'saved' | 'applied';
 
 export default function SmartJobCenterPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
@@ -56,7 +58,6 @@ export default function SmartJobCenterPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalJobsCount, setTotalJobsCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const jobsPerPage = 6;
 
   const [filters, setFilters] = useState<JobFilterState>({
@@ -83,7 +84,7 @@ export default function SmartJobCenterPage() {
         }
       } catch (err) {
         // Fallback default skills for matching
-        setUserSkills(['React', 'Node.js', 'TypeScript', 'Next.js', 'MongoDB', 'Tailwind CSS']);
+        setUserSkills(['React', 'Node.js', 'TypeScript', 'Next.js', 'MongoDB', 'Tailwind CSS', 'Python', 'AWS']);
       }
     }
     loadCandidateProfile();
@@ -97,8 +98,8 @@ export default function SmartJobCenterPage() {
     try {
       // Map UI filters to backend query params
       const queryParams: Record<string, any> = {
-        page: currentPage,
-        limit: 50, // Fetch broader set to allow local sort/tier filtering
+        page: 1,
+        limit: 50, // Fetch broader dataset to allow fast client-side tab switching & sorting
       };
 
       if (filters.searchQuery.trim()) {
@@ -138,7 +139,7 @@ export default function SmartJobCenterPage() {
     } finally {
       setIsLoadingJobs(false);
     }
-  }, [currentPage, filters.searchQuery, filters.location, filters.workMode, filters.employmentType, userSkills]);
+  }, [filters.searchQuery, filters.location, filters.workMode, filters.employmentType, userSkills]);
 
   // Debounced search trigger
   useEffect(() => {
@@ -214,6 +215,11 @@ export default function SmartJobCenterPage() {
   const filteredJobs = useMemo(() => {
     return liveJobs
       .filter((job) => {
+        // Tab Source Filter
+        if (activeTab === 'platform' && job.sourceType !== 'PLATFORM') return false;
+        if (activeTab === 'external' && job.sourceType !== 'EXTERNAL') return false;
+        if (activeTab === 'recommended' && job.matchScore < 75) return false;
+
         // Experience filter
         if (filters.experience !== 'All') {
           if (filters.experience === '0–1 years' && job.experienceMin > 1) return false;
@@ -249,7 +255,7 @@ export default function SmartJobCenterPage() {
         // Default: AI Match
         return b.matchScore - a.matchScore;
       });
-  }, [liveJobs, filters]);
+  }, [liveJobs, filters, activeTab]);
 
   // Top AI Recommended jobs (Top 3 highest match score)
   const recommendedJobs = useMemo(() => {
@@ -259,6 +265,14 @@ export default function SmartJobCenterPage() {
   const savedJobsList = useMemo(() => {
     return liveJobs.filter((j) => savedJobIds.includes(j.id));
   }, [liveJobs, savedJobIds]);
+
+  const platformJobsCount = useMemo(() => {
+    return liveJobs.filter((j) => j.sourceType === 'PLATFORM').length;
+  }, [liveJobs]);
+
+  const externalJobsCount = useMemo(() => {
+    return liveJobs.filter((j) => j.sourceType === 'EXTERNAL').length;
+  }, [liveJobs]);
 
   // Dynamic pagination calculation
   const calculatedTotalPages = Math.ceil(filteredJobs.length / jobsPerPage) || 1;
@@ -278,7 +292,7 @@ export default function SmartJobCenterPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <PageHeader
             title="Smart Job Center"
-            description="Find real jobs matched to your skills, experience, and career goals."
+            description="Find real jobs matched to your skills, experience, and career goals across Direct Platform Employers and Jooble Aggregated Listings."
             badge="Live MongoDB Database • Real-Time AI Matching"
           />
           <button
@@ -310,47 +324,53 @@ export default function SmartJobCenterPage() {
 
             <div className="flex items-center gap-2 border-l border-slate-300 dark:border-slate-700 pl-4">
               <FileCheck className="w-4 h-4 text-[#3D5AFE]" />
-              <span className="text-slate-600 dark:text-slate-400 font-medium">Data Source:</span>
+              <span className="text-slate-600 dark:text-slate-400 font-medium">Data Pipeline:</span>
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold text-[10px] border border-emerald-500/30">
-                Live Backend API (/api/jobs)
+                Direct Platform + Jooble API
               </span>
             </div>
           </div>
 
-          <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-            {liveJobs.length} active opportunities verified
-          </span>
+          <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+            <span className="inline-flex items-center gap-1 text-[#3D5AFE]">
+              <Building className="w-3.5 h-3.5" /> {platformJobsCount} Platform
+            </span>
+            <span>•</span>
+            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+              <Globe className="w-3.5 h-3.5" /> {externalJobsCount} Jooble
+            </span>
+          </div>
         </div>
 
         {/* 4 Summary Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
-            title="Live Database Jobs"
+            title="Total Opportunities"
             value={totalJobsCount.toString()}
-            subtitle="Active server listings"
+            subtitle={`${platformJobsCount} Platform • ${externalJobsCount} Jooble`}
             icon={Briefcase}
             color="text-[#3D5AFE]"
           />
           <MetricCard
-            title="High Match Jobs"
-            value={highMatchJobsCount.toString()}
-            subtitle="≥80% Match score"
-            icon={TrendingUp}
-            color="text-emerald-500"
+            title="Direct Platform Jobs"
+            value={platformJobsCount.toString()}
+            subtitle="Verified Direct Employers"
+            icon={Building}
+            color="text-indigo-500"
           />
           <MetricCard
-            title="Saved Bookmarks"
-            value={savedJobIds.length.toString()}
-            subtitle="Saved for review"
-            icon={Bookmark}
+            title="Jooble External Jobs"
+            value={externalJobsCount.toString()}
+            subtitle="Aggregated Tech Roles"
+            icon={Globe}
             color="text-amber-500"
           />
           <MetricCard
-            title="Active Applications"
-            value={applications.length.toString()}
-            subtitle="Tracked submissions"
-            icon={Send}
-            color="text-purple-500"
+            title="High Match (≥80%)"
+            value={highMatchJobsCount.toString()}
+            subtitle="Top AI Fit for Profile"
+            icon={TrendingUp}
+            color="text-emerald-500"
           />
         </div>
 
@@ -384,7 +404,15 @@ export default function SmartJobCenterPage() {
                       <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
                         {job.matchScore}% Match
                       </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{job.postedTimeAgo}</span>
+                      {job.sourceType === 'EXTERNAL' ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                          <Globe className="w-3 h-3" /> Jooble
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-[#3D5AFE] font-bold">
+                          <Building className="w-3 h-3" /> Platform
+                        </span>
+                      )}
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
@@ -425,16 +453,21 @@ export default function SmartJobCenterPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-3">
             {/* Tabs */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {[
-                { id: 'all', label: 'All Jobs', count: filteredJobs.length },
-                { id: 'recommended', label: 'Top Recommended', count: recommendedJobs.length },
-                { id: 'saved', label: 'Saved Jobs', count: savedJobIds.length },
-                { id: 'applied', label: 'Applied Jobs', count: applications.length },
+                { id: 'all', label: 'All Jobs', count: liveJobs.length },
+                { id: 'platform', label: '🏢 Direct Platform', count: platformJobsCount },
+                { id: 'external', label: '🌐 Jooble Aggregated', count: externalJobsCount },
+                { id: 'recommended', label: '✨ Top Match', count: highMatchJobsCount },
+                { id: 'saved', label: 'Saved', count: savedJobIds.length },
+                { id: 'applied', label: 'Applied', count: applications.length },
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as ActiveTab)}
+                  onClick={() => {
+                    setActiveTab(tab.id as ActiveTab);
+                    setCurrentPage(1);
+                  }}
                   className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
                     activeTab === tab.id
                       ? 'bg-[#3D5AFE] text-white border-[#3D5AFE] shadow-sm font-bold'
@@ -522,7 +555,9 @@ export default function SmartJobCenterPage() {
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-              <span>Showing {filteredJobs.length} live jobs</span>
+              <span>
+                Showing {filteredJobs.length} {activeTab === 'platform' ? 'Platform' : activeTab === 'external' ? 'Jooble' : 'live'} opportunities
+              </span>
               <span>Page {currentPage} of {calculatedTotalPages}</span>
             </div>
 
@@ -563,7 +598,7 @@ export default function SmartJobCenterPage() {
                 </button>
 
                 <div className="flex items-center gap-1 text-xs">
-                  {Array.from({ length: calculatedTotalPages }, (_, i) => i + 1).map((pageNum) => (
+                  {Array.from({ length: Math.min(10, calculatedTotalPages) }, (_, i) => i + 1).map((pageNum) => (
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}

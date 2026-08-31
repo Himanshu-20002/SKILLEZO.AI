@@ -14,6 +14,8 @@ import {
   GraduationCap,
   ShieldCheck,
   ExternalLink,
+  Globe,
+  Building,
 } from 'lucide-react';
 import { Job } from '@/types/job-center';
 import { JobMatchScore } from './JobMatchScore';
@@ -39,19 +41,36 @@ export const JobDetailsDrawer: React.FC<JobDetailsDrawerProps> = ({
 }) => {
   if (!isOpen || !job) return null;
 
+  const isExternal = job.sourceType === 'EXTERNAL';
+
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/60 backdrop-blur-sm animate-fade-in flex justify-end">
       <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full flex flex-col shadow-2xl overflow-hidden">
         {/* Drawer Header */}
         <div className="p-6 border-b border-slate-200/60 dark:border-slate-800/60 flex items-start justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/50">
           <div className="flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#3D5AFE]/20 to-[#00D9C0]/20 text-[#3D5AFE] dark:text-[#00D9C0] flex items-center justify-center font-bold text-xl shrink-0 border border-[#3D5AFE]/20">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl shrink-0 border ${
+              isExternal
+                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                : 'bg-gradient-to-tr from-[#3D5AFE]/20 to-[#00D9C0]/20 text-[#3D5AFE] dark:text-[#00D9C0] border-[#3D5AFE]/20'
+            }`}>
               {job.company.substring(0, 2).toUpperCase()}
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{job.title}</h2>
-                {job.verified && (
+                {isExternal ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+                    <Globe className="w-3.5 h-3.5 text-amber-600 dark:text-amber-500" />
+                    Aggregated via {job.sourceName || 'Jooble'}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#3D5AFE]/15 text-[#3D5AFE] dark:text-[#00D9C0] border border-[#3D5AFE]/30">
+                    <Building className="w-3.5 h-3.5" />
+                    Direct Platform Job
+                  </span>
+                )}
+                {job.verified && !isExternal && (
                   <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
                     <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-500" />
                     Verified Employer
