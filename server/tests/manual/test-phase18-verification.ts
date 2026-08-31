@@ -1,12 +1,12 @@
-import { connectDatabase, disconnectDatabase } from './database/connection/db';
-import { ApplicationModel } from './database/models/Application.model';
-import { JobModel } from './database/models/Job.model';
-import { ResumeModel } from './database/models/Resume.model';
-import { CompanyModel } from './database/models/Company.model';
-import { CompanyMemberModel } from './database/models/CompanyMember.model';
-import { ApplicationService } from './modules/application/application.service';
-import { RecruiterApplicationService } from './modules/recruiter-application/recruiter-application.service';
-import { CompanyMemberRole, CompanyMemberStatus, ApplicationStatus } from './core/constants/enums';
+import { connectDatabase, disconnectDatabase } from '@/database/connection/db';
+import { ApplicationModel } from '@/database/models/Application.model';
+import { JobModel } from '@/database/models/Job.model';
+import { ResumeModel } from '@/database/models/Resume.model';
+import { CompanyModel } from '@/database/models/Company.model';
+import { CompanyMemberModel } from '@/database/models/CompanyMember.model';
+import { ApplicationService } from '@/modules/application/application.service';
+import { RecruiterApplicationService } from '@/modules/recruiter-application/recruiter-application.service';
+import { CompanyMemberRole, CompanyMemberStatus, ApplicationStatus } from '@/core/constants/enums';
 
 async function testPhase18Suite() {
   await connectDatabase();

@@ -1,8 +1,8 @@
-import { connectDatabase, disconnectDatabase } from './database/connection/db';
-import { ApplicationModel } from './database/models/Application.model';
-import { JobModel } from './database/models/Job.model';
-import { ResumeModel } from './database/models/Resume.model';
-import { ApplicationService } from './modules/application/application.service';
+import { connectDatabase, disconnectDatabase } from '@/database/connection/db';
+import { ApplicationModel } from '@/database/models/Application.model';
+import { JobModel } from '@/database/models/Job.model';
+import { ResumeModel } from '@/database/models/Resume.model';
+import { ApplicationService } from '@/modules/application/application.service';
 
 async function testSuite() {
   await connectDatabase();
