@@ -119,32 +119,52 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
     }
   }
 
-  // Calculate Match Score against user's skills
-  const jobSkillNames = job.requiredSkills.map((s) => s.name.toLowerCase());
+  // Extract skills from requiredSkills or title + description
+  const commonTechSkills = [
+    "React", "Node.js", "TypeScript", "JavaScript", "Next.js", "Python", "MongoDB", "Express",
+    "AWS", "Docker", "Kubernetes", "PostgreSQL", "Tailwind CSS", "Redux", "GraphQL", "Java",
+    "FastAPI", "SQL", "Git", "System Design", "Microservices", "REST API", "CI/CD", "Redis",
+    "HTML", "CSS", "Vue.js", "Angular", "Spring Boot", "Golang", "Linux"
+  ];
+
+  let extractedSkills = (job.requiredSkills || []).map((s) => s.name);
+  if (extractedSkills.length === 0) {
+    const fullText = `${job.title} ${job.description}`.toLowerCase();
+    extractedSkills = commonTechSkills.filter((skill) =>
+      fullText.includes(skill.toLowerCase())
+    );
+    if (extractedSkills.length === 0) {
+      extractedSkills = ["JavaScript", "React", "Node.js"];
+    }
+  }
+
+  const jobSkillNames = extractedSkills.map((s) => s.toLowerCase());
   const userSkillLower = userSkills.map((s) => s.toLowerCase());
-  const matched = jobSkillNames.filter((s) => userSkillLower.includes(s));
-  const missing = jobSkillNames.filter((s) => !userSkillLower.includes(s));
-  
-  let matchScore = 75; // Baseline match
+  const matched = extractedSkills.filter((s) => userSkillLower.includes(s.toLowerCase()));
+  const missing = extractedSkills.filter((s) => !userSkillLower.includes(s.toLowerCase()));
+
+  let matchScore = 78;
   if (jobSkillNames.length > 0) {
     const ratio = matched.length / jobSkillNames.length;
-    matchScore = Math.round(50 + ratio * 45);
+    matchScore = Math.min(98, Math.max(62, Math.round(55 + ratio * 43)));
   }
 
   const matchTier: "Excellent Match" | "Good Match" | "Potential Match" =
     matchScore >= 85 ? "Excellent Match" : matchScore >= 70 ? "Good Match" : "Potential Match";
 
   // Format posted time
-  const createdDate = new Date(job.publishedAt || job.createdAt);
+  const createdDate = new Date(job.publishedAt || job.createdAt || Date.now());
   const diffDays = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
   const postedTimeAgo = diffDays <= 0 ? "Today" : diffDays === 1 ? "1 day ago" : `${diffDays} days ago`;
+
+  const isPlatform = String(job.sourceType || "").toLowerCase() === "platform";
 
   return {
     id: job._id,
     title: job.title,
     company: job.companyName || "Skillezo Partner Company",
     companyLogo: "",
-    verified: job.sourceType === "PLATFORM",
+    verified: isPlatform,
     department: "Engineering",
     location: locationStr,
     workMode,
@@ -152,10 +172,10 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
     salaryMin: job.salary?.min || 0,
     salaryMax: job.salary?.max || 0,
     salaryText,
-    experienceMin: job.minExperienceYears,
-    experienceMax: job.minExperienceYears + 3,
-    experienceText: job.minExperienceYears === 0 ? "Fresher / 0-1 Years" : `${job.minExperienceYears}+ Years`,
-    skills: job.requiredSkills.map((s) => s.name),
+    experienceMin: job.minExperienceYears || 1,
+    experienceMax: (job.minExperienceYears || 1) + 3,
+    experienceText: (job.minExperienceYears || 1) === 0 ? "Fresher / 0-1 Years" : `${job.minExperienceYears || 1}+ Years`,
+    skills: extractedSkills,
     description: job.description,
     responsibilities: [
       "Design, build, and maintain high-quality, scalable code.",
@@ -172,16 +192,16 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
       experienceMatchScore: 85,
       roleMatchScore: 80,
       locationMatchScore: 90,
-      matchedSkills: matched.length > 0 ? matched : job.requiredSkills.slice(0, 2).map((s) => s.name),
+      matchedSkills: matched.length > 0 ? matched : extractedSkills.slice(0, 2),
       missingSkills: missing.length > 0 ? missing : [],
       recommendation: matchScore >= 80 ? "Strong fit for your current skill profile. High interview callback probability." : "Review required skills to tailor your resume before applying.",
     },
     postedDate: createdDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
     postedTimeAgo,
-    sourceType: (job.sourceType || "PLATFORM").toUpperCase() === "EXTERNAL" ? "EXTERNAL" : "PLATFORM",
-    sourceProvider: job.sourceProvider || (job.sourceType === "EXTERNAL" ? "Jooble" : "Skillezo"),
+    sourceType: isPlatform ? "PLATFORM" : "EXTERNAL",
+    sourceProvider: job.sourceProvider || (isPlatform ? "Skillezo" : "Jooble"),
     sourceUrl: job.sourceUrl || null,
-    sourceName: job.sourceName || (job.sourceType === "EXTERNAL" ? "Jooble" : null),
+    sourceName: job.sourceName || (isPlatform ? "Direct Platform" : "Jooble"),
     isSaved: false,
     isApplied: false,
   };

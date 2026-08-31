@@ -99,7 +99,7 @@ export default function SmartJobCenterPage() {
       // Map UI filters to backend query params
       const queryParams: Record<string, any> = {
         page: 1,
-        limit: 50, // Fetch broader dataset to allow fast client-side tab switching & sorting
+        limit: 100, // Fetch broader dataset to allow fast client-side tab switching & sorting
       };
 
       if (filters.searchQuery.trim()) {
@@ -267,11 +267,11 @@ export default function SmartJobCenterPage() {
   }, [liveJobs, savedJobIds]);
 
   const platformJobsCount = useMemo(() => {
-    return liveJobs.filter((j) => j.sourceType === 'PLATFORM').length;
+    return liveJobs.filter((j) => (j.sourceType || '').toUpperCase() === 'PLATFORM').length;
   }, [liveJobs]);
 
   const externalJobsCount = useMemo(() => {
-    return liveJobs.filter((j) => j.sourceType === 'EXTERNAL').length;
+    return liveJobs.filter((j) => (j.sourceType || '').toUpperCase() === 'EXTERNAL').length;
   }, [liveJobs]);
 
   // Dynamic pagination calculation

@@ -14,7 +14,7 @@ export class JobsService {
 
   async searchJobs(query: JobSearchQueryDTO): Promise<PaginatedJobsResponseDTO> {
     const page = query.page && query.page > 0 ? query.page : 1;
-    const limit = query.limit && query.limit > 0 ? Math.min(50, query.limit) : 20;
+    const limit = query.limit && query.limit > 0 ? Math.min(100, query.limit) : 20;
 
     const result = await this.jobRepository.findPublicJobs({
       ...query,

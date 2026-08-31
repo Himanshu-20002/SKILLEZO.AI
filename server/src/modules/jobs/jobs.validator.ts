@@ -16,7 +16,7 @@ export const jobSearchQueryValidator = z.object({
   companyId: z.string().trim().optional(),
   roleId: z.string().trim().optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
-  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
   sort: z.enum(["newest", "oldest"]).optional().default("newest"),
 });
 
