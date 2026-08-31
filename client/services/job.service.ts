@@ -119,34 +119,43 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
     }
   }
 
-  // Extract skills from requiredSkills or title + description
-  const commonTechSkills = [
-    "React", "Node.js", "TypeScript", "JavaScript", "Next.js", "Python", "MongoDB", "Express",
-    "AWS", "Docker", "Kubernetes", "PostgreSQL", "Tailwind CSS", "Redux", "GraphQL", "Java",
-    "FastAPI", "SQL", "Git", "System Design", "Microservices", "REST API", "CI/CD", "Redis",
-    "HTML", "CSS", "Vue.js", "Angular", "Spring Boot", "Golang", "Linux"
-  ];
+  // 1. Determine Actual Job Skills
+  let jobSkills: string[] = (job.requiredSkills || []).map((s) => s.name.trim()).filter(Boolean);
 
-  let extractedSkills = (job.requiredSkills || []).map((s) => s.name);
-  if (extractedSkills.length === 0) {
-    const fullText = `${job.title} ${job.description}`.toLowerCase();
-    extractedSkills = commonTechSkills.filter((skill) =>
-      fullText.includes(skill.toLowerCase())
-    );
-    if (extractedSkills.length === 0) {
-      extractedSkills = ["JavaScript", "React", "Node.js"];
-    }
+  // For external jobs with no structured skills array, check if any of the candidate's profile skills exist in title/description
+  if (jobSkills.length === 0 && userSkills.length > 0) {
+    const jobText = `${job.title} ${job.description}`.toLowerCase();
+    jobSkills = userSkills.filter((userSkill) => {
+      const regex = new RegExp(`\\b${userSkill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      return regex.test(jobText);
+    });
   }
 
-  const jobSkillNames = extractedSkills.map((s) => s.toLowerCase());
-  const userSkillLower = userSkills.map((s) => s.toLowerCase());
-  const matched = extractedSkills.filter((s) => userSkillLower.includes(s.toLowerCase()));
-  const missing = extractedSkills.filter((s) => !userSkillLower.includes(s.toLowerCase()));
+  // 2. Real Skill Matching Overlap
+  const userSkillLower = userSkills.map((s) => s.toLowerCase().trim());
+  const matchedSkills: string[] = [];
+  const missingSkills: string[] = [];
 
-  let matchScore = 78;
-  if (jobSkillNames.length > 0) {
-    const ratio = matched.length / jobSkillNames.length;
-    matchScore = Math.min(98, Math.max(62, Math.round(55 + ratio * 43)));
+  jobSkills.forEach((skill) => {
+    if (userSkillLower.includes(skill.toLowerCase())) {
+      matchedSkills.push(skill);
+    } else {
+      missingSkills.push(skill);
+    }
+  });
+
+  // 3. Mathematical Match Score Calculation (0 - 100%)
+  let matchScore = 0;
+  if (userSkills.length === 0) {
+    matchScore = 0; // Candidate has not added any skills to their profile
+  } else if (jobSkills.length > 0) {
+    matchScore = Math.round((matchedSkills.length / jobSkills.length) * 100);
+  } else {
+    // If no specific skills could be determined, calculate general keyword overlap
+    const matchedKeywords = userSkills.filter((s) =>
+      `${job.title} ${job.description}`.toLowerCase().includes(s.toLowerCase())
+    );
+    matchScore = Math.round((matchedKeywords.length / userSkills.length) * 100);
   }
 
   const matchTier: "Excellent Match" | "Good Match" | "Potential Match" =
@@ -172,10 +181,10 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
     salaryMin: job.salary?.min || 0,
     salaryMax: job.salary?.max || 0,
     salaryText,
-    experienceMin: job.minExperienceYears || 1,
-    experienceMax: (job.minExperienceYears || 1) + 3,
-    experienceText: (job.minExperienceYears || 1) === 0 ? "Fresher / 0-1 Years" : `${job.minExperienceYears || 1}+ Years`,
-    skills: extractedSkills,
+    experienceMin: job.minExperienceYears || 0,
+    experienceMax: (job.minExperienceYears || 0) + 3,
+    experienceText: (job.minExperienceYears || 0) === 0 ? "Fresher / 0-1 Years" : `${job.minExperienceYears}+ Years`,
+    skills: jobSkills.length > 0 ? jobSkills : (userSkills.length > 0 ? userSkills.slice(0, 3) : ["General Engineering"]),
     description: job.description,
     responsibilities: [
       "Design, build, and maintain high-quality, scalable code.",
@@ -188,13 +197,18 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
     matchTier,
     matchBreakdown: {
       overallScore: matchScore,
-      skillMatchScore: Math.min(100, matchScore + 5),
-      experienceMatchScore: 85,
-      roleMatchScore: 80,
+      skillMatchScore: matchScore,
+      experienceMatchScore: job.minExperienceYears ? Math.max(50, 100 - job.minExperienceYears * 10) : 100,
+      roleMatchScore: matchScore >= 70 ? 85 : 60,
       locationMatchScore: 90,
-      matchedSkills: matched.length > 0 ? matched : extractedSkills.slice(0, 2),
-      missingSkills: missing.length > 0 ? missing : [],
-      recommendation: matchScore >= 80 ? "Strong fit for your current skill profile. High interview callback probability." : "Review required skills to tailor your resume before applying.",
+      matchedSkills,
+      missingSkills,
+      recommendation:
+        matchScore >= 80
+          ? `Strong fit for your profile! You match ${matchedSkills.length} of ${jobSkills.length || matchedSkills.length} required skills.`
+          : missingSkills.length > 0
+          ? `Skill gap identified: You are missing ${missingSkills.join(", ")}.`
+          : "Update your profile skills to get higher accuracy match breakdowns.",
     },
     postedDate: createdDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
     postedTimeAgo,

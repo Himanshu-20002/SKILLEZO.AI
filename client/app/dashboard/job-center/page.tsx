@@ -79,12 +79,15 @@ export default function SmartJobCenterPage() {
       try {
         const profile = await profileService.getMyProfile();
         if (profile?.skills && Array.isArray(profile.skills)) {
-          const names = profile.skills.map((s) => s.name);
+          const names = profile.skills.map((s) => s.name).filter(Boolean);
           setUserSkills(names);
         }
+        if (profile?.experience?.[0]?.jobTitle) {
+          setTargetRoleTitle(profile.experience[0].jobTitle);
+        }
       } catch (err) {
-        // Fallback default skills for matching
-        setUserSkills(['React', 'Node.js', 'TypeScript', 'Next.js', 'MongoDB', 'Tailwind CSS', 'Python', 'AWS']);
+        // Candidate not logged in or profile empty
+        setUserSkills([]);
       }
     }
     loadCandidateProfile();
