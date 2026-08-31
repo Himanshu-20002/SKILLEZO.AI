@@ -27,6 +27,7 @@
 * ✅ `FE-203`: Wire Smart Job Center UI to Live Jobs API (103 real MongoDB jobs)
 * ✅ `BE-109`: Job Ingestion Background Cron & 3-Tier Lifecycle Engine (`node-cron` + 14-Day TTL)
 * ✅ `BE-101`: Setup Vitest Automated Test Suite (`server/vitest.config.mts` — 18/18 passing)
+* ✅ `FE-204`: Build Resume Client Service (`client/services/resume.service.ts`)
 
 ---
 
@@ -76,9 +77,10 @@
   - **Verify:** Uploading a PDF saves extracted keywords and metadata to database.
 
 #### 🎨 Developer 2 (Frontend)
-- [ ] **`FE-204` — Build Resume Client Service** (4 hours)
+- [x] **`FE-204` — Build Resume Client Service** (4 hours) — *COMPLETED (31-Aug-2026)*
   - **Action:** Create `client/services/resume.service.ts` with `uploadResume(file, title)`, `getUserResumes()`, `deleteResume(id)`.
-  - **Target Files:** `client/services/resume.service.ts`.
+  - **Target Files:** `client/services/resume.service.ts`, `client/types/resume.ts`.
+  - **Verify:** TypeScript check passes with typed methods calling `/api/resumes`.
 
 ---
 

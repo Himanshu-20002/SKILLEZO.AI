@@ -25,9 +25,10 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     ? endpoint
     : `${cleanBase}/${cleanEndpoint}`;
 
-  const defaultHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const defaultHeaders: Record<string, string> = {};
+  if (!(options.body instanceof FormData)) {
+    defaultHeaders["Content-Type"] = "application/json";
+  }
 
   const response = await fetch(url, {
     ...options,

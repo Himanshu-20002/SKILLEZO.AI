@@ -17,7 +17,7 @@ export default function ResumeIntelligencePage() {
   const [analysis, setAnalysis] = useState<ResumeAnalysisData>(mockCareerIntelligence.resumeAnalysis);
 
   const handleSimulateUpload = () => {
-    setAnalysis((prev) => ({
+    setAnalysis((prev: ResumeAnalysisData) => ({
       ...prev,
       overallScore: Math.min(98, prev.overallScore + 2),
       atsScore: Math.min(96, prev.atsScore + 1),

@@ -13,7 +13,7 @@
 | **FE-201** | M1: Core Integration | Configure Dev Proxy in `.env.local` | `client/.env.local` | 1h | P0 | 🟢 **Done** |
 | **FE-202** | M1: Core Integration | Build Job Client Service (`job.service.ts`)| `client/services` | 4h | P0 | 🟢 **Done** |
 | **FE-203** | M1: Core Integration | Wire Smart Job Center UI to Live Jobs API | `/dashboard/job-center`| 6h | P0 | 🟢 **Done** |
-| **FE-204** | M1: Core Integration | Build Resume Client Service (`resume.service.ts`)| `client/services` | 4h | P0 | ⚪ Todo |
+| **FE-204** | M1: Core Integration | Build Resume Client Service (`resume.service.ts`)| `client/services` | 4h | P0 | 🟢 **Done** |
 | **FE-205** | M1: Core Integration | Wire Live Resume Upload in UI | `/resume-intelligence` | 5h | P0 | ⚪ Todo |
 | **FE-206** | M2: Applications & AI | Build Application Client Service | `client/services` | 4h | P0 | ⚪ Todo |
 | **FE-207** | M2: Applications & AI | Wire Job Apply Modal & Tracker to Live API | `/dashboard/job-center`| 5h | P0 | ⚪ Todo |
@@ -69,18 +69,22 @@
 ---
 
 ### `FE-204` — Build Resume Client Service (`resume.service.ts`)
-- **Priority:** P0 | **Estimate:** 4 hours | **Status:** ⚪ Todo
+- **Priority:** P0 | **Estimate:** 4 hours | **Status:** 🟢 **Done** (31-Aug-2026)
 - **Dependency:** `FE-201`
 - **Target Files:**
   - `client/services/resume.service.ts`
+  - `client/types/resume.ts`
+  - `client/lib/api.ts`
 - **Specification:** Create `resumeService` with methods:
-  - `uploadResume(file: File, title: string): Promise<ResumeRecord>` (uses `FormData`).
+  - `uploadResume(file: File, title?: string): Promise<ResumeRecord>` (uses `FormData`).
   - `getUserResumes(): Promise<ResumeRecord[]>` calling `GET /api/resumes`.
   - `getResumeById(id: string)` calling `GET /api/resumes/:id`.
-  - `deleteResume(id: string)` calling `DELETE /api/resumes/:id`.
   - `setDefaultResume(id: string)` calling `PUT /api/resumes/:id/default`.
+  - `updateResume(id: string, data)` calling `PATCH /api/resumes/:id`.
+  - `deleteResume(id: string)` calling `DELETE /api/resumes/:id`.
 - **Acceptance Criteria:**
-  - [ ] File upload sends multipart `FormData` and successfully uploads to server.
+  - [x] File upload sends multipart `FormData` and successfully uploads to server.
+  - [x] All methods typed with `ResumeRecord` model from unified `types/resume.ts`.
 
 ---
 

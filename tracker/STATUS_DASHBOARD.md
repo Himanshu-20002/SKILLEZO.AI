@@ -42,8 +42,8 @@ AI Intelligence & Career Plan Engines  : [██░░░░░░░░░░�
 
 ### 🎨 Developer 2 (Frontend Integration & UI Engineering)
 - **Total Assigned Tasks:** 12 tasks (`FE-201` to `FE-212`) • **Total Effort:** ~57 hours
-- **Tasks Completed:** `3 / 12` (FE-201, FE-202, FE-203 Done ✅)
-- **Current Task:** `FE-204` (Build Resume Client Service `resume.service.ts`)
+- **Tasks Completed:** `4 / 12` (FE-201, FE-202, FE-203, FE-204 Done ✅)
+- **Current Task:** `FE-205` (Wire Live Resume Upload in UI)
 - **Sprint 1 Target:** Finish `FE-201`, `FE-202/203` (Live Job Center), and `FE-204/205` (Live Resume Upload).
 
 ---

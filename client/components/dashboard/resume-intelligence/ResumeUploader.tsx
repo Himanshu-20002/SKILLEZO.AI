@@ -5,16 +5,16 @@ import { Upload, FileText, CheckCircle2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ResumeUploaderProps {
-  currentFileName: string;
-  fileSize: string;
-  uploadedAt: string;
-  onSimulateUpload: () => void;
+  currentFileName?: string;
+  fileSize?: string;
+  uploadedAt?: string;
+  onSimulateUpload?: () => void;
 }
 
 export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
-  currentFileName,
-  fileSize,
-  uploadedAt,
+  currentFileName = "Resume.pdf",
+  fileSize = "1.2 MB",
+  uploadedAt = "Just now",
   onSimulateUpload,
 }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -29,8 +29,8 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
         if (prev >= 100) {
           clearInterval(interval);
           setIsUploading(false);
-          onSimulateUpload();
-          toast.success('Resume uploaded & re-analyzed by AI Engine');
+          onSimulateUpload?.();
+          toast.success('Resume analyzed successfully!');
           return 100;
         }
         return prev + 25;
