@@ -238,6 +238,15 @@ jobSchema.index(
   }
 );
 jobSchema.index(
+  { importedAt: 1 },
+  {
+    expireAfterSeconds: 14 * 24 * 60 * 60, // 14 days auto-expiration for external jobs
+    partialFilterExpression: {
+      sourceType: JobSourceType.EXTERNAL,
+    },
+  }
+);
+jobSchema.index(
   {
     title: "text",
     description: "text",

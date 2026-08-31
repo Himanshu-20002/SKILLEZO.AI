@@ -162,4 +162,33 @@ export class JobRepository extends BaseRepository<IJob> {
       })
       .exec();
   }
+
+  async markJobClosed(jobId: string): Promise<boolean> {
+    if (!Types.ObjectId.isValid(jobId)) {
+      return false;
+    }
+    const result = await this.model.updateOne(
+      { _id: new Types.ObjectId(jobId) },
+      { $set: { status: JobStatus.CLOSED, closesAt: new Date() } }
+    ).exec();
+    return result.modifiedCount > 0;
+  }
+
+  async cleanupStaleExternalJobs(days: number = 14): Promise<number> {
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const result = await this.model.updateMany(
+      {
+        sourceType: JobSourceType.EXTERNAL,
+        status: JobStatus.ACTIVE,
+        $or: [
+          { importedAt: { $lt: cutoffDate } },
+          { sourceUpdatedAt: { $lt: cutoffDate } },
+        ],
+      },
+      {
+        $set: { status: JobStatus.CLOSED, closesAt: new Date() },
+      }
+    ).exec();
+    return result.modifiedCount;
+  }
 }

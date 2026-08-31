@@ -30,4 +30,10 @@ export class JobsController {
       throw err;
     }
   };
+
+  redirectToSource = async (req: Request, res: Response): Promise<void> => {
+    const jobId = req.params.jobId as string;
+    const url = await this.jobsService.getJobRedirectUrl(jobId);
+    res.redirect(HTTP_STATUS.FOUND, url);
+  };
 }

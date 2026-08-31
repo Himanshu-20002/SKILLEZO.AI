@@ -9,7 +9,8 @@
 
 | Date | Task ID | Team | Task Title | Commit Hash | Verified By | Verification Evidence |
 | :--- | :---: | :---: | :--- | :---: | :---: | :--- |
-| **31-Aug-2026** | `FE-203` | Dev 2 | Wire Smart Job Center UI to Live Jobs API | Pending Push | Developer | Wired `/dashboard/job-center` to `jobService.searchJobs()`. Real MongoDB jobs rendered with search, filters, pagination, and refresh button. |
+| **31-Aug-2026** | `BE-109` | Dev 1 | Job Ingestion Background Cron & Lifecycle Engine | Pending Push | Developer | Integrated node-cron (12h cycle), 14-day MongoDB TTL index, and GET /api/jobs/:id/redirect outbound health check. |
+| **31-Aug-2026** | `FE-203` | Dev 2 | Wire Smart Job Center UI to Live Jobs API | `c503da3` | Developer | Wired `/dashboard/job-center` to `jobService.searchJobs()`. Real MongoDB jobs rendered with search, filters, pagination, and refresh button. |
 | **31-Aug-2026** | `FE-202` | Dev 2 | Build Job Client Service (`job.service.ts`) | `d7fdb8e` | Developer | Created `client/services/job.service.ts` with `searchJobs()` & `getJobById()`. TypeScript type-check passed. |
 | **31-Aug-2026** | `FE-201` | Dev 2 | Configure Dev Proxy (`BACKEND_INTERNAL_URL`) | Local Config | Developer | Added `BACKEND_INTERNAL_URL=http://localhost:5000` to `client/.env.local`. |
 | **29-Aug-2026** | `PRE-AUTH` | Dev 1 & 2 | Better Auth Core Session & Cookie Overhaul | `deed491`, `d77d098` | Dev Lead | Tested sign-up, sign-in, session token cache, and cross-origin cookies. |

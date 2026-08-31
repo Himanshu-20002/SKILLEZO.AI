@@ -16,7 +16,7 @@ import testAuthRouter from "@/routes/testAuth.routes";
 import { profileRouter } from "@/modules/profile";
 import { companyRouter } from "@/modules/company";
 import { companyMemberRouter } from "@/modules/company-member";
-import { jobIngestionRouter } from "@/modules/job-ingestion";
+import { jobIngestionRouter, initJobIngestionCron } from "@/modules/job-ingestion";
 import { jobsRouter } from "@/modules/jobs";
 import { resumeRouter } from "@/modules/resume";
 import applicationRouter from "@/modules/application";
@@ -87,6 +87,10 @@ let server: Server;
 async function bootstrap() {
   try {
     await connectDatabase();
+    // Initialize background external job lifecycle cron
+    if (process.env.NODE_ENV !== "test") {
+      initJobIngestionCron();
+    }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Database connection failed";
     console.error(`[Server] Warning: Database connection failed on startup: ${message}`);

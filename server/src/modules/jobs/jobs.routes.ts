@@ -19,4 +19,10 @@ router.get(
   asyncHandler(controller.getJobById)
 );
 
+router.get(
+  "/:jobId/redirect",
+  validate({ params: jobParamsValidator }),
+  asyncHandler(controller.redirectToSource)
+);
+
 export default router;

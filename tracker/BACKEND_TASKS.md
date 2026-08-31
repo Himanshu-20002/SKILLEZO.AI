@@ -18,7 +18,7 @@
 | **BE-106** | M3: Recruiter & AI | Employability Index Scoring Engine | `modules/employability` | 8h | P2 | ⚪ Todo |
 | **BE-107** | M3: Recruiter & AI | Better Auth OAuth Providers (Google/GitHub) | `core/auth` | 5h | P2 | ⚪ Todo |
 | **BE-108** | M3: Recruiter & AI | Real Password Reset & Email Transport | `core/auth` | 4h | P2 | ⚪ Todo |
-| **BE-109** | M3: Recruiter & AI | Job Ingestion Background Cron Job | `modules/job-ingestion`| 4h | P2 | ⚪ Todo |
+| **BE-109** | M3: Recruiter & AI | Job Ingestion Background Cron & Lifecycle Engine | `modules/job-ingestion`| 4h | P2 | 🟢 **Done** |
 | **BE-110** | M3: Recruiter & AI | In-App Notifications API | `modules/notifications`| 6h | P2 | ⚪ Todo |
 
 ---
@@ -129,14 +129,19 @@
 
 ---
 
-### `BE-109` — Job Ingestion Background Cron Job
-- **Priority:** P2 | **Estimate:** 4 hours | **Status:** ⚪ Todo
+### `BE-109` — Job Ingestion Background Cron & Lifecycle Engine
+- **Priority:** P2 | **Estimate:** 4 hours | **Status:** 🟢 **Done** (31-Aug-2026)
 - **Target Files:**
   - `server/src/modules/job-ingestion/job-ingestion.cron.ts`
+  - `server/src/database/models/Job.model.ts`
+  - `server/src/database/repositories/job/JobRepository.ts`
+  - `server/src/modules/jobs/jobs.controller.ts`
   - `server/src/server.ts`
-- **Specification:** Install `node-cron`. Schedule daily job ingestion to fetch fresh listings for target keywords (Full-Stack, React, Node.js, AI) and save deduplicated jobs to MongoDB.
+- **Specification:** Install `node-cron`. Schedule background job ingestion every 12 hours across core engineering tracks. Implement 14-day TTL index on `importedAt` and real-time outbound link health check verifier (`GET /api/jobs/:id/redirect`).
 - **Acceptance Criteria:**
-  - [ ] Cron automatically triggers every 12 hours without manual intervention.
+  - [x] Cron automatically triggers every 12 hours without manual intervention.
+  - [x] 14-day TTL index automatically purges expired external jobs from MongoDB.
+  - [x] Outbound redirect endpoint verifies link health and auto-closes dead 404 postings.
 
 ---
 
