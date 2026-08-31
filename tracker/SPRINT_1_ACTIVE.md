@@ -35,7 +35,7 @@
   - **Action:** Add `BACKEND_INTERNAL_URL=http://localhost:5000` to `client/.env.local` and `.env.example`.
   - **Target Files:** `client/.env.local`, `client/.env.example`.
   - **Verify:** Requesting `/api/health` from Next.js reaches `localhost:5000`.
-- [ ] **`FE-202` — Build Job Client Service** (4 hours)
+- [x] **`FE-202` — Build Job Client Service** (4 hours) — *COMPLETED (31-Aug-2026)*
   - **Action:** Create `client/services/job.service.ts` calling `GET /api/jobs` and `GET /api/jobs/:id`.
   - **Target Files:** `client/services/job.service.ts`.
   - **Verify:** Calling `jobService.searchJobs({ page: 1 })` returns typed response from backend.

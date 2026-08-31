@@ -42,8 +42,8 @@ AI Intelligence & Career Plan Engines  : [██░░░░░░░░░░�
 
 ### 🎨 Developer 2 (Frontend Integration & UI Engineering)
 - **Total Assigned Tasks:** 12 tasks (`FE-201` to `FE-212`) • **Total Effort:** ~57 hours
-- **Tasks Completed:** `1 / 12` (FE-201 Done ✅)
-- **Current Task:** `FE-202` (Build Job Client Service `job.service.ts`)
+- **Tasks Completed:** `2 / 12` (FE-201, FE-202 Done ✅)
+- **Current Task:** `FE-203` (Wire Smart Job Center UI to Live Jobs API)
 - **Sprint 1 Target:** Finish `FE-201`, `FE-202/203` (Live Job Center), and `FE-204/205` (Live Resume Upload).
 
 ---

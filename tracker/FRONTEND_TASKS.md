@@ -11,7 +11,7 @@
 | Task ID | Milestone | Task Title | Target View / Service | Est. | Priority | Status |
 | :-: | :--- | :--- | :--- | :-: | :-: | :-: |
 | **FE-201** | M1: Core Integration | Configure Dev Proxy in `.env.local` | `client/.env.local` | 1h | P0 | 🟢 **Done** |
-| **FE-202** | M1: Core Integration | Build Job Client Service (`job.service.ts`)| `client/services` | 4h | P0 | ⚪ Todo |
+| **FE-202** | M1: Core Integration | Build Job Client Service (`job.service.ts`)| `client/services` | 4h | P0 | 🟢 **Done** |
 | **FE-203** | M1: Core Integration | Wire Smart Job Center UI to Live Jobs API | `/dashboard/job-center`| 6h | P0 | ⚪ Todo |
 | **FE-204** | M1: Core Integration | Build Resume Client Service (`resume.service.ts`)| `client/services` | 4h | P0 | ⚪ Todo |
 | **FE-205** | M1: Core Integration | Wire Live Resume Upload in UI | `/resume-intelligence` | 5h | P0 | ⚪ Todo |
@@ -41,7 +41,7 @@
 ---
 
 ### `FE-202` — Build Job Client Service (`job.service.ts`)
-- **Priority:** P0 | **Estimate:** 4 hours | **Status:** ⚪ Todo
+- **Priority:** P0 | **Estimate:** 4 hours | **Status:** 🟢 **Done** (31-Aug-2026)
 - **Dependency:** `FE-201`
 - **Target Files:**
   - `client/services/job.service.ts`
@@ -50,7 +50,7 @@
   - `searchJobs(query: JobSearchQuery): Promise<PaginatedJobsResponse>` calling `GET /api/jobs`.
   - `getJobById(id: string): Promise<JobDetails>` calling `GET /api/jobs/:id`.
 - **Acceptance Criteria:**
-  - [ ] Method returns typed live jobs matching backend `JobModel` structure.
+  - [x] Method returns typed live jobs matching backend `JobModel` structure.
 
 ---
 

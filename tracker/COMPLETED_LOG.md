@@ -9,6 +9,7 @@
 
 | Date | Task ID | Team | Task Title | Commit Hash | Verified By | Verification Evidence |
 | :--- | :---: | :---: | :--- | :---: | :---: | :--- |
+| **31-Aug-2026** | `FE-202` | Dev 2 | Build Job Client Service (`job.service.ts`) | Pending Push | Developer | Created `client/services/job.service.ts` with `searchJobs()` & `getJobById()`. TypeScript type-check passed. |
 | **31-Aug-2026** | `FE-201` | Dev 2 | Configure Dev Proxy (`BACKEND_INTERNAL_URL`) | Local Config | Developer | Added `BACKEND_INTERNAL_URL=http://localhost:5000` to `client/.env.local`. |
 | **29-Aug-2026** | `PRE-AUTH` | Dev 1 & 2 | Better Auth Core Session & Cookie Overhaul | `deed491`, `d77d098` | Dev Lead | Tested sign-up, sign-in, session token cache, and cross-origin cookies. |
 | **29-Aug-2026** | `PRE-PROF` | Dev 2 | Candidate Profile Live Read Integration | `27da9d7`, `057a005` | Dev Lead | Live `session.user.name` and profile data rendering on `/dashboard/profile`. |
