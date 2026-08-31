@@ -10,7 +10,7 @@
 
 | Task ID | Milestone | Task Title | Target View / Service | Est. | Priority | Status |
 | :-: | :--- | :--- | :--- | :-: | :-: | :-: |
-| **FE-201** | M1: Core Integration | Configure Dev Proxy in `.env.local` | `client/.env.local` | 1h | P0 | ⚪ Todo |
+| **FE-201** | M1: Core Integration | Configure Dev Proxy in `.env.local` | `client/.env.local` | 1h | P0 | 🟢 **Done** |
 | **FE-202** | M1: Core Integration | Build Job Client Service (`job.service.ts`)| `client/services` | 4h | P0 | ⚪ Todo |
 | **FE-203** | M1: Core Integration | Wire Smart Job Center UI to Live Jobs API | `/dashboard/job-center`| 6h | P0 | ⚪ Todo |
 | **FE-204** | M1: Core Integration | Build Resume Client Service (`resume.service.ts`)| `client/services` | 4h | P0 | ⚪ Todo |
@@ -30,13 +30,13 @@
 ## 🔍 Detailed Task Specifications
 
 ### `FE-201` — Configure Client Dev Proxy (`.env.local`)
-- **Priority:** P0 | **Estimate:** 1 hour | **Status:** ⚪ Todo
+- **Priority:** P0 | **Estimate:** 1 hour | **Status:** 🟢 **Done** (31-Aug-2026)
 - **Target Files:**
   - `client/.env.local`
   - `client/.env.example`
 - **Specification:** Add `BACKEND_INTERNAL_URL=http://localhost:5000` to `client/.env.local`. Ensure `next.config.ts` rewrite proxy `/api/:path*` correctly routes relative requests to local Express during development.
 - **Acceptance Criteria:**
-  - [ ] `fetch('/api/health')` from client reaches `http://localhost:5000/api/health`.
+  - [x] `fetch('/api/health')` from client reaches `http://localhost:5000/api/health`.
 
 ---
 

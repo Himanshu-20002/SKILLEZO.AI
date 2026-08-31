@@ -31,7 +31,7 @@
   - **Verify:** Run `npm test` from `/server` and verify that unit tests pass.
 
 #### 🎨 Developer 2 (Frontend)
-- [ ] **`FE-201` — Configure Client Dev Proxy** (1 hour)
+- [x] **`FE-201` — Configure Client Dev Proxy** (1 hour) — *COMPLETED (31-Aug-2026)*
   - **Action:** Add `BACKEND_INTERNAL_URL=http://localhost:5000` to `client/.env.local` and `.env.example`.
   - **Target Files:** `client/.env.local`, `client/.env.example`.
   - **Verify:** Requesting `/api/health` from Next.js reaches `localhost:5000`.

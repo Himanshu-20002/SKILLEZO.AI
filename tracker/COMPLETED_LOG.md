@@ -9,6 +9,7 @@
 
 | Date | Task ID | Team | Task Title | Commit Hash | Verified By | Verification Evidence |
 | :--- | :---: | :---: | :--- | :---: | :---: | :--- |
+| **31-Aug-2026** | `FE-201` | Dev 2 | Configure Dev Proxy (`BACKEND_INTERNAL_URL`) | Local Config | Developer | Added `BACKEND_INTERNAL_URL=http://localhost:5000` to `client/.env.local`. |
 | **29-Aug-2026** | `PRE-AUTH` | Dev 1 & 2 | Better Auth Core Session & Cookie Overhaul | `deed491`, `d77d098` | Dev Lead | Tested sign-up, sign-in, session token cache, and cross-origin cookies. |
 | **29-Aug-2026** | `PRE-PROF` | Dev 2 | Candidate Profile Live Read Integration | `27da9d7`, `057a005` | Dev Lead | Live `session.user.name` and profile data rendering on `/dashboard/profile`. |
 | **29-Aug-2026** | `PRE-BACK` | Dev 1 | Backend Phases 1–18 Architecture & Hiring Pipeline | `deed491` | Dev Lead | Verified via standalone scripts `test-phase17-verification.ts` & `test-phase18-verification.ts`. |

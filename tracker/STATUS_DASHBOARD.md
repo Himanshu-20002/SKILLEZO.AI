@@ -42,8 +42,8 @@ AI Intelligence & Career Plan Engines  : [██░░░░░░░░░░�
 
 ### 🎨 Developer 2 (Frontend Integration & UI Engineering)
 - **Total Assigned Tasks:** 12 tasks (`FE-201` to `FE-212`) • **Total Effort:** ~57 hours
-- **Tasks Completed:** `0 / 12`
-- **Current Task:** `FE-201` (Configure Dev Proxy in `.env.local`)
+- **Tasks Completed:** `1 / 12` (FE-201 Done ✅)
+- **Current Task:** `FE-202` (Build Job Client Service `job.service.ts`)
 - **Sprint 1 Target:** Finish `FE-201`, `FE-202/203` (Live Job Center), and `FE-204/205` (Live Resume Upload).
 
 ---
@@ -52,7 +52,6 @@ AI Intelligence & Career Plan Engines  : [██░░░░░░░░░░�
 
 | ID | Blocker | Severity | Owner | Target Resolution Date |
 | :-: | :--- | :---: | :---: | :---: |
-| **BLK-01** | Local Next.js rewrite proxy defaults to remote Railway URL | 🔴 **P0** | Dev 2 | 01 Sep 2026 (Task `FE-201`) |
 | **BLK-02** | Frontend Job Center & Resume UI currently reading `@/mock/*` | 🟡 **P1** | Dev 2 | 03 Sep 2026 (Tasks `FE-203`, `FE-205`) |
 | **BLK-03** | No automated `npm test` script in CI pipeline | 🟡 **P1** | Dev 1 | 01 Sep 2026 (Task `BE-101`) |
 
