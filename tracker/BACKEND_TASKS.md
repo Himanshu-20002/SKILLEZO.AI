@@ -10,16 +10,16 @@
 
 | Task ID | Milestone | Task Title | Module | Est. | Priority | Status |
 | :-: | :--- | :--- | :--- | :-: | :-: | :-: |
-| **BE-101** | M1: Core Integration | Setup Vitest Automated Test Suite | `core/testing` | 4h | P0 | 🟢 **Done** |
-| **BE-102** | M1: Core Integration | Resume PDF Text Extraction Service | `modules/resume` | 8h | P1 | ⚪ Todo |
-| **BE-103** | M1: Core Integration | AI ATS Scoring & Feedback Engine | `modules/resume` | 8h | P1 | ⚪ Todo |
-| **BE-104** | M2: Applications & AI | Skill Gap Calculation Engine | `modules/career-plan` | 8h | P1 | ⚪ Todo |
-| **BE-105** | M2: Applications & AI | Career Plan API Endpoints (`/api/career-plan`)| `modules/career-plan` | 6h | P1 | ⚪ Todo |
-| **BE-106** | M3: Recruiter & AI | Employability Index Scoring Engine | `modules/employability` | 8h | P2 | ⚪ Todo |
-| **BE-107** | M3: Recruiter & AI | Better Auth OAuth Providers (Google/GitHub) | `core/auth` | 5h | P2 | ⚪ Todo |
-| **BE-108** | M3: Recruiter & AI | Real Password Reset & Email Transport | `core/auth` | 4h | P2 | ⚪ Todo |
-| **BE-109** | M3: Recruiter & AI | Job Ingestion Background Cron & Lifecycle Engine | `modules/job-ingestion`| 4h | P2 | 🟢 **Done** |
-| **BE-110** | M3: Recruiter & AI | In-App Notifications API | `modules/notifications`| 6h | P2 | ⚪ Todo |
+| **BE-101** | M1: Core Integration | Setup Vitest Automated Test Suite | `core/testing` | 45m | P0 | 🟢 **Done** |
+| **BE-102** | M1: Core Integration | Resume PDF Text Extraction Service | `modules/resume` | 1h | P1 | ⚪ Todo |
+| **BE-103** | M1: Core Integration | AI ATS Scoring & Feedback Engine | `modules/resume` | 1.5h | P1 | ⚪ Todo |
+| **BE-104** | M2: Applications & AI | Skill Gap Calculation Engine | `modules/career-plan` | 1.5h | P1 | ⚪ Todo |
+| **BE-105** | M2: Applications & AI | Career Plan API Endpoints (`/api/career-plan`)| `modules/career-plan` | 1h | P1 | ⚪ Todo |
+| **BE-106** | M3: Recruiter & AI | Employability Index Scoring Engine | `modules/employability` | 1.5h | P2 | ⚪ Todo |
+| **BE-107** | M3: Recruiter & AI | Better Auth OAuth Providers (Google/GitHub) | `core/auth` | 1h | P2 | ⚪ Todo |
+| **BE-108** | M3: Recruiter & AI | Real Password Reset & Email Transport | `core/auth` | 45m | P2 | ⚪ Todo |
+| **BE-109** | M3: Recruiter & AI | Job Ingestion Background Cron & Lifecycle Engine | `modules/job-ingestion`| 1h | P2 | 🟢 **Done** |
+| **BE-110** | M3: Recruiter & AI | In-App Notifications API | `modules/notifications`| 1h | P2 | ⚪ Todo |
 
 ---
 

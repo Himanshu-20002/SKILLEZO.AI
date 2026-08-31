@@ -10,20 +10,20 @@
 
 | Task ID | Milestone | Task Title | Target View / Service | Est. | Priority | Status |
 | :-: | :--- | :--- | :--- | :-: | :-: | :-: |
-| **FE-201** | M1: Core Integration | Configure Dev Proxy in `.env.local` | `client/.env.local` | 1h | P0 | 🟢 **Done** |
-| **FE-202** | M1: Core Integration | Build Job Client Service (`job.service.ts`)| `client/services` | 4h | P0 | 🟢 **Done** |
-| **FE-203** | M1: Core Integration | Wire Smart Job Center UI to Live Jobs API | `/dashboard/job-center`| 6h | P0 | 🟢 **Done** |
-| **FE-204** | M1: Core Integration | Build Resume Client Service (`resume.service.ts`)| `client/services` | 4h | P0 | 🟢 **Done** |
-| **FE-205** | M1: Core Integration | Wire Live Resume Upload in UI | `/resume-intelligence` | 5h | P0 | ⚪ Todo |
-| **FE-206** | M2: Applications & AI | Build Application Client Service | `client/services` | 4h | P0 | ⚪ Todo |
-| **FE-207** | M2: Applications & AI | Wire Job Apply Modal & Tracker to Live API | `/dashboard/job-center`| 5h | P0 | ⚪ Todo |
-| **FE-208** | M2: Applications & AI | Build Candidate Profile Mutation Modals | `/dashboard/profile` | 6h | P1 | ⚪ Todo |
-| **FE-209** | M2: Applications & AI | Backend Employer Job Posting CRUD | `server/src/modules/jobs`| 6h | P1 | ⚪ Todo |
-| **FE-210** | M3: Recruiter Portal | Build Recruiter Dashboard Views | `/dashboard/recruiter` | 8h | P1 | ⚪ Todo |
-| **FE-211** | M3: Recruiter Portal | Build Candidate Review & Status Drawer | `/dashboard/recruiter` | 8h | P1 | ⚪ Todo |
-| **FE-212** | M2: Applications & AI | Wire Skill Gap UI to Live API | `/skill-gap-analysis` | 6h | P1 | ⚪ Todo |
-| **FE-213** | M3: Recruiter Portal | Wire Real Password Reset Screens | `/(auth)/forgot-password`| 4h | P2 | ⚪ Todo |
-| **FE-214** | M3: Recruiter Portal | Wire Live Notifications Center | `/dashboard/notifications`| 4h | P2 | ⚪ Todo |
+| **FE-201** | M1: Core Integration | Configure Dev Proxy in `.env.local` | `client/.env.local` | 15m | P0 | 🟢 **Done** |
+| **FE-202** | M1: Core Integration | Build Job Client Service (`job.service.ts`)| `client/services` | 45m | P0 | 🟢 **Done** |
+| **FE-203** | M1: Core Integration | Wire Smart Job Center UI to Live Jobs API | `/dashboard/job-center`| 1.5h | P0 | 🟢 **Done** |
+| **FE-204** | M1: Core Integration | Build Resume Client Service (`resume.service.ts`)| `client/services` | 45m | P0 | 🟢 **Done** |
+| **FE-205** | M1: Core Integration | Wire Live Resume Upload in UI | `/resume-intelligence` | 1h | P0 | ⚪ Todo |
+| **FE-206** | M2: Applications & AI | Build Application Client Service | `client/services` | 45m | P0 | ⚪ Todo |
+| **FE-207** | M2: Applications & AI | Wire Job Apply Modal & Tracker to Live API | `/dashboard/job-center`| 1h | P0 | ⚪ Todo |
+| **FE-208** | M2: Applications & AI | Build Candidate Profile Mutation Modals | `/dashboard/profile` | 1.5h | P1 | ⚪ Todo |
+| **FE-209** | M2: Applications & AI | Backend Employer Job Posting CRUD | `server/src/modules/jobs`| 1.5h | P1 | ⚪ Todo |
+| **FE-210** | M3: Recruiter Portal | Build Recruiter Dashboard Views | `/dashboard/recruiter` | 1.5h | P1 | ⚪ Todo |
+| **FE-211** | M3: Recruiter Portal | Build Candidate Review & Status Drawer | `/dashboard/recruiter` | 1.5h | P1 | ⚪ Todo |
+| **FE-212** | M2: Applications & AI | Wire Skill Gap UI to Live API | `/skill-gap-analysis` | 1h | P1 | ⚪ Todo |
+| **FE-213** | M3: Recruiter Portal | Wire Real Password Reset Screens | `/(auth)/forgot-password`| 45m | P2 | ⚪ Todo |
+| **FE-214** | M3: Recruiter Portal | Wire Live Notifications Center | `/dashboard/notifications`| 45m | P2 | ⚪ Todo |
 
 ---
 

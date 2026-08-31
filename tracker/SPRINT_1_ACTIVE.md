@@ -36,17 +36,17 @@
 ### 🗓️ DAY 1 (Tuesday, Sep 01)
 
 #### 🛠️ Developer 1 (Backend)
-- [x] **`BE-101` — Setup Vitest Automated Test Suite** (4 hours) — *COMPLETED (31-Aug-2026)*
+- [x] **`BE-101` — Setup Vitest Automated Test Suite** (45 mins) — *COMPLETED (31-Aug-2026)*
   - **Action:** Install `vitest`, `supertest`, and `vite-tsconfig-paths` in `/server`. Create `server/vitest.config.mts`.
   - **Target Files:** `server/package.json`, `server/vitest.config.mts`.
   - **Verify:** Run `npm test` from `/server` and verify that unit tests pass (18/18 green).
 
 #### 🎨 Developer 2 (Frontend)
-- [x] **`FE-201` — Configure Client Dev Proxy** (1 hour) — *COMPLETED (31-Aug-2026)*
+- [x] **`FE-201` — Configure Client Dev Proxy** (15 mins) — *COMPLETED (31-Aug-2026)*
   - **Action:** Add `BACKEND_INTERNAL_URL=http://localhost:5000` to `client/.env.local` and `.env.example`.
   - **Target Files:** `client/.env.local`, `client/.env.example`.
   - **Verify:** Requesting `/api/health` from Next.js reaches `localhost:5000`.
-- [x] **`FE-202` — Build Job Client Service** (4 hours) — *COMPLETED (31-Aug-2026)*
+- [x] **`FE-202` — Build Job Client Service** (45 mins) — *COMPLETED (31-Aug-2026)*
   - **Action:** Create `client/services/job.service.ts` calling `GET /api/jobs` and `GET /api/jobs/:id`.
   - **Target Files:** `client/services/job.service.ts`.
   - **Verify:** Calling `jobService.searchJobs({ page: 1 })` returns typed response from backend.
@@ -56,12 +56,12 @@
 ### 🗓️ DAY 2 (Wednesday, Sep 02)
 
 #### 🛠️ Developer 1 (Backend)
-- [ ] **`BE-102` (Part 1) — Resume Text Extraction Utility** (4 hours)
+- [ ] **`BE-102` (Part 1) — Resume Text Extraction Utility** (1 hour)
   - **Action:** Install `pdf-parse` in `/server`. Create text extraction helper in `server/src/modules/resume`.
   - **Target Files:** `server/package.json`, `server/src/modules/resume/resume.parser.ts`.
 
 #### 🎨 Developer 2 (Frontend)
-- [x] **`FE-203` — Wire Smart Job Center to Live API** (6 hours) — *COMPLETED (31-Aug-2026)*
+- [x] **`FE-203` — Wire Smart Job Center to Live API** (1.5 hours) — *COMPLETED (31-Aug-2026)*
   - **Action:** Update `client/app/dashboard/job-center/page.tsx` to replace `mockJobListings` with data from `job.service.ts`.
   - **Target Files:** `client/app/dashboard/job-center/page.tsx`.
   - **Verify:** Page loads real MongoDB jobs; search input, pagination, and filter changes fetch fresh live data.
@@ -71,13 +71,13 @@
 ### 🗓️ DAY 3 (Thursday, Sep 03)
 
 #### 🛠️ Developer 1 (Backend)
-- [ ] **`BE-102` (Part 2) — Store Extracted Text in MongoDB** (4 hours)
+- [ ] **`BE-102` (Part 2) — Store Extracted Text in MongoDB** (45 mins)
   - **Action:** Hook `ResumeParserService` into `POST /api/resumes/upload` to parse uploaded PDF and save text in `ResumeModel.extractedData`.
   - **Target Files:** `server/src/modules/resume/resume.service.ts`.
   - **Verify:** Uploading a PDF saves extracted keywords and metadata to database.
 
 #### 🎨 Developer 2 (Frontend)
-- [x] **`FE-204` — Build Resume Client Service** (4 hours) — *COMPLETED (31-Aug-2026)*
+- [x] **`FE-204` — Build Resume Client Service** (45 mins) — *COMPLETED (31-Aug-2026)*
   - **Action:** Create `client/services/resume.service.ts` with `uploadResume(file, title)`, `getUserResumes()`, `deleteResume(id)`.
   - **Target Files:** `client/services/resume.service.ts`, `client/types/resume.ts`.
   - **Verify:** TypeScript check passes with typed methods calling `/api/resumes`.
@@ -87,12 +87,12 @@
 ### 🗓️ DAY 4 (Friday, Sep 04)
 
 #### 🛠️ Developer 1 (Backend)
-- [ ] **`BE-103` (Part 1) — Implement AI ATS Scoring Logic** (4 hours)
+- [ ] **`BE-103` (Part 1) — Implement AI ATS Scoring Logic** (1 hour)
   - **Action:** Build `AtsScoringService` evaluating keyword density, formatting, and brevity against target roles.
   - **Target Files:** `server/src/modules/resume/ats.service.ts`.
 
 #### 🎨 Developer 2 (Frontend)
-- [ ] **`FE-205` — Wire Live Resume Upload in UI** (5 hours)
+- [ ] **`FE-205` — Wire Live Resume Upload in UI** (1 hour)
   - **Action:** Replace "Simulate Upload" in `client/app/dashboard/resume-intelligence/page.tsx` with real file input calling `resumeService.uploadResume()`.
   - **Target Files:** `client/app/dashboard/resume-intelligence/page.tsx`, `client/components/dashboard/resume-intelligence/ResumeUploader.tsx`.
   - **Verify:** Uploading a real PDF uploads to backend `storage/resumes` and lists under user's resumes.
@@ -102,7 +102,7 @@
 ### 🗓️ DAY 5 (Monday, Sep 07 / Wrap-up)
 
 #### 🛠️ Developer 1 (Backend)
-- [ ] **`BE-103` (Part 2) — ATS Scoring API Endpoint** (4 hours)
+- [ ] **`BE-103` (Part 2) — ATS Scoring API Endpoint** (45 mins)
   - **Action:** Expose `GET /api/resumes/:resumeId/analysis` returning score breakdown and tips.
   - **Target Files:** `server/src/modules/resume/resume.controller.ts`, `server/src/modules/resume/resume.routes.ts`.
   - **Verify:** Calling endpoint returns ATS score (0–100) and recommendation list.
