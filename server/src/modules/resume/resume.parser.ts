@@ -54,11 +54,17 @@ export class ResumeParserService {
       }
     }
 
-    // 4. Location extraction (e.g., "City, State", "City, Country", "Remote")
-    const locationMatch = text.match(
-      /(?:location|address|based in)?\s*([A-Za-z\s]+,\s*(?:[A-Za-z]{2,}|[A-Za-z\s]+))/i
-    );
-    const location = locationMatch ? locationMatch[1].trim() : null;
+    // 4. Location extraction
+    let location: string | null = null;
+    const explicitLocationMatch = text.match(/(?:location|address|based in)\s*[:\-]?\s*([A-Za-z\s,.-]+?)(?:\n|\||$)/i);
+    if (explicitLocationMatch && !/university|institute|college|school|academy/i.test(explicitLocationMatch[1])) {
+      location = explicitLocationMatch[1].trim();
+    } else {
+      const cityStateMatch = text.match(/\b([A-Za-z\s]{2,25},\s*(?:[A-Za-z]{2,20}|India|USA|UK|Canada|Germany|Australia|Remote))\b/i);
+      if (cityStateMatch && !/university|institute|college|school|academy|technology|science|engineering/i.test(cityStateMatch[1])) {
+        location = cityStateMatch[1].trim();
+      }
+    }
 
     return {
       fullName,
@@ -272,12 +278,18 @@ export class ResumeParserService {
     const education = this.extractEducation(text);
     const experience = this.extractExperience(text);
 
-    // Summary extraction (take first 300 characters of meaningful intro)
-    const lines = text
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l.length > 20);
-    const summary = lines.slice(1, 4).join(" ").slice(0, 350) || null;
+    // Summary extraction (look for dedicated summary/profile section, avoid education/achievements)
+    let summary: string | null = null;
+    const summaryHeaderMatch = text.match(
+      /(?:professional\s+summary|executive\s+summary|summary|profile|about\s+me|career\s+objective|objective)\s*[:\n\-]\s*([\s\S]{20,400}?)(?=\n\s*(?:skills|technical\s+skills|experience|work\s+experience|education|projects|achievements|certifications|\b[A-Z\s]{4,}\b\n|$))/i
+    );
+
+    if (summaryHeaderMatch && summaryHeaderMatch[1]) {
+      const cleanSummary = summaryHeaderMatch[1].replace(/\s+/g, " ").trim();
+      if (!/^(?:achievements?|education|experience|skills?)\b/i.test(cleanSummary) && cleanSummary.length > 20) {
+        summary = cleanSummary.slice(0, 350);
+      }
+    }
 
     // Estimate total experience
     const totalExperienceYears = Math.min(15, Math.max(1, experience.length * 1.5));
