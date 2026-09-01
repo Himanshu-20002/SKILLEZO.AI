@@ -23,11 +23,54 @@ function formatFileSize(bytes?: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+function mapResumeToExtractedData(resume: ResumeRecord): ResumeAnalysisData['extractedData'] {
+  const extracted = resume.extractedData;
+  const skillsList =
+    extracted?.skillsExtracted ||
+    (extracted?.skills || []).map((s: any) => (typeof s === 'string' ? s : s.name)) ||
+    [];
+
+  return {
+    fileName: resume.originalFileName || resume.fileName || resume.title,
+    fileSize: formatFileSize(resume.fileSize),
+    uploadedAt: new Date(resume.createdAt || Date.now()).toLocaleDateString(),
+    candidateName: extracted?.personalInfo?.fullName || extracted?.candidateName || undefined,
+    location: extracted?.personalInfo?.location || extracted?.location || undefined,
+    email: extracted?.personalInfo?.email || extracted?.email || undefined,
+    phone: extracted?.personalInfo?.phone || extracted?.phone || undefined,
+    summary: extracted?.summary || null,
+    skillsExtracted: skillsList,
+    skills: extracted?.skills || [],
+    education: extracted?.education || [],
+    experience: extracted?.experience || [],
+    totalExperienceYears: extracted?.totalExperienceYears || null,
+    personalInfo: extracted?.personalInfo || null,
+  };
+}
+
 export default function ResumeIntelligencePage() {
   const [analysis, setAnalysis] = useState<ResumeAnalysisData>(mockCareerIntelligence.resumeAnalysis);
   const [userResumes, setUserResumes] = useState<ResumeRecord[]>([]);
   const [activeResume, setActiveResume] = useState<ResumeRecord | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  const applyResumeToAnalysis = (resume: ResumeRecord) => {
+    setActiveResume(resume);
+    const extracted = mapResumeToExtractedData(resume);
+    const skillKeywords = (resume.extractedData?.skills || []).map((s: any) => ({
+      keyword: typeof s === 'string' ? s : s.name,
+      category: (s.category as any) || 'Frontend',
+      matched: true,
+      frequency: 3,
+      importance: 'Required' as const,
+    }));
+
+    setAnalysis((prev) => ({
+      ...prev,
+      extractedData: extracted,
+      keywords: skillKeywords.length > 0 ? skillKeywords : prev.keywords,
+    }));
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -37,16 +80,7 @@ export default function ResumeIntelligencePage() {
         if (isMounted && resumes && resumes.length > 0) {
           setUserResumes(resumes);
           const defaultResume = resumes.find((r) => r.isDefault) || resumes[0];
-          setActiveResume(defaultResume);
-          setAnalysis((prev) => ({
-            ...prev,
-            extractedData: {
-              ...prev.extractedData,
-              fileName: defaultResume.originalFileName || defaultResume.fileName || defaultResume.title,
-              fileSize: formatFileSize(defaultResume.fileSize),
-              uploadedAt: new Date(defaultResume.createdAt).toLocaleDateString(),
-            },
-          }));
+          applyResumeToAnalysis(defaultResume);
         }
       } catch {
         // Fallback gracefully to demo state if offline or unauthenticated
@@ -64,20 +98,7 @@ export default function ResumeIntelligencePage() {
     try {
       const uploaded = await resumeService.uploadResume(file);
       setUserResumes((prev) => [uploaded, ...prev.filter((r) => (r._id || r.id) !== (uploaded._id || uploaded.id))]);
-      setActiveResume(uploaded);
-
-      setAnalysis((prev) => ({
-        ...prev,
-        overallScore: Math.min(98, prev.overallScore + 2),
-        atsScore: Math.min(96, prev.atsScore + 1),
-        extractedData: {
-          ...prev.extractedData,
-          fileName: uploaded.originalFileName || uploaded.fileName || file.name,
-          fileSize: formatFileSize(uploaded.fileSize || file.size),
-          uploadedAt: new Date(uploaded.createdAt || Date.now()).toLocaleDateString(),
-        },
-      }));
-
+      applyResumeToAnalysis(uploaded);
       toast.success(`"${file.name}" uploaded & parsed successfully!`);
     } catch (err: any) {
       toast.error(err.message || 'Failed to upload resume. Please try again.');
@@ -87,16 +108,7 @@ export default function ResumeIntelligencePage() {
   };
 
   const handleSelectResume = (resume: ResumeRecord) => {
-    setActiveResume(resume);
-    setAnalysis((prev) => ({
-      ...prev,
-      extractedData: {
-        ...prev.extractedData,
-        fileName: resume.originalFileName || resume.fileName || resume.title,
-        fileSize: formatFileSize(resume.fileSize),
-        uploadedAt: new Date(resume.createdAt).toLocaleDateString(),
-      },
-    }));
+    applyResumeToAnalysis(resume);
     toast.info(`Switched active resume to "${resume.title || resume.fileName}"`);
   };
 
@@ -108,25 +120,20 @@ export default function ResumeIntelligencePage() {
 
       if (remaining.length > 0) {
         const nextResume = remaining.find((r) => r.isDefault) || remaining[0];
-        setActiveResume(nextResume);
-        setAnalysis((prev) => ({
-          ...prev,
-          extractedData: {
-            ...prev.extractedData,
-            fileName: nextResume.originalFileName || nextResume.fileName || nextResume.title,
-            fileSize: formatFileSize(nextResume.fileSize),
-            uploadedAt: new Date(nextResume.createdAt).toLocaleDateString(),
-          },
-        }));
+        applyResumeToAnalysis(nextResume);
       } else {
         setActiveResume(null);
         setAnalysis((prev) => ({
           ...prev,
           extractedData: {
-            ...prev.extractedData,
             fileName: 'No resume uploaded',
             fileSize: '0 KB',
             uploadedAt: 'N/A',
+            candidateName: 'No Candidate',
+            location: '',
+            summary: null,
+            skillsExtracted: [],
+            skills: [],
           },
         }));
       }
