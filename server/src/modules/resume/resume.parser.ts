@@ -60,10 +60,20 @@ export class ResumeParserService {
     if (explicitLocationMatch && !/university|institute|college|school|academy/i.test(explicitLocationMatch[1])) {
       location = explicitLocationMatch[1].trim();
     } else {
-      const cityStateMatch = text.match(/\b([A-Za-z\s]{2,25},\s*(?:[A-Za-z]{2,20}|India|USA|UK|Canada|Germany|Australia|Remote))\b/i);
+      const cityStateMatch = text.match(/\b([A-Za-z]{2,15}(?:\s+[A-Za-z]{2,15})?,\s*(?:[A-Za-z]{2,20}|India|USA|UK|Canada|Germany|Australia|Remote))\b/i);
       if (cityStateMatch && !/university|institute|college|school|academy|technology|science|engineering/i.test(cityStateMatch[1])) {
         location = cityStateMatch[1].trim();
       }
+    }
+
+    // Clean location if candidate's name or leading symbols leaked in
+    if (location && fullName) {
+      const nameParts = fullName.split(/\s+/).filter((p) => p.length > 2);
+      for (const part of nameParts) {
+        location = location.replace(new RegExp(`\\b${part}\\b`, "gi"), "").trim();
+      }
+      location = location.replace(/^[,\s|/.-]+/, "").replace(/[,\s|/.-]+$/, "").trim();
+      if (location.length === 0) location = null;
     }
 
     return {

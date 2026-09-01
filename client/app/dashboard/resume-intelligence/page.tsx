@@ -25,6 +25,13 @@ function formatFileSize(bytes?: number): string {
 
 function mapResumeToExtractedData(resume: ResumeRecord): ResumeAnalysisData['extractedData'] {
   const extracted = resume.extractedData;
+  const candidateName = extracted?.personalInfo?.fullName || extracted?.candidateName || undefined;
+  const rawLoc = extracted?.personalInfo?.location || extracted?.location || undefined;
+  const cleanLocation =
+    rawLoc && candidateName
+      ? rawLoc.replace(new RegExp(candidateName, 'gi'), '').replace(/^[,\s|/.-]+/, '').trim() || undefined
+      : rawLoc;
+
   const skillsList =
     extracted?.skillsExtracted ||
     (extracted?.skills || []).map((s: any) => (typeof s === 'string' ? s : s.name)) ||
@@ -34,8 +41,8 @@ function mapResumeToExtractedData(resume: ResumeRecord): ResumeAnalysisData['ext
     fileName: resume.originalFileName || resume.fileName || resume.title,
     fileSize: formatFileSize(resume.fileSize),
     uploadedAt: new Date(resume.createdAt || Date.now()).toLocaleDateString(),
-    candidateName: extracted?.personalInfo?.fullName || extracted?.candidateName || undefined,
-    location: extracted?.personalInfo?.location || extracted?.location || undefined,
+    candidateName,
+    location: cleanLocation,
     email: extracted?.personalInfo?.email || extracted?.email || undefined,
     phone: extracted?.personalInfo?.phone || extracted?.phone || undefined,
     summary: extracted?.summary || null,

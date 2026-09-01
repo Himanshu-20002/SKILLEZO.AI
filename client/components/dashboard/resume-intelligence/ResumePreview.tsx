@@ -31,7 +31,16 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ data }) => {
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               {data.candidateName || data.personalInfo?.fullName || "Candidate"}
             </h3>
-            <span className="text-slate-500">{data.location || data.personalInfo?.location || ""}</span>
+            <span className="text-slate-500">
+              {(() => {
+                const loc = data.location || data.personalInfo?.location || "";
+                const name = data.candidateName || data.personalInfo?.fullName || "";
+                if (loc && name) {
+                  return loc.replace(new RegExp(name, "gi"), "").replace(/^[,\s|/.-]+/, "").trim();
+                }
+                return loc;
+              })()}
+            </span>
           </div>
           {data.summary && <p className="text-slate-600 dark:text-slate-300 italic">{data.summary}</p>}
         </div>
