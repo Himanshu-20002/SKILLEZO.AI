@@ -62,4 +62,20 @@ export const resumeService = {
       method: "DELETE",
     });
   },
+
+  /**
+   * Fetch resume file blob for viewing or downloading.
+   */
+  async getResumeBlob(resumeId: string, inline = true): Promise<Blob> {
+    const cleanBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").trim().replace(/\/+$/, "");
+    const url = `${cleanBase}/api/resumes/${resumeId}/download?inline=${inline}`;
+    const response = await fetch(url, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error("Failed to load resume file");
+    }
+    return await response.blob();
+  },
 };
+

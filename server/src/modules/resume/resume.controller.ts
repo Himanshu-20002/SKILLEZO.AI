@@ -36,10 +36,12 @@ export class ResumeController {
     const userId = req.user!.id;
     const resumeId = req.params.resumeId as string;
     const fileInfo = await this.resumeService.getResumeStream(userId, resumeId);
+    const isInline = req.query.inline === "true" || req.query.view === "true";
+    const disposition = isInline ? "inline" : "attachment";
 
     res.setHeader("Content-Type", fileInfo.mimeType);
     res.setHeader("Content-Length", fileInfo.fileSize);
-    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(fileInfo.fileName)}"`);
+    res.setHeader("Content-Disposition", `${disposition}; filename="${encodeURIComponent(fileInfo.fileName)}"`);
     
     fileInfo.stream.pipe(res);
   };
