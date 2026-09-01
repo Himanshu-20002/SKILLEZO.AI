@@ -100,6 +100,43 @@ export default function ResumeIntelligencePage() {
     toast.info(`Switched active resume to "${resume.title || resume.fileName}"`);
   };
 
+  const handleDeleteResume = async (resumeId: string) => {
+    try {
+      await resumeService.deleteResume(resumeId);
+      const remaining = userResumes.filter((r) => (r._id || r.id) !== resumeId);
+      setUserResumes(remaining);
+
+      if (remaining.length > 0) {
+        const nextResume = remaining.find((r) => r.isDefault) || remaining[0];
+        setActiveResume(nextResume);
+        setAnalysis((prev) => ({
+          ...prev,
+          extractedData: {
+            ...prev.extractedData,
+            fileName: nextResume.originalFileName || nextResume.fileName || nextResume.title,
+            fileSize: formatFileSize(nextResume.fileSize),
+            uploadedAt: new Date(nextResume.createdAt).toLocaleDateString(),
+          },
+        }));
+      } else {
+        setActiveResume(null);
+        setAnalysis((prev) => ({
+          ...prev,
+          extractedData: {
+            ...prev.extractedData,
+            fileName: 'No resume uploaded',
+            fileSize: '0 KB',
+            uploadedAt: 'N/A',
+          },
+        }));
+      }
+
+      toast.success('Resume deleted successfully.');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete resume. Please try again.');
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -120,6 +157,7 @@ export default function ResumeIntelligencePage() {
             userResumes={userResumes}
             selectedResumeId={activeResume?._id || activeResume?.id}
             onSelectResume={handleSelectResume}
+            onDeleteResume={handleDeleteResume}
           />
 
           <ResumeScoreCard
@@ -149,4 +187,5 @@ export default function ResumeIntelligencePage() {
     </DashboardLayout>
   );
 }
+
 

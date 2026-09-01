@@ -1,7 +1,21 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { Upload, FileText, CheckCircle2, Sparkles, FileUp, ChevronDown, Eye, ExternalLink, Download, X, Loader2 } from 'lucide-react';
+import {
+  Upload,
+  FileText,
+  CheckCircle2,
+  Sparkles,
+  FileUp,
+  ChevronDown,
+  Eye,
+  ExternalLink,
+  Download,
+  X,
+  Loader2,
+  Trash2,
+  AlertTriangle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { ResumeRecord } from '@/types/resume';
 import { resumeService } from '@/services/resume.service';
@@ -15,6 +29,7 @@ interface ResumeUploaderProps {
   userResumes?: ResumeRecord[];
   selectedResumeId?: string;
   onSelectResume?: (resume: ResumeRecord) => void;
+  onDeleteResume?: (resumeId: string) => Promise<void> | void;
 }
 
 export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
@@ -26,12 +41,15 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   userResumes = [],
   selectedResumeId,
   onSelectResume,
+  onDeleteResume,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const processFile = async (file: File) => {
     const isPdfOrDocx =
@@ -132,6 +150,19 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     }
   };
 
+  const confirmDelete = async () => {
+    if (!selectedResumeId || !onDeleteResume) return;
+    setIsDeleting(true);
+    try {
+      await onDeleteResume(selectedResumeId);
+      setIsDeleteDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete resume.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <>
       <div className="rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-sm">
@@ -205,7 +236,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
           <div className="flex items-center gap-2.5 min-w-0">
             <FileText className="w-4 h-4 text-[#3D5AFE] shrink-0" />
             <div className="min-w-0">
-              <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate max-w-[180px] sm:max-w-[260px]">
+              <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate max-w-[180px] sm:max-w-[240px]">
                 {currentFileName}
               </span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -252,6 +283,19 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
               </button>
             )}
 
+            {selectedResumeId && onDeleteResume && (
+              <button
+                type="button"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                disabled={isUploading || isDeleting}
+                aria-label="Delete resume"
+                title="Delete resume"
+                className="p-1.5 rounded-lg text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+
             <button
               type="button"
               onClick={triggerFileInput}
@@ -263,6 +307,47 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Delete Resume</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Are you sure you want to proceed?</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              This will permanently delete <span className="font-semibold text-slate-900 dark:text-slate-100">{currentFileName}</span> from storage and your ATS analysis records.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteDialogOpen(false)}
+                disabled={isDeleting}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Resume Document Viewer Modal */}
       {isPreviewOpen && previewUrl && (
@@ -320,5 +405,6 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     </>
   );
 };
+
 
 
