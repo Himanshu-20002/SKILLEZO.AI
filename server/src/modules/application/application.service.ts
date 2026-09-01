@@ -2,10 +2,12 @@ import { ApplicationRepository } from "@/database/repositories/application/Appli
 import { JobRepository } from "@/database/repositories/job/JobRepository";
 import { ResumeRepository } from "@/database/repositories/resume/ResumeRepository";
 import { IApplication } from "@/database/models/Application.model";
+import { IResume } from "@/database/models/Resume.model";
 import { ApplicationStatus, JobStatus, JobSourceType } from "@/core/constants/enums";
 import { AppError } from "@/core/utils/AppError";
 import { HTTP_STATUS } from "@/core/constants/http-status";
 import { ERROR_CODES } from "@/core/constants/error-codes";
+import { IResumeStorageService, resumeStorageService } from "@/core/storage/storage.service";
 import {
   CreateApplicationDTO,
   WithdrawApplicationDTO,
@@ -18,15 +20,18 @@ export class ApplicationService {
   private readonly applicationRepository: ApplicationRepository;
   private readonly jobRepository: JobRepository;
   private readonly resumeRepository: ResumeRepository;
+  private readonly storageService: IResumeStorageService;
 
   constructor(
     applicationRepository?: ApplicationRepository,
     jobRepository?: JobRepository,
-    resumeRepository?: ResumeRepository
+    resumeRepository?: ResumeRepository,
+    storageService?: IResumeStorageService
   ) {
     this.applicationRepository = applicationRepository || new ApplicationRepository();
     this.jobRepository = jobRepository || new JobRepository();
     this.resumeRepository = resumeRepository || new ResumeRepository();
+    this.storageService = storageService || resumeStorageService;
   }
 
   async applyToJob(
@@ -70,18 +75,26 @@ export class ApplicationService {
       );
     }
 
-    // 3. Resume Ownership Resolution & Snapshot
-    let targetResume: any = null;
+    // 3. Resume Ownership Resolution & Storage Presence Verification
+    let targetResume: IResume | null = null;
 
     if (dto.resumeId) {
-      targetResume = await this.resumeRepository.findUserResumeById(userId, dto.resumeId);
-      if (!targetResume) {
+      const resume = await this.resumeRepository.findById(dto.resumeId);
+      if (!resume) {
         throw new AppError(
-          "Selected resume not found or does not belong to candidate",
-          HTTP_STATUS.BAD_REQUEST,
+          "Selected resume not found",
+          HTTP_STATUS.NOT_FOUND,
+          ERROR_CODES.APPLICATION_RESUME_NOT_FOUND
+        );
+      }
+      if (resume.userId !== userId) {
+        throw new AppError(
+          "Selected resume does not belong to candidate",
+          HTTP_STATUS.FORBIDDEN,
           ERROR_CODES.APPLICATION_RESUME_NOT_OWNED
         );
       }
+      targetResume = resume;
     } else {
       targetResume = await this.resumeRepository.findDefaultByUserId(userId);
       if (!targetResume) {
@@ -95,6 +108,18 @@ export class ApplicationService {
           "No resume found. Please upload a resume before applying.",
           HTTP_STATUS.BAD_REQUEST,
           ERROR_CODES.APPLICATION_RESUME_NOT_FOUND
+        );
+      }
+    }
+
+    // Verify physical file presence on storage
+    if (targetResume.storageKey) {
+      const fileExists = await this.storageService.exists(targetResume.storageKey);
+      if (!fileExists) {
+        throw new AppError(
+          "Resume file not found on storage",
+          HTTP_STATUS.NOT_FOUND,
+          ERROR_CODES.APPLICATION_RESUME_FILE_NOT_FOUND
         );
       }
     }

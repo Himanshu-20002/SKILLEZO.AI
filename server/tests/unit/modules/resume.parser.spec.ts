@@ -66,7 +66,38 @@ describe("ResumeParserService", () => {
       expect(reactSkill?.category).toBe("Frontend");
 
       const awsSkill = skills.find((s) => s.name === "AWS");
-      expect(awsSkill?.category).toBe("DevOps & Cloud");
+      expect(awsSkill?.category).toBe("Tools & Platforms");
+    });
+
+    it("should accurately parse full user technical skills block with direct categories", () => {
+      const userText = `
+        Technical Skills
+        Frontend: React, Next.js, JavaScript, TypeScript, Tailwind CSS, GSAP, Framer Motion
+        Backend & Database: Node.js, Express.js, REST APIs, JWT, MongoDB, PostgreSQL, Firebase, Redis
+        Analytics & Performance: SEO, Lighthouse, Web Vitals, Google Analytics 4, Google Tag Manager
+        Tools & Platforms: Git, GitHub, Postman, Docker, figma, Vercel, Zapier
+        Soft Skill: Problem Solving, Communication, Teamwork, Analytical Thinking, Debugging
+      `;
+
+      const skills = parser.extractSkills(userText);
+      const skillNames = skills.map((s) => s.name);
+
+      expect(skillNames).toContain("GSAP");
+      expect(skillNames).toContain("Framer Motion");
+      expect(skillNames).toContain("Express.js");
+      expect(skillNames).toContain("JWT");
+      expect(skillNames).toContain("Firebase");
+      expect(skillNames).toContain("SEO");
+      expect(skillNames).toContain("Lighthouse");
+      expect(skillNames).toContain("Web Vitals");
+      expect(skillNames).toContain("Google Analytics 4");
+      expect(skillNames).toContain("Google Tag Manager");
+      expect(skillNames).toContain("Postman");
+      expect(skillNames).toContain("Figma");
+      expect(skillNames).toContain("Vercel");
+      expect(skillNames).toContain("Zapier");
+      expect(skillNames).toContain("Problem Solving");
+      expect(skillNames).toContain("Debugging");
     });
   });
 
