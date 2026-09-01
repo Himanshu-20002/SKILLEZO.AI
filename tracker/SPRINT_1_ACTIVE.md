@@ -56,9 +56,10 @@
 ### 🗓️ DAY 2 (Wednesday, Sep 02)
 
 #### 🛠️ Developer 1 (Backend)
-- [ ] **`BE-102` (Part 1) — Resume Text Extraction Utility** (1 hour)
+- [x] **`BE-102` (Part 1) — Resume Text Extraction Utility** (1 hour) — *COMPLETED (01-Sep-2026)*
   - **Action:** Install `pdf-parse` in `/server`. Create text extraction helper in `server/src/modules/resume`.
   - **Target Files:** `server/package.json`, `server/src/modules/resume/resume.parser.ts`.
+  - **Verify:** Automated unit test suite `tests/unit/modules/resume.parser.spec.ts` passes (5/5 green).
 
 #### 🎨 Developer 2 (Frontend)
 - [x] **`FE-203` — Wire Smart Job Center to Live API** (1.5 hours) — *COMPLETED (31-Aug-2026)*

@@ -9,7 +9,8 @@
 
 | Date | Task ID | Status | Team | Task Title | Commit Hash | Verified By | Verification Evidence |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :--- |
-| **31-Aug-2026** | `FE-204` | 🟢 **Completed** | Dev 2 | Build Resume Client Service (`resume.service.ts`) | Pending Push | Dev Lead | Created typed `resumeService` with multipart FormData upload, `getUserResumes()`, `setDefaultResume()`, and `deleteResume()`. |
+| **01-Sep-2026** | `BE-102-P1` | 🟢 **Completed** | Dev 1 | Resume Text Extraction Engine (`resume.parser.ts`) | Local Commit | Dev Lead | Installed `pdf-parse`, built `ResumeParserService` with NLP section extractors, and created unit test suite (5/5 tests green). |
+| **31-Aug-2026** | `FE-204` | 🟢 **Completed** | Dev 2 | Build Resume Client Service (`resume.service.ts`) | `c5e3f0f` | Dev Lead | Created typed `resumeService` with multipart FormData upload, `getUserResumes()`, `setDefaultResume()`, and `deleteResume()`. |
 | **31-Aug-2026** | `BE-101` | 🟢 **Completed** | Dev 1 | Setup Vitest Automated Test Suite | `fe7600c` | Dev Lead | Configured vitest.config.mts, supertest, and wrote unit test suites for skill extraction, validation, jobs service, and health routes (18/18 tests green). |
 | **31-Aug-2026** | `BE-109` | 🟢 **Completed** | Dev 1 | Job Ingestion Background Cron & Lifecycle Engine | `1f024f5` | Dev Lead | Integrated node-cron (12h cycle), 14-day MongoDB TTL index, and GET /api/jobs/:id/redirect outbound health check. |
 | **31-Aug-2026** | `FE-203` | 🟢 **Completed** | Dev 2 | Wire Smart Job Center UI to Live Jobs API | `c503da3` | Dev Lead | Wired `/dashboard/job-center` to `jobService.searchJobs()`. 103 real MongoDB jobs rendered with search, filters, pagination, and refresh button. |
