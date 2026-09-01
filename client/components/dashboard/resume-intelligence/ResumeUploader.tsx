@@ -283,19 +283,6 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
               </button>
             )}
 
-            {selectedResumeId && onDeleteResume && (
-              <button
-                type="button"
-                onClick={() => setIsDeleteDialogOpen(true)}
-                disabled={isUploading || isDeleting}
-                aria-label="Delete resume"
-                title="Delete resume"
-                className="p-1.5 rounded-lg text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-
             <button
               type="button"
               onClick={triggerFileInput}
@@ -304,6 +291,19 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
             >
               Upload New
             </button>
+
+            {selectedResumeId && onDeleteResume && (
+              <button
+                type="button"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                disabled={isUploading || isDeleting}
+                aria-label="Delete resume"
+                title="Delete resume"
+                className="p-1.5 rounded-lg text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-50 ml-0.5"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
