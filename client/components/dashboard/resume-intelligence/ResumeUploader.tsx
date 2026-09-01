@@ -297,11 +297,10 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
                 type="button"
                 onClick={() => setIsDeleteDialogOpen(true)}
                 disabled={isUploading || isDeleting}
-                aria-label="Delete resume"
-                title="Delete resume"
-                className="p-1.5 rounded-lg text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-50 ml-0.5"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 border border-rose-500/20"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete</span>
               </button>
             )}
           </div>
