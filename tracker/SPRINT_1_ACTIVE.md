@@ -93,10 +93,11 @@
   - **Target Files:** `server/src/modules/resume/ats.service.ts`.
 
 #### 🎨 Developer 2 (Frontend)
-- [ ] **`FE-205` — Wire Live Resume Upload in UI** (1 hour)
+- [x] **`FE-205` — Wire Live Resume Upload in UI** (1 hour)
   - **Action:** Replace "Simulate Upload" in `client/app/dashboard/resume-intelligence/page.tsx` with real file input calling `resumeService.uploadResume()`.
   - **Target Files:** `client/app/dashboard/resume-intelligence/page.tsx`, `client/components/dashboard/resume-intelligence/ResumeUploader.tsx`.
   - **Verify:** Uploading a real PDF uploads to backend `storage/resumes` and lists under user's resumes.
+
 
 ---
 

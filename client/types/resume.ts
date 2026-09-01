@@ -109,14 +109,17 @@ export interface ResumeRecord {
   id?: string;
   userId: string;
   title: string;
+  originalFileName?: string;
   fileName: string;
   fileSize: number;
   mimeType: string;
   storageKey: string;
+  fileUrl?: string;
   isDefault: boolean;
-  status: "pending" | "processing" | "completed" | "failed";
+  status: "pending" | "processing" | "completed" | "failed" | "uploaded";
   extractedData?: ResumeExtractedData;
   errorMessage?: string;
   createdAt: string;
   updatedAt: string;
 }
+
