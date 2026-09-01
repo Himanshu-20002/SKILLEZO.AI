@@ -9,7 +9,11 @@
 
 | Date | Task ID | Status | Team | Task Title | Commit Hash | Verified By | Verification Evidence |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :--- |
-| **01-Sep-2026** | `BE-102-P1` | 🟢 **Completed** | Dev 1 | Resume Text Extraction Engine (`resume.parser.ts`) | Local Commit | Dev Lead | Installed `pdf-parse`, built `ResumeParserService` with NLP section extractors, and created unit test suite (5/5 tests green). |
+| **01-Sep-2026** | `BE-202` | 🟢 **Completed** | Dev 1 | Duplicate Application Prevention & Active Job Check | `d36924a` | Dev Lead | Compound uniqueness index on `(userId, jobId)`, active job validation, and 9/9 unit tests passing. |
+| **01-Sep-2026** | `BE-201` | 🟢 **Completed** | Dev 1 | Application Security & Resume Ownership Validation | `d36924a` | Dev Lead | Resume ownership checks (403 FORBIDDEN), storage file existence validation, and unit test suite passing. |
+| **01-Sep-2026** | `FE-205` | 🟢 **Completed** | Dev 2 | Wire Live Resume Upload in UI | `52b761a` | Dev Lead | Real drag-and-drop file upload, multiple resume dropdown, inline PDF tab viewing, delete with confirm, 0 DOM bloat. |
+| **01-Sep-2026** | `BE-102-P2` | 🟢 **Completed** | Dev 1 | Store Extracted Text in MongoDB | `e65032a` | Dev Lead | Automatically parses uploaded PDF buffers and saves structured extractedData with status 'parsed' to MongoDB. |
+| **01-Sep-2026** | `BE-102-P1` | 🟢 **Completed** | Dev 1 | Resume Text Extraction Engine (`resume.parser.ts`) | `017c1d0` | Dev Lead | Installed `pdf-parse`, built `ResumeParserService` with NLP section extractors, and created unit test suite (6/6 tests green). |
 | **31-Aug-2026** | `FE-204` | 🟢 **Completed** | Dev 2 | Build Resume Client Service (`resume.service.ts`) | `c5e3f0f` | Dev Lead | Created typed `resumeService` with multipart FormData upload, `getUserResumes()`, `setDefaultResume()`, and `deleteResume()`. |
 | **31-Aug-2026** | `BE-101` | 🟢 **Completed** | Dev 1 | Setup Vitest Automated Test Suite | `fe7600c` | Dev Lead | Configured vitest.config.mts, supertest, and wrote unit test suites for skill extraction, validation, jobs service, and health routes (18/18 tests green). |
 | **31-Aug-2026** | `BE-109` | 🟢 **Completed** | Dev 1 | Job Ingestion Background Cron & Lifecycle Engine | `1f024f5` | Dev Lead | Integrated node-cron (12h cycle), 14-day MongoDB TTL index, and GET /api/jobs/:id/redirect outbound health check. |
