@@ -73,6 +73,74 @@ describe("ResumeService Unit Tests", () => {
       expect(result.isDefault).toBe(true);
       expect(mockRepository.clearDefaultFlag).toHaveBeenCalledWith("usr_123");
     });
+
+    it("should parse PDF buffer and persist extractedData with PARSED status", async () => {
+      const mockParser: any = {
+        parseResumeBuffer: vi.fn().mockResolvedValue({
+          personalInfo: { fullName: "Himanshu", email: "test@example.com" },
+          skills: [{ name: "React", category: "Frontend" }],
+          education: [],
+          experience: [],
+        }),
+      };
+
+      const customService = new ResumeService(mockRepository, mockStorage, mockParser);
+
+      mockRepository.countUserResumes.mockResolvedValue(1);
+      mockRepository.findByUserId.mockResolvedValue([{ _id: "res_old" }]);
+      mockStorage.save.mockResolvedValue("resumes/usr_123/uuid.pdf");
+      mockRepository.create.mockImplementation((dto: any) => Promise.resolve({ _id: "res_2", ...dto }));
+
+      const fakeFile = {
+        originalname: "resume.pdf",
+        mimetype: "application/pdf",
+        buffer: Buffer.from("fake pdf content"),
+        size: 2048,
+      } as any;
+
+      const result = await customService.uploadResume("usr_123", fakeFile);
+
+      expect(mockParser.parseResumeBuffer).toHaveBeenCalledWith(fakeFile.buffer);
+      expect(mockRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "parsed",
+          extractedData: expect.objectContaining({
+            personalInfo: { fullName: "Himanshu", email: "test@example.com" },
+          }),
+        })
+      );
+      expect(result.status).toBe("parsed");
+    });
+
+    it("should gracefully handle parser errors without failing the upload", async () => {
+      const mockParser: any = {
+        parseResumeBuffer: vi.fn().mockRejectedValue(new Error("Corrupted PDF")),
+      };
+
+      const customService = new ResumeService(mockRepository, mockStorage, mockParser);
+
+      mockRepository.countUserResumes.mockResolvedValue(1);
+      mockRepository.findByUserId.mockResolvedValue([{ _id: "res_old" }]);
+      mockStorage.save.mockResolvedValue("resumes/usr_123/uuid.pdf");
+      mockRepository.create.mockImplementation((dto: any) => Promise.resolve({ _id: "res_3", ...dto }));
+
+      const fakeFile = {
+        originalname: "corrupt.pdf",
+        mimetype: "application/pdf",
+        buffer: Buffer.from("corrupt data"),
+        size: 1024,
+      } as any;
+
+      const result = await customService.uploadResume("usr_123", fakeFile);
+
+      expect(mockRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "uploaded",
+          parsingError: "Corrupted PDF",
+        })
+      );
+      expect(result.status).toBe("uploaded");
+    });
   });
 
   describe("getResumeStream", () => {

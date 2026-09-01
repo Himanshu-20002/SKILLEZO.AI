@@ -1,11 +1,12 @@
 import { ResumeRepository } from "@/database/repositories/resume/ResumeRepository";
-import { IResume } from "@/database/models/Resume.model";
+import { IResume, IResumeExtractedData } from "@/database/models/Resume.model";
 import { UpdateResumeDTO } from "./resume.dto";
 import { AppError } from "@/core/utils/AppError";
 import { HTTP_STATUS } from "@/core/constants/http-status";
 import { ERROR_CODES } from "@/core/constants/error-codes";
 import { ResumeStatus } from "@/core/constants/enums";
 import { IResumeStorageService, resumeStorageService } from "@/core/storage/storage.service";
+import { ResumeParserService, resumeParserService } from "./resume.parser";
 import path from "path";
 import fs from "fs";
 import { Readable } from "stream";
@@ -15,10 +16,16 @@ const MAX_RESUMES_PER_USER = parseInt(process.env.MAX_RESUMES_PER_USER || "10", 
 export class ResumeService {
   private readonly resumeRepository: ResumeRepository;
   private readonly storageService: IResumeStorageService;
+  private readonly parserService: ResumeParserService;
 
-  constructor(resumeRepository?: ResumeRepository, storageService?: IResumeStorageService) {
+  constructor(
+    resumeRepository?: ResumeRepository,
+    storageService?: IResumeStorageService,
+    parserService?: ResumeParserService
+  ) {
     this.resumeRepository = resumeRepository || new ResumeRepository();
     this.storageService = storageService || resumeStorageService;
+    this.parserService = parserService || resumeParserService;
   }
 
   async uploadResume(
@@ -65,6 +72,33 @@ export class ResumeService {
       );
     }
 
+    // Extract structured data from uploaded resume buffer
+    let extractedData: IResumeExtractedData | null = null;
+    let parsingError: string | null = null;
+    let status: ResumeStatus = ResumeStatus.UPLOADED;
+
+    try {
+      let fileBuffer: Buffer | null = file.buffer || null;
+      if (!fileBuffer && savedStorageKey) {
+        const absPath = this.storageService.getAbsolutePath(savedStorageKey);
+        if (fs.existsSync(absPath)) {
+          fileBuffer = fs.readFileSync(absPath);
+        }
+      }
+
+      const isPdf =
+        file.mimetype === "application/pdf" ||
+        file.originalname.toLowerCase().endsWith(".pdf");
+
+      if (fileBuffer && isPdf) {
+        extractedData = await this.parserService.parseResumeBuffer(fileBuffer);
+        status = ResumeStatus.PARSED;
+      }
+    } catch (parseErr: any) {
+      parsingError = parseErr?.message || "Failed to parse resume text";
+      status = ResumeStatus.UPLOADED;
+    }
+
     try {
       if (makeDefault) {
         await this.resumeRepository.clearDefaultFlag(userId);
@@ -82,8 +116,10 @@ export class ResumeService {
         mimeType: file.mimetype,
         fileSize: file.size,
         isDefault: makeDefault,
-        status: ResumeStatus.UPLOADED,
+        status,
         version: 1,
+        extractedData,
+        parsingError,
         uploadedAt: new Date(),
       } as any);
 

@@ -72,7 +72,7 @@
 ### 🗓️ DAY 3 (Thursday, Sep 03)
 
 #### 🛠️ Developer 1 (Backend)
-- [ ] **`BE-102` (Part 2) — Store Extracted Text in MongoDB** (45 mins)
+- [x] **`BE-102` (Part 2) — Store Extracted Text in MongoDB** (45 mins) — *COMPLETED (01-Sep-2026)*
   - **Action:** Hook `ResumeParserService` into `POST /api/resumes/upload` to parse uploaded PDF and save text in `ResumeModel.extractedData`.
   - **Target Files:** `server/src/modules/resume/resume.service.ts`.
   - **Verify:** Uploading a PDF saves extracted keywords and metadata to database.

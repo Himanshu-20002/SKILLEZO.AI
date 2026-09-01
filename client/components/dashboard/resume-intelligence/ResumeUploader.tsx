@@ -122,13 +122,12 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
           setIsDragging(false);
           if (e.dataTransfer.files?.[0]) processFile(e.dataTransfer.files[0]);
         }}
-        className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
-          isUploading
+        className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${isUploading
             ? 'border-[#3D5AFE] bg-[#3D5AFE]/5 cursor-not-allowed'
             : isDragging
-            ? 'border-[#00D9C0] bg-[#00D9C0]/10 scale-[0.99]'
-            : 'border-slate-300 dark:border-slate-700 hover:border-[#3D5AFE] dark:hover:border-[#00D9C0] hover:bg-slate-50 dark:hover:bg-slate-800/40'
-        }`}
+              ? 'border-[#00D9C0] bg-[#00D9C0]/10 scale-[0.99]'
+              : 'border-slate-300 dark:border-slate-700 hover:border-[#3D5AFE] dark:hover:border-[#00D9C0] hover:bg-slate-50 dark:hover:bg-slate-800/40'
+          }`}
       >
         {!isUploading ? (
           <div className="space-y-2">
