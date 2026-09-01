@@ -87,7 +87,7 @@ SKILLEZO AI brings everything together into one intelligent ecosystem where user
 - Experience Analysis
 - Education Detection
 - Resume Improvement Suggestions
-- Resume Version History
+- Resume Version History and scrore
 
 ---
 
