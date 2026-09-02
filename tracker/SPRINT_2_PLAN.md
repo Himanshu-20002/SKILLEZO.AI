@@ -110,17 +110,6 @@
   - **Target Files:** `client/components/dashboard/job-center/AppliedJobsTracker.tsx`, `client/app/dashboard/job-center/page.tsx`.
   - **Verify:** Withdrawn applications instantly update their status badge.
 
-- [x] **`QA-201` — Full End-to-End User Journey Verification** (30m) — *COMPLETED (02-Sep-2026)*
-  - **Action:** Validate complete workflow:
-    1. Browse real jobs in `/dashboard/job-center`.
-    2. Click "Apply with AI Resume", select resume, and submit.
-    3. Verify job card switches to `Applied ✓` and disables duplicate apply.
-    4. Open drawer to verify application submission metadata.
-    5. Switch to "Applied" tab in Job Center to verify pipeline status and test withdrawal.
-    6. Verify `npx tsc --noEmit` and `npm test` have 0 errors.
-  - **Verify:** 100% functional user journey with 0 mock dependencies (30/30 tests passing).
-
----
 
 ## 🏆 Sprint 2 Deliverable Checklist
 

@@ -32,4 +32,4 @@ export const getApplicationsQueryValidator = z.object({
 
 export const withdrawApplicationValidator = z.object({
   reason: z.string().trim().max(500).optional(),
-});
+}).default({});

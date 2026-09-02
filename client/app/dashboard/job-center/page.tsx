@@ -357,7 +357,10 @@ export default function SmartJobCenterPage() {
 
   const handleWithdrawApplication = async (applicationId: string, jobId: string) => {
     try {
-      await applicationService.withdrawApplication(applicationId);
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(applicationId);
+      if (isObjectId) {
+        await applicationService.withdrawApplication(applicationId);
+      }
       setApplications((prev) =>
         prev.map((app) =>
           app.id === applicationId
