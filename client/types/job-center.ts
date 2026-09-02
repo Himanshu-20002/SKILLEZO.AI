@@ -3,7 +3,21 @@ export type EmploymentType = 'Full-Time' | 'Part-Time' | 'Contract' | 'Internshi
 export type ExperienceRange = '0–1 years' | '1–3 years' | '3–5 years' | '5+ years';
 export type MatchTier = '85%+' | '70–85%' | 'All Jobs';
 export type SortOption = 'AI Match' | 'Latest' | 'Salary: High to Low' | 'Salary: Low to High';
-export type ApplicationStatus = 'Submitted' | 'Under Review' | 'Shortlisted' | 'Interview Scheduled' | 'Offer' | 'Rejected';
+export type ApplicationStatus =
+  | 'applied'
+  | 'under_review'
+  | 'shortlisted'
+  | 'interview'
+  | 'offered'
+  | 'hired'
+  | 'rejected'
+  | 'withdrawn'
+  | 'Submitted'
+  | 'Under Review'
+  | 'Shortlisted'
+  | 'Interview Scheduled'
+  | 'Offer'
+  | 'Rejected';
 
 export interface ApplicationTimelineEvent {
   title: string;

@@ -9,4 +9,3 @@ export * from './SavedJobsTab';
 export * from './AppliedJobsTracker';
 export * from './ApplicationTimeline';
 export * from './JobEmptyState';
-export * from './JobSkeleton';

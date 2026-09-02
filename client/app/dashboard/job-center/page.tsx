@@ -269,7 +269,7 @@ export default function SmartJobCenterPage() {
         salaryText: job.salaryText,
         appliedDate: new Date().toISOString().split('T')[0],
         matchScore: job.matchScore,
-        status: 'Submitted',
+        status: 'applied',
         nextStep: `Redirected to ${job.sourceName || 'Partner'}`,
         resumeUsed: resumeId ? 'Selected Resume' : 'Profile AI Resume',
         atsScore: job.matchScore,
@@ -303,7 +303,7 @@ export default function SmartJobCenterPage() {
         salaryText: job.salaryText,
         appliedDate: new Date().toISOString().split('T')[0],
         matchScore: job.matchScore,
-        status: 'Submitted',
+        status: 'applied',
         nextStep: 'Awaiting recruiter screening',
         resumeUsed: (appRecord as any).resumeSnapshot?.originalFileName || (appRecord as any).resumeSnapshot?.fileName || 'Attached AI Resume',
         atsScore: job.matchScore,
@@ -335,7 +335,7 @@ export default function SmartJobCenterPage() {
               salaryText: job.salaryText,
               appliedDate: new Date().toISOString().split('T')[0],
               matchScore: job.matchScore,
-              status: 'Submitted',
+              status: 'applied',
               nextStep: 'Under review',
               resumeUsed: 'Uploaded Resume',
               atsScore: job.matchScore,
@@ -612,17 +612,15 @@ export default function SmartJobCenterPage() {
                     setActiveTab(tab.id as ActiveTab);
                     setCurrentPage(1);
                   }}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
-                    activeTab === tab.id
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${activeTab === tab.id
                       ? 'bg-[#3D5AFE] text-white border-[#3D5AFE] shadow-sm font-bold'
                       : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
+                    }`}
                 >
                   <span>{tab.label}</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
-                      activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
-                    }`}
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
+                      }`}
                   >
                     {tab.count}
                   </span>
@@ -746,11 +744,10 @@ export default function SmartJobCenterPage() {
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`w-8 h-8 rounded-lg font-bold transition-all cursor-pointer ${
-                        currentPage === pageNum
+                      className={`w-8 h-8 rounded-lg font-bold transition-all cursor-pointer ${currentPage === pageNum
                           ? 'bg-[#3D5AFE] text-white'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-                      }`}
+                        }`}
                     >
                       {pageNum}
                     </button>
