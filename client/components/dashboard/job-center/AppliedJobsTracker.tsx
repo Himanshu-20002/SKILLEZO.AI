@@ -111,27 +111,52 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
           {filtered.map((app) => {
             const isExpanded = expandedAppId === app.id;
             const statusLower = (app.status || '').toLowerCase();
+            const isWithdrawn = statusLower === 'withdrawn';
             const isWithdrawable = !['withdrawn', 'rejected', 'hired', 'offered'].includes(statusLower);
             const displayStatus = getApplicationStatusLabel(app.status);
 
             return (
               <div
                 key={app.id}
-                className="rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-5 space-y-3 shadow-sm transition-all"
+                className={`rounded-2xl p-5 space-y-3 transition-all ${
+                  isWithdrawn
+                    ? 'bg-slate-100/80 dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-800/40 shadow-none opacity-65 grayscale-[35%]'
+                    : 'bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm'
+                }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#3D5AFE] flex items-center justify-center font-bold text-sm shrink-0 border border-slate-200 dark:border-slate-700">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 border ${
+                        isWithdrawn
+                          ? 'bg-slate-200/60 dark:bg-slate-800/60 text-slate-400 border-slate-300/40 dark:border-slate-700/40'
+                          : 'bg-slate-100 dark:bg-slate-800 text-[#3D5AFE] border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
                       <Briefcase className="w-5 h-5" />
                     </div>
 
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{app.jobTitle}</h4>
+                      <h4
+                        className={`text-sm font-bold ${
+                          isWithdrawn
+                            ? 'text-slate-600 dark:text-slate-400'
+                            : 'text-slate-900 dark:text-slate-100'
+                        }`}
+                      >
+                        {app.jobTitle}
+                      </h4>
                       <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         <span>{app.company} • Applied on {app.appliedDate}</span>
                         {app.resumeUsed && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                            <FileText className="w-3 h-3 text-[#3D5AFE]" />
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
+                              isWithdrawn
+                                ? 'bg-slate-200/40 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 border-slate-300/30 dark:border-slate-700/30'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                            }`}
+                          >
+                            <FileText className={`w-3 h-3 ${isWithdrawn ? 'text-slate-400' : 'text-[#3D5AFE]'}`} />
                             {app.resumeUsed}
                           </span>
                         )}
@@ -140,7 +165,13 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#3D5AFE]/10 text-[#3D5AFE] dark:text-[#00D9C0]">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        isWithdrawn
+                          ? 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400'
+                          : 'bg-[#3D5AFE]/10 text-[#3D5AFE] dark:text-[#00D9C0]'
+                      }`}
+                    >
                       <Sparkles className="w-3 h-3" />
                       {app.matchScore}% Match
                     </span>
@@ -159,9 +190,15 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
                 </div>
 
                 {/* Next Step & Action Row */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 text-xs">
-                  <span className="text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-[#3D5AFE]" />
+                <div
+                  className={`flex items-center justify-between p-3 rounded-xl border text-xs ${
+                    isWithdrawn
+                      ? 'bg-slate-100/50 dark:bg-slate-800/20 border-slate-200/40 dark:border-slate-800/40 text-slate-500 dark:text-slate-400'
+                      : 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60'
+                  }`}
+                >
+                  <span className={`font-semibold flex items-center gap-1.5 ${isWithdrawn ? 'text-slate-500 dark:text-slate-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                    <Clock className={`w-3.5 h-3.5 ${isWithdrawn ? 'text-slate-400' : 'text-[#3D5AFE]'}`} />
                     Next Step: {app.nextStep}
                   </span>
 
@@ -179,7 +216,11 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
 
                     <button
                       onClick={() => toggleExpand(app.id)}
-                      className="text-[#3D5AFE] dark:text-[#00D9C0] font-bold text-[11px] hover:underline cursor-pointer"
+                      className={`font-bold text-[11px] hover:underline cursor-pointer ${
+                        isWithdrawn
+                          ? 'text-slate-500 dark:text-slate-400'
+                          : 'text-[#3D5AFE] dark:text-[#00D9C0]'
+                      }`}
                     >
                       {isExpanded ? 'Hide Timeline' : 'View Timeline'}
                     </button>
