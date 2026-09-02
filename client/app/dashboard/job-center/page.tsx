@@ -355,6 +355,37 @@ export default function SmartJobCenterPage() {
     }
   };
 
+  const handleWithdrawApplication = async (applicationId: string, jobId: string) => {
+    try {
+      await applicationService.withdrawApplication(applicationId);
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === applicationId
+            ? {
+                ...app,
+                status: 'withdrawn',
+                nextStep: 'Application withdrawn by candidate',
+                timeline: [
+                  ...app.timeline,
+                  { title: 'Application Withdrawn', date: 'Just now', completed: true },
+                ],
+              }
+            : app
+        )
+      );
+      setAppliedJobIdSet((prev) => {
+        const next = new Set(prev);
+        next.delete(jobId);
+        return next;
+      });
+      toast.success('Application successfully withdrawn');
+    } catch (err: any) {
+      console.error('[JobCenter] Failed to withdraw application:', err);
+      toast.error(err?.message || 'Failed to withdraw application');
+      throw err;
+    }
+  };
+
   // Client-side Sort & Filter refinements on live jobs
   const filteredJobs = useMemo(() => {
     return liveJobs
@@ -693,7 +724,10 @@ export default function SmartJobCenterPage() {
             onExplore={() => setActiveTab('all')}
           />
         ) : activeTab === 'applied' ? (
-          <AppliedJobsTracker applications={applications} />
+          <AppliedJobsTracker
+            applications={applications}
+            onWithdraw={handleWithdrawApplication}
+          />
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-slate-500 font-medium">

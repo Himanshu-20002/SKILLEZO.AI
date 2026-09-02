@@ -8,6 +8,32 @@ export type ApplicationStatus =
   | "rejected"
   | "withdrawn";
 
+export function getApplicationStatusLabel(status: ApplicationStatus | string): string {
+  switch (status?.toLowerCase()) {
+    case "applied":
+    case "submitted":
+      return "Submitted";
+    case "under_review":
+      return "Under Review";
+    case "shortlisted":
+      return "Shortlisted";
+    case "interview":
+    case "interview scheduled":
+      return "Interview Scheduled";
+    case "offered":
+    case "offer":
+      return "Offer";
+    case "hired":
+      return "Hired";
+    case "rejected":
+      return "Rejected";
+    case "withdrawn":
+      return "Withdrawn";
+    default:
+      return status || "Submitted";
+  }
+}
+
 export interface CreateApplicationDTO {
   jobId: string;
   resumeId?: string;

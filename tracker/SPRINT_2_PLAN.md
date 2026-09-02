@@ -100,14 +100,14 @@
 
 ### 🗓️ DAY 4 — Application Lifecycle (Withdrawal) & QA
 
-- [ ] **`BE-204` — Application Withdrawal Endpoint** (45m)
+- [x] **`BE-204` — Application Withdrawal Endpoint** (45m) — *COMPLETED (02-Sep-2026)*
   - **Action:** Ensure `PATCH /api/applications/:id/withdraw` updates status to `withdrawn` in MongoDB and logs status history.
   - **Target Files:** `server/src/modules/application/application.service.ts`.
   - **Verify:** Withdrawing application updates status in MongoDB.
 
-- [ ] **`FE-215` — In-Place Application Withdrawal in Job Center** (30m)
+- [x] **`FE-215` — In-Place Application Withdrawal in Job Center** (30m) — *COMPLETED (02-Sep-2026)*
   - **Action:** Add a lightweight "Withdraw" button on application cards in the Job Center Applied Tab with confirmation toast.
-  - **Target Files:** `client/components/dashboard/job-center/AppliedJobsTracker.tsx`.
+  - **Target Files:** `client/components/dashboard/job-center/AppliedJobsTracker.tsx`, `client/app/dashboard/job-center/page.tsx`.
   - **Verify:** Withdrawn applications instantly update their status badge.
 
 - [ ] **`QA-201` — Full End-to-End User Journey Verification** (30m)
@@ -128,5 +128,5 @@
 - [x] Job cards reflect `Applied ✓` status and block duplicate submissions.
 - [x] Job Center "Applied" tab displays live status pipeline for all submitted applications.
 - [x] Job details drawer shows submission date, resume used, and review status.
-- [ ] Candidates can withdraw an active application directly from the Applied tab.
+- [x] Candidates can withdraw an active application directly from the Applied tab.
 - [x] 0 TypeScript errors on client and server.
