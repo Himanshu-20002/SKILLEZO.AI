@@ -173,8 +173,11 @@ export default function SmartJobCenterPage() {
   // Helper to check if a job is applied
   const isJobApplied = (jobId: string) => appliedJobIdSet.has(jobId);
 
-  // Preserve existing applications state for the Applied tab
-  const appliedJobIds = useMemo(() => applications.map((a) => a.jobId), [applications]);
+  // Preserve active applications state for the Applied and Saved tabs
+  const appliedJobIds = useMemo(
+    () => applications.filter((a) => a.status?.toLowerCase() !== 'withdrawn').map((a) => a.jobId),
+    [applications]
+  );
 
   const handleFilterChange = (updated: Partial<JobFilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }));
@@ -241,7 +244,14 @@ export default function SmartJobCenterPage() {
         setAppliedJobIdSet((prev) => {
           const next = new Set(prev);
           res.items.forEach((item) => {
-            if (item.jobId) next.add(item.jobId);
+            const isWithdrawn = item.status?.toLowerCase() === 'withdrawn';
+            if (item.jobId) {
+              if (isWithdrawn) {
+                next.delete(item.jobId);
+              } else {
+                next.add(item.jobId);
+              }
+            }
           });
           return next;
         });
