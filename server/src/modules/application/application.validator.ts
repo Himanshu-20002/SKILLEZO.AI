@@ -17,12 +17,14 @@ export const getApplicationsQueryValidator = z.object({
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 1))
-    .pipe(z.number().int().positive()),
+    .pipe(z.number().int().positive())
+    .optional(),
   limit: z
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 20))
-    .pipe(z.number().int().positive().max(50)),
+    .pipe(z.number().int().positive().max(100))
+    .optional(),
   status: z
     .enum(Object.values(ApplicationStatus) as [string, ...string[]])
     .optional(),

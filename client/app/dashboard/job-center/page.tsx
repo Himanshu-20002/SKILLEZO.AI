@@ -24,6 +24,7 @@ import {
 import { Job, JobFilterState, SortOption, JobApplication } from '@/types/job-center';
 import { jobService, mapBackendJobToUiJob, BackendJob } from '@/services/job.service';
 import { profileService } from '@/services/profile.service';
+import { applicationService } from '@/services/application.service';
 import { mockJobApplications } from '@/mock/job-center';
 import {
   JobSearch,
@@ -188,30 +189,139 @@ export default function SmartJobCenterPage() {
     });
   };
 
-  const handleConfirmApply = (job: Job) => {
-    const newApp: JobApplication = {
-      id: `app-${Date.now()}`,
-      jobId: job.id,
-      jobTitle: job.title,
-      company: job.company,
-      location: job.location,
-      workMode: job.workMode,
-      salaryText: job.salaryText,
-      appliedDate: new Date().toISOString().split('T')[0],
-      matchScore: job.matchScore,
-      status: 'Submitted',
-      nextStep: 'Awaiting recruiter screening',
-      resumeUsed: 'Default_Uploaded_Resume.pdf',
-      atsScore: job.matchScore,
-      timeline: [
-        { title: 'Application Submitted', date: 'Just now', completed: true, isCurrent: true },
-        { title: 'Resume Review', date: 'Pending', completed: false },
-        { title: 'Recruiter Screening', date: 'Pending', completed: false },
-      ],
-    };
+  const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
 
-    setApplications((prev) => [newApp, ...prev]);
-    toast.success(`Application successfully submitted for ${job.title}!`);
+  // Load candidate's live submitted applications from MongoDB
+  const fetchMyApplications = useCallback(async () => {
+    try {
+      const res = await applicationService.getMyApplications({ limit: 50 });
+      if (res && res.items && res.items.length > 0) {
+        const mappedApps: JobApplication[] = res.items.map((app) => ({
+          id: app.id,
+          jobId: app.jobId,
+          jobTitle: app.job?.title || 'Job Application',
+          company: app.job?.companyName || 'Company',
+          location: app.job?.location || 'Remote',
+          workMode: (app.job?.workplaceType as any) || 'Remote',
+          salaryText: 'Competitive',
+          appliedDate: app.appliedAt ? new Date(app.appliedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          matchScore: 85,
+          status: (app.status === 'applied' ? 'Submitted' : app.status.charAt(0).toUpperCase() + app.status.slice(1).replace(/_/g, ' ')) as any,
+          nextStep: 'Awaiting recruiter review',
+          resumeUsed: app.resumeSnapshot?.originalFileName || app.resumeSnapshot?.title || 'Attached Resume',
+          atsScore: 85,
+          timeline: (app.statusHistory || []).map((h) => ({
+            title: h.status.replace(/_/g, ' ').toUpperCase(),
+            date: new Date(h.changedAt).toLocaleDateString(),
+            completed: true,
+          })),
+        }));
+        setApplications(mappedApps);
+      }
+    } catch (err) {
+      console.error('[JobCenter] Failed to load candidate applications:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMyApplications();
+  }, [fetchMyApplications]);
+
+  const handleConfirmApply = async (job: Job, resumeId?: string, coverLetter?: string) => {
+    const isExternal = (job.sourceType || '').toUpperCase() === 'EXTERNAL';
+
+    if (isExternal) {
+      const newApp: JobApplication = {
+        id: `ext-app-${Date.now()}`,
+        jobId: job.id,
+        jobTitle: job.title,
+        company: job.company,
+        location: job.location,
+        workMode: job.workMode,
+        salaryText: job.salaryText,
+        appliedDate: new Date().toISOString().split('T')[0],
+        matchScore: job.matchScore,
+        status: 'Submitted',
+        nextStep: `Redirected to ${job.sourceName || 'Partner'}`,
+        resumeUsed: resumeId ? 'Selected Resume' : 'Profile AI Resume',
+        atsScore: job.matchScore,
+        timeline: [
+          { title: 'Application Started via Partner', date: 'Just now', completed: true, isCurrent: true },
+        ],
+      };
+
+      setApplications((prev) => [newApp, ...prev.filter((a) => a.jobId !== job.id)]);
+      toast.success(`Application recorded for ${job.title}!`);
+      setSelectedJobForApply(null);
+      return;
+    }
+
+    try {
+      setIsSubmittingApplication(true);
+      const appRecord = await applicationService.applyToJob({
+        jobId: job.id,
+        resumeId: resumeId || undefined,
+        coverLetter: coverLetter || undefined,
+      });
+
+      const newApp: JobApplication = {
+        id: (appRecord as any).id || `app-${Date.now()}`,
+        jobId: job.id,
+        jobTitle: job.title,
+        company: job.company,
+        location: job.location,
+        workMode: job.workMode,
+        salaryText: job.salaryText,
+        appliedDate: new Date().toISOString().split('T')[0],
+        matchScore: job.matchScore,
+        status: 'Submitted',
+        nextStep: 'Awaiting recruiter screening',
+        resumeUsed: (appRecord as any).resumeSnapshot?.originalFileName || (appRecord as any).resumeSnapshot?.fileName || 'Attached AI Resume',
+        atsScore: job.matchScore,
+        timeline: [
+          { title: 'Application Submitted', date: 'Just now', completed: true, isCurrent: true },
+          { title: 'Resume Review', date: 'Pending', completed: false },
+          { title: 'Recruiter Screening', date: 'Pending', completed: false },
+        ],
+      };
+
+      setApplications((prev) => [newApp, ...prev.filter((a) => a.jobId !== job.id)]);
+      toast.success(`Application successfully submitted to ${job.company}!`);
+      setSelectedJobForApply(null);
+    } catch (err: any) {
+      console.error('[JobCenter] Failed to submit application:', err);
+      if (err.code === 'APPLICATION_ALREADY_EXISTS' || err.code === 'DUPLICATE_APPLICATION') {
+        toast.info(`You have already applied for ${job.title}.`);
+        if (!applications.some((a) => a.jobId === job.id)) {
+          setApplications((prev) => [
+            {
+              id: `existing-${job.id}`,
+              jobId: job.id,
+              jobTitle: job.title,
+              company: job.company,
+              location: job.location,
+              workMode: job.workMode,
+              salaryText: job.salaryText,
+              appliedDate: new Date().toISOString().split('T')[0],
+              matchScore: job.matchScore,
+              status: 'Submitted',
+              nextStep: 'Under review',
+              resumeUsed: 'Uploaded Resume',
+              atsScore: job.matchScore,
+              timeline: [{ title: 'Application Submitted', date: 'Previously', completed: true }],
+            },
+            ...prev,
+          ]);
+        }
+        setSelectedJobForApply(null);
+      } else if (err.code === 'APPLICATION_RESUME_NOT_FOUND') {
+        toast.error('Please upload a resume first before applying.');
+      } else {
+        toast.error(err.message || 'Failed to submit application. Please try again.');
+      }
+    } finally {
+      setIsSubmittingApplication(false);
+    }
   };
 
   // Client-side Sort & Filter refinements on live jobs
@@ -651,6 +761,7 @@ export default function SmartJobCenterPage() {
           isOpen={!!selectedJobForApply}
           onClose={() => setSelectedJobForApply(null)}
           onConfirmApply={handleConfirmApply}
+          isSubmitting={isSubmittingApplication}
         />
       </div>
     </DashboardLayout>

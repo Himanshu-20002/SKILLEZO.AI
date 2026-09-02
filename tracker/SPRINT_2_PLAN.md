@@ -57,17 +57,17 @@
   - **Target Files:** `client/components/dashboard/job-center/JobApplyModal.tsx`.
   - **Verify:** Modal opens cleanly from Job Center with responsive backdrop.
 
-- [ ] **`FE-209` — Resume Selector Dropdown & Quick Preview** (1h 15m)
+- [x] **`FE-209` — Resume Selector Dropdown & Quick Preview** (1h 15m) — *COMPLETED (02-Sep-2026)*
   - **Action:** Wire `resumeService.getUserResumes()` into modal dropdown, auto-selecting default resume and displaying filename and upload date.
   - **Target Files:** `client/components/dashboard/job-center/JobApplyModal.tsx`.
   - **Verify:** Candidate can switch between multiple uploaded resumes.
 
-- [ ] **`FE-210` — Cover Letter Editor & Inline Resume Upload** (1h 00m)
+- [x] **`FE-210` — Cover Letter Editor & Inline Resume Upload** (1h 00m) — *COMPLETED (02-Sep-2026)*
   - **Action:** Add optional cover letter textarea and an embedded upload dropzone for candidates uploading a fresh resume on the fly.
   - **Target Files:** `client/components/dashboard/job-center/JobApplyModal.tsx`.
   - **Verify:** Uploading a new PDF from modal immediately selects it for submission.
 
-- [ ] **`FE-211` — Application Submission Handler & Toast Feedback** (1h 00m)
+- [x] **`FE-211` — Application Submission Handler & Toast Feedback** (1h 00m) — *COMPLETED (02-Sep-2026)*
   - **Action:** Wire modal submit button to `applicationService.applyToJob()`, showing loading spinner and success toast.
   - **Target Files:** `client/app/dashboard/job-center/page.tsx`, `client/components/dashboard/job-center/JobApplyModal.tsx`.
   - **Verify:** Submitting creates application in MongoDB and closes modal.
