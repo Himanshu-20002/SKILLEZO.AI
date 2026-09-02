@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "SKILLEZO.AI — Know Your Employability Score. Get Hired.",
@@ -17,7 +18,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className="h-full antialiased dark">
       <body className="min-h-full flex flex-col bg-[#F8FAFC] dark:bg-[#0B1130] text-slate-900 dark:text-white selection:bg-[#3D5AFE]/30 selection:text-white transition-colors duration-200">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <Toaster richColors position="top-right" closeButton />
+        </ThemeProvider>
       </body>
     </html>
   );
