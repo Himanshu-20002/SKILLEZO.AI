@@ -38,12 +38,12 @@
   - **Target Files:** `server/src/modules/application/application.service.ts`, `server/src/database/models/Application.model.ts`.
   - **Verify:** Second application to the same job fails gracefully with descriptive message.
 
-- [ ] **`FE-206` — Application TypeScript Interfaces & Data Contracts** (0h 45m)
+- [x] **`FE-206` — Application TypeScript Interfaces & Data Contracts** (0h 45m) — *COMPLETED (02-Sep-2026)*
   - **Action:** Define `ApplicationRecord`, `ApplicationStatus`, `ApplicationSubmissionDTO`, and query filter types in `client/types/application.ts`.
   - **Target Files:** `client/types/application.ts`.
   - **Verify:** Types match backend Mongoose schema and compile cleanly.
 
-- [ ] **`FE-207` — Build Application Client Service (`application.service.ts`)** (1h 00m)
+- [x] **`FE-207` — Build Application Client Service (`application.service.ts`)** (1h 00m) — *COMPLETED (02-Sep-2026)*
   - **Action:** Implement `applyToJob()`, `getMyApplications()`, `getApplicationById()`, and `withdrawApplication()` using `client/lib/api.ts`.
   - **Target Files:** `client/services/application.service.ts`.
   - **Verify:** `npx tsc --noEmit` compiles with 0 errors.
@@ -52,7 +52,7 @@
 
 ### 🗓️ DAY 2 — "Apply with Resume" Modal & Submission Flow
 
-- [ ] **`FE-208` — Create Apply Modal UI Shell & Job Summary Header** (1h 00m)
+- [x] **`FE-208` — Create Apply Modal UI Shell & Job Summary Header** (1h 00m) — *COMPLETED (02-Sep-2026)*
   - **Action:** Build `client/components/dashboard/job-center/JobApplyModal.tsx` showing job title, company logo, location, type, and salary.
   - **Target Files:** `client/components/dashboard/job-center/JobApplyModal.tsx`.
   - **Verify:** Modal opens cleanly from Job Center with responsive backdrop.
