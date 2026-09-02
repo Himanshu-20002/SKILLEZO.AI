@@ -124,17 +124,7 @@ export class ApplicationService {
       }
     }
 
-    // 4. Duplicate Check
-    const existingApp = await this.applicationRepository.findByUserAndJob(userId, dto.jobId);
-    if (existingApp) {
-      throw new AppError(
-        "Candidate has already applied for this job",
-        HTTP_STATUS.CONFLICT,
-        ERROR_CODES.APPLICATION_ALREADY_EXISTS
-      );
-    }
-
-    // 5. Build Resume Snapshot
+    // 4. Build Resume Snapshot
     const resumeSnapshot = {
       resumeId: targetResume._id,
       title: targetResume.title || targetResume.fileName,
@@ -146,6 +136,31 @@ export class ApplicationService {
       version: targetResume.version || 1,
       submittedAt: new Date(),
     };
+
+    // 5. Duplicate Check (with re-apply support for withdrawn jobs)
+    const existingApp = await this.applicationRepository.findByUserAndJob(userId, dto.jobId);
+    if (existingApp) {
+      if (existingApp.status === ApplicationStatus.WITHDRAWN) {
+        existingApp.status = ApplicationStatus.APPLIED;
+        existingApp.resumeId = targetResume._id;
+        existingApp.resumeSnapshot = resumeSnapshot as any;
+        existingApp.appliedAt = new Date();
+        existingApp.statusHistory.push({
+          status: ApplicationStatus.APPLIED,
+          changedAt: new Date(),
+          changedBy: userId,
+          reason: "Re-applied by candidate",
+        });
+        await existingApp.save();
+        return existingApp;
+      }
+
+      throw new AppError(
+        "Candidate has already applied for this job",
+        HTTP_STATUS.CONFLICT,
+        ERROR_CODES.APPLICATION_ALREADY_EXISTS
+      );
+    }
 
     // 6. Create Application Record
     try {

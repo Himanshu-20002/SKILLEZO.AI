@@ -26,7 +26,7 @@ export class ApplicationRepository extends BaseRepository<IApplication> {
 
   async findAppliedJobIdsByUserId(userId: string): Promise<string[]> {
     const apps = await this.model
-      .find({ userId })
+      .find({ userId, status: { $ne: "withdrawn" } })
       .select("jobId")
       .exec();
     return apps.map((a: any) => a.jobId?.toString()).filter(Boolean);
