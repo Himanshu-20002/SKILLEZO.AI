@@ -110,7 +110,8 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
         <div className="space-y-3">
           {filtered.map((app) => {
             const isExpanded = expandedAppId === app.id;
-            const isWithdrawable = app.status !== 'withdrawn' && app.status !== 'rejected';
+            const statusLower = (app.status || '').toLowerCase();
+            const isWithdrawable = !['withdrawn', 'rejected', 'hired', 'offered'].includes(statusLower);
             const displayStatus = getApplicationStatusLabel(app.status);
 
             return (

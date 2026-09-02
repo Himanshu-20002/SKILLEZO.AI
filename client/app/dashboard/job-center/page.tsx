@@ -227,8 +227,8 @@ export default function SmartJobCenterPage() {
           salaryText: 'Competitive',
           appliedDate: app.appliedAt ? new Date(app.appliedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           matchScore: 85,
-          status: (app.status === 'applied' ? 'Submitted' : app.status.charAt(0).toUpperCase() + app.status.slice(1).replace(/_/g, ' ')) as any,
-          nextStep: 'Awaiting recruiter review',
+          status: app.status || 'applied',
+          nextStep: app.status === 'withdrawn' ? 'Application withdrawn by candidate' : 'Awaiting recruiter review',
           resumeUsed: app.resumeSnapshot?.originalFileName || app.resumeSnapshot?.title || 'Attached Resume',
           atsScore: 85,
           timeline: (app.statusHistory || []).map((h) => ({
@@ -384,8 +384,22 @@ export default function SmartJobCenterPage() {
       toast.success('Application successfully withdrawn');
     } catch (err: any) {
       console.error('[JobCenter] Failed to withdraw application:', err);
-      toast.error(err?.message || 'Failed to withdraw application');
-      throw err;
+      if (err?.code === 'APPLICATION_ALREADY_WITHDRAWN' || err?.message?.toLowerCase().includes('already withdrawn')) {
+        setApplications((prev) =>
+          prev.map((app) =>
+            app.id === applicationId
+              ? {
+                  ...app,
+                  status: 'withdrawn',
+                  nextStep: 'Application withdrawn by candidate',
+                }
+              : app
+          )
+        );
+        toast.info('Application is already marked as withdrawn.');
+      } else {
+        toast.error(err?.message || 'Failed to withdraw application');
+      }
     }
   };
 
