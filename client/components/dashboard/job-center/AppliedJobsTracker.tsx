@@ -53,11 +53,10 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({ applicat
             <button
               key={status}
               onClick={() => setFilterStatus(status)}
-              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer ${
-                filterStatus === status
+              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer ${filterStatus === status
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-bold'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
+                }`}
             >
               {status}
             </button>

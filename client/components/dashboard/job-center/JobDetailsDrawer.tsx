@@ -16,8 +16,11 @@ import {
   ExternalLink,
   Globe,
   Building,
+  FileText,
+  Calendar,
+  BadgeCheck,
 } from 'lucide-react';
-import { Job } from '@/types/job-center';
+import { Job, JobApplication } from '@/types/job-center';
 import { JobMatchScore } from './JobMatchScore';
 
 interface JobDetailsDrawerProps {
@@ -25,6 +28,7 @@ interface JobDetailsDrawerProps {
   isOpen: boolean;
   isSaved?: boolean;
   isApplied?: boolean;
+  application?: JobApplication | null;
   onClose: () => void;
   onSaveToggle: (id: string) => void;
   onApply: (job: Job) => void;
@@ -35,6 +39,7 @@ export const JobDetailsDrawer: React.FC<JobDetailsDrawerProps> = ({
   isOpen,
   isSaved = false,
   isApplied = false,
+  application = null,
   onClose,
   onSaveToggle,
   onApply,
@@ -96,6 +101,55 @@ export const JobDetailsDrawer: React.FC<JobDetailsDrawerProps> = ({
 
         {/* Drawer Scrollable Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6 text-xs">
+          {/* Application Submission Status Card (FE-214) */}
+          {isApplied && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/30 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                    <BadgeCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
+                      Application Submitted
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Your application is active in the review pipeline
+                    </p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 uppercase tracking-wide">
+                  {application?.status || 'Submitted'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-emerald-500/20 text-[11px]">
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>Applied on:</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {application?.appliedDate || 'Recently'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                  <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>Resume:</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-[180px]">
+                    {application?.resumeUsed || 'AI Tailored Resume'}
+                  </span>
+                </div>
+              </div>
+
+              {application?.nextStep && (
+                <div className="text-[11px] bg-white/70 dark:bg-slate-800/70 p-2.5 rounded-xl border border-emerald-500/20 text-slate-700 dark:text-slate-300">
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">Next Step: </span>
+                  <span>{application.nextStep}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Quick Details Badges */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-1">

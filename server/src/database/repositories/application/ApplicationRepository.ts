@@ -24,6 +24,14 @@ export class ApplicationRepository extends BaseRepository<IApplication> {
     return await this.model.findOne({ userId, jobId }).exec();
   }
 
+  async findAppliedJobIdsByUserId(userId: string): Promise<string[]> {
+    const apps = await this.model
+      .find({ userId })
+      .select("jobId")
+      .exec();
+    return apps.map((a: any) => a.jobId?.toString()).filter(Boolean);
+  }
+
   async findPaginatedByUserId(
     userId: string,
     options: FindApplicationsPaginatedOptions = {}

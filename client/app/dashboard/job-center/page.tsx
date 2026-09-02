@@ -25,7 +25,6 @@ import { Job, JobFilterState, SortOption, JobApplication } from '@/types/job-cen
 import { jobService, mapBackendJobToUiJob, BackendJob } from '@/services/job.service';
 import { profileService } from '@/services/profile.service';
 import { applicationService } from '@/services/application.service';
-import { mockJobApplications } from '@/mock/job-center';
 import {
   JobSearch,
   JobFilters,
@@ -44,7 +43,7 @@ type ActiveTab = 'all' | 'platform' | 'external' | 'recommended' | 'saved' | 'ap
 export default function SmartJobCenterPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
-  const [applications, setApplications] = useState<JobApplication[]>(mockJobApplications);
+  const [applications, setApplications] = useState<JobApplication[]>([]);
 
   const [selectedJobForBreakdown, setSelectedJobForBreakdown] = useState<Job | null>(null);
   const [selectedJobForDrawer, setSelectedJobForDrawer] = useState<Job | null>(null);
@@ -153,6 +152,28 @@ export default function SmartJobCenterPage() {
     return () => clearTimeout(timer);
   }, [fetchLiveJobs]);
 
+  // Lightweight cache of applied job IDs (set for O(1) lookup)
+  const [appliedJobIdSet, setAppliedJobIdSet] = useState<Set<string>>(new Set());
+
+  // Fetch applied job IDs from backend (BE-203)
+  const fetchAppliedJobIds = useCallback(async () => {
+    try {
+      const ids = await applicationService.getAppliedJobIds();
+      setAppliedJobIdSet(new Set(ids));
+    } catch (err) {
+      console.error('[JobCenter] Failed to load applied job IDs:', err);
+    }
+  }, []);
+
+  // Load applied IDs on mount
+  useEffect(() => {
+    fetchAppliedJobIds();
+  }, []);
+
+  // Helper to check if a job is applied
+  const isJobApplied = (jobId: string) => appliedJobIdSet.has(jobId);
+
+  // Preserve existing applications state for the Applied tab
   const appliedJobIds = useMemo(() => applications.map((a) => a.jobId), [applications]);
 
   const handleFilterChange = (updated: Partial<JobFilterState>) => {
@@ -217,6 +238,13 @@ export default function SmartJobCenterPage() {
           })),
         }));
         setApplications(mappedApps);
+        setAppliedJobIdSet((prev) => {
+          const next = new Set(prev);
+          res.items.forEach((item) => {
+            if (item.jobId) next.add(item.jobId);
+          });
+          return next;
+        });
       }
     } catch (err) {
       console.error('[JobCenter] Failed to load candidate applications:', err);
@@ -251,6 +279,7 @@ export default function SmartJobCenterPage() {
       };
 
       setApplications((prev) => [newApp, ...prev.filter((a) => a.jobId !== job.id)]);
+      setAppliedJobIdSet((prev) => new Set([...prev, job.id]));
       toast.success(`Application recorded for ${job.title}!`);
       setSelectedJobForApply(null);
       return;
@@ -286,12 +315,14 @@ export default function SmartJobCenterPage() {
       };
 
       setApplications((prev) => [newApp, ...prev.filter((a) => a.jobId !== job.id)]);
+      setAppliedJobIdSet((prev) => new Set([...prev, job.id]));
       toast.success(`Application successfully submitted to ${job.company}!`);
       setSelectedJobForApply(null);
     } catch (err: any) {
       console.error('[JobCenter] Failed to submit application:', err);
       if (err.code === 'APPLICATION_ALREADY_EXISTS' || err.code === 'DUPLICATE_APPLICATION') {
         toast.info(`You have already applied for ${job.title}.`);
+        setAppliedJobIdSet((prev) => new Set([...prev, job.id]));
         if (!applications.some((a) => a.jobId === job.id)) {
           setApplications((prev) => [
             {
@@ -688,7 +719,7 @@ export default function SmartJobCenterPage() {
                     key={job.id}
                     job={job}
                     isSaved={savedJobIds.includes(job.id)}
-                    isApplied={appliedJobIds.includes(job.id)}
+                    isApplied={isJobApplied(job.id)}
                     onSaveToggle={handleToggleSave}
                     onViewDetails={(j) => setSelectedJobForDrawer(j)}
                     onWhyMatches={(j) => setSelectedJobForBreakdown(j)}
@@ -750,7 +781,8 @@ export default function SmartJobCenterPage() {
           job={selectedJobForDrawer}
           isOpen={!!selectedJobForDrawer}
           isSaved={selectedJobForDrawer ? savedJobIds.includes(selectedJobForDrawer.id) : false}
-          isApplied={selectedJobForDrawer ? appliedJobIds.includes(selectedJobForDrawer.id) : false}
+          isApplied={selectedJobForDrawer ? isJobApplied(selectedJobForDrawer.id) : false}
+          application={selectedJobForDrawer ? applications.find((a) => a.jobId === selectedJobForDrawer.id) : null}
           onClose={() => setSelectedJobForDrawer(null)}
           onSaveToggle={handleToggleSave}
           onApply={(j) => setSelectedJobForApply(j)}

@@ -40,6 +40,14 @@ export const applicationService = {
   },
 
   /**
+   * Retrieve lightweight array of applied job IDs for the current candidate.
+   */
+  async getAppliedJobIds(): Promise<string[]> {
+    const res = await apiFetch<{ success: boolean; data: string[] }>("/api/applications/my-job-ids");
+    return res.data;
+  },
+
+  /**
    * Retrieve single application details by ID.
    */
   async getApplicationById(applicationId: string): Promise<ApplicationRecord> {

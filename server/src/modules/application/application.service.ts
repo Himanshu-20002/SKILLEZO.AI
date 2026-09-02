@@ -214,6 +214,11 @@ export class ApplicationService {
     return this.formatApplicationResponse(application);
   }
 
+  // Method: return list of applied job IDs for a candidate
+  async getAppliedJobIds(userId: string): Promise<string[]> {
+    return await this.applicationRepository.findAppliedJobIdsByUserId(userId);
+  }
+
   async getApplicationStatusHistory(userId: string, applicationId: string) {
     const application = await this.getMyApplication(userId, applicationId);
     return application.statusHistory;

@@ -27,6 +27,12 @@ router.get(
   asyncHandler(controller.getMyApplications)
 );
 
+// Fetch array of applied job IDs for current user (must be before /:applicationId parameter route)
+router.get(
+  "/my-job-ids",
+  asyncHandler(controller.getAppliedJobIds)
+);
+
 router.get(
   "/:applicationId",
   validate({ params: applicationIdParamValidator }),

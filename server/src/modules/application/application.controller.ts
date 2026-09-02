@@ -47,4 +47,11 @@ export class ApplicationController {
     const result = await this.applicationService.withdrawApplication(userId, applicationId, req.body);
     res.status(HTTP_STATUS.OK).json(successResponse(result));
   };
+
+  // New endpoint: return array of applied job IDs for authenticated candidate
+  getAppliedJobIds = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const jobIds = await this.applicationService.getAppliedJobIds(userId);
+    res.status(HTTP_STATUS.OK).json(successResponse(jobIds));
+  };
 }
