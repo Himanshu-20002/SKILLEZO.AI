@@ -260,26 +260,37 @@ export class ResumeAtsEngine {
     else level = "NEEDS_IMPROVEMENT";
 
     // 8. ATS System Simulations
+    const greenhouseScore = Math.min(99, Math.round(overallScore * 0.95 + keywordMatchScore * 0.05));
+    const leverScore = Math.min(99, Math.round(overallScore * 0.90 + structureScore * 0.10));
+    const workdayScore = Math.min(99, Math.max(40, Math.round(structureScore * 0.45 + keywordMatchScore * 0.35 + brevityScore * 0.20)));
+    const taleoScore = Math.min(99, Math.round(overallScore * 0.90 + impactScore * 0.10));
+
+    const getMatchStatus = (score: number): "High Match" | "Moderate Match" | "Needs Optimization" => {
+      if (score >= 80) return "High Match";
+      if (score >= 60) return "Moderate Match";
+      return "Needs Optimization";
+    };
+
     const atsCompatibility: ATSCompatibilityItem[] = [
       {
         system: "Greenhouse",
-        compatibilityScore: Math.min(99, Math.round(overallScore * 0.95 + keywordMatchScore * 0.05)),
-        status: overallScore >= 80 ? "High Match" : overallScore >= 65 ? "Moderate Match" : "Needs Optimization",
+        compatibilityScore: greenhouseScore,
+        status: getMatchStatus(greenhouseScore),
       },
       {
         system: "Lever",
-        compatibilityScore: Math.min(99, Math.round(overallScore * 0.90 + structureScore * 0.10)),
-        status: overallScore >= 78 ? "High Match" : overallScore >= 60 ? "Moderate Match" : "Needs Optimization",
+        compatibilityScore: leverScore,
+        status: getMatchStatus(leverScore),
       },
       {
         system: "Workday",
-        compatibilityScore: Math.min(99, Math.max(40, Math.round(structureScore * 0.50 + keywordMatchScore * 0.35 + brevityScore * 0.15))),
-        status: structureScore >= 80 && keywordMatchScore >= 70 ? "High Match" : "Moderate Match",
+        compatibilityScore: workdayScore,
+        status: getMatchStatus(workdayScore),
       },
       {
         system: "Taleo",
-        compatibilityScore: Math.min(99, Math.round(overallScore * 0.92 + impactScore * 0.08)),
-        status: overallScore >= 75 ? "High Match" : "Moderate Match",
+        compatibilityScore: taleoScore,
+        status: getMatchStatus(taleoScore),
       },
     ];
 
