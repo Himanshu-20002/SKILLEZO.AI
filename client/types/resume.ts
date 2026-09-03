@@ -92,17 +92,37 @@ export interface AIResumeRecommendation {
   actionText: string;
 }
 
-export interface ResumeAnalysisData {
+export interface ResumeAtsAnalysis {
+  resumeId?: string;
+  resumeVersion?: number;
+  fileName?: string;
   overallScore: number;
   atsScore: number;
   impactScore: number;
   brevityScore: number;
-  extractedData: ResumeExtractedData;
+  level?: "EXCELLENT" | "GOOD" | "AVERAGE" | "NEEDS_IMPROVEMENT" | string;
+  breakdown?: {
+    keywordMatch: number;
+    structure: number;
+    brevity: number;
+    impact: number;
+    readability: number;
+  };
+  categories?: Record<string, {
+    score: number;
+    matched: number;
+    total: number;
+    matchedSkills: string[];
+  }>;
   atsCompatibility: ATSCompatibilityItem[];
   keywords: KeywordMatchItem[];
-  missingSkills: MissingSkillItem[];
+  missingKeywords?: MissingSkillItem[];
+  missingSkills?: MissingSkillItem[];
   recommendations: AIResumeRecommendation[];
+  extractedData?: ResumeExtractedData;
 }
+
+export type ResumeAnalysisData = ResumeAtsAnalysis;
 
 export interface ResumeRecord {
   _id: string;

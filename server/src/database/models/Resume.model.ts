@@ -69,6 +69,7 @@ export interface IResume extends Document {
   status: ResumeStatus;
   version: number;
   extractedData?: IResumeExtractedData | null;
+  rawText?: string | null;
   parsingError?: string | null;
   uploadedAt: Date;
   createdAt: Date;
@@ -210,6 +211,10 @@ const resumeSchema = new Schema<IResume>(
     },
     extractedData: {
       type: extractedDataSchema,
+      default: null,
+    },
+    rawText: {
+      type: String,
       default: null,
     },
     parsingError: {

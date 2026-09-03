@@ -66,4 +66,18 @@ export class ResumeController {
     await this.resumeService.deleteResume(userId, resumeId);
     res.status(HTTP_STATUS.OK).json(successResponse({ message: "Resume deleted successfully" }));
   };
+
+  getAtsScore = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const resumeId = req.params.resumeId as string;
+    const analysis = await this.resumeService.getResumeAtsScore(userId, resumeId);
+    res.status(HTTP_STATUS.OK).json(successResponse(analysis));
+  };
+
+  getMyAtsScore = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const analysis = await this.resumeService.getResumeAtsScore(userId);
+    res.status(HTTP_STATUS.OK).json(successResponse(analysis));
+  };
 }
+

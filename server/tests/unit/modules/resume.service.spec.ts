@@ -76,6 +76,7 @@ describe("ResumeService Unit Tests", () => {
 
     it("should parse PDF buffer and persist extractedData with PARSED status", async () => {
       const mockParser: any = {
+        extractRawTextFromBuffer: vi.fn().mockResolvedValue("Himanshu test@example.com React developer"),
         parseResumeBuffer: vi.fn().mockResolvedValue({
           personalInfo: { fullName: "Himanshu", email: "test@example.com" },
           skills: [{ name: "React", category: "Frontend" }],
@@ -114,6 +115,7 @@ describe("ResumeService Unit Tests", () => {
 
     it("should gracefully handle parser errors without failing the upload", async () => {
       const mockParser: any = {
+        extractRawTextFromBuffer: vi.fn().mockRejectedValue(new Error("Corrupted PDF")),
         parseResumeBuffer: vi.fn().mockRejectedValue(new Error("Corrupted PDF")),
       };
 

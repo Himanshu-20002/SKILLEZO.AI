@@ -24,6 +24,17 @@ router.get(
 );
 
 router.get(
+  "/me/ats-score",
+  asyncHandler(controller.getMyAtsScore)
+);
+
+router.get(
+  "/:resumeId/ats-score",
+  validate({ params: resumeIdParamValidator }),
+  asyncHandler(controller.getAtsScore)
+);
+
+router.get(
   "/:resumeId",
   validate({ params: resumeIdParamValidator }),
   asyncHandler(controller.getResumeById)

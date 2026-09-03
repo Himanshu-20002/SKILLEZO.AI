@@ -61,9 +61,30 @@ export default function ResumeIntelligencePage() {
   const [activeResume, setActiveResume] = useState<ResumeRecord | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const applyResumeToAnalysis = (resume: ResumeRecord) => {
+  const applyResumeToAnalysis = async (resume: ResumeRecord) => {
     setActiveResume(resume);
     const extracted = mapResumeToExtractedData(resume);
+
+    try {
+      const liveAts = await resumeService.getResumeAtsScore(resume._id || resume.id);
+      if (liveAts) {
+        setAnalysis({
+          overallScore: liveAts.overallScore,
+          atsScore: liveAts.atsScore,
+          impactScore: liveAts.impactScore,
+          brevityScore: liveAts.brevityScore,
+          extractedData: extracted,
+          atsCompatibility: liveAts.atsCompatibility || [],
+          keywords: liveAts.keywords || [],
+          missingSkills: liveAts.missingKeywords || [],
+          recommendations: liveAts.recommendations || [],
+        });
+        return;
+      }
+    } catch {
+      // If live ATS call fails, fallback to extracted data keyword mapping
+    }
+
     const skillKeywords = (resume.extractedData?.skills || []).map((s: any) => ({
       keyword: typeof s === 'string' ? s : s.name,
       category: (s.category as any) || 'Frontend',
@@ -87,7 +108,7 @@ export default function ResumeIntelligencePage() {
         if (isMounted && resumes && resumes.length > 0) {
           setUserResumes(resumes);
           const defaultResume = resumes.find((r) => r.isDefault) || resumes[0];
-          applyResumeToAnalysis(defaultResume);
+          await applyResumeToAnalysis(defaultResume);
         }
       } catch {
         // Fallback gracefully to demo state if offline or unauthenticated
@@ -105,7 +126,7 @@ export default function ResumeIntelligencePage() {
     try {
       const uploaded = await resumeService.uploadResume(file);
       setUserResumes((prev) => [uploaded, ...prev.filter((r) => (r._id || r.id) !== (uploaded._id || uploaded.id))]);
-      applyResumeToAnalysis(uploaded);
+      await applyResumeToAnalysis(uploaded);
       toast.success(`"${file.name}" uploaded & parsed successfully!`);
     } catch (err: any) {
       toast.error(err.message || 'Failed to upload resume. Please try again.');
@@ -163,9 +184,9 @@ export default function ResumeIntelligencePage() {
         {/* Upload & Score Card Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ResumeUploader
-            currentFileName={analysis.extractedData.fileName}
-            fileSize={analysis.extractedData.fileSize}
-            uploadedAt={analysis.extractedData.uploadedAt}
+            currentFileName={analysis.extractedData?.fileName || activeResume?.originalFileName || activeResume?.fileName || 'No resume uploaded'}
+            fileSize={analysis.extractedData?.fileSize || formatFileSize(activeResume?.fileSize)}
+            uploadedAt={analysis.extractedData?.uploadedAt || (activeResume ? new Date(activeResume.createdAt).toLocaleDateString() : 'N/A')}
             isUploading={isUploading}
             onUpload={handleFileUpload}
             userResumes={userResumes}
@@ -190,11 +211,11 @@ export default function ResumeIntelligencePage() {
           <div className="lg:col-span-2 space-y-6">
             <KeywordAnalysis keywords={analysis.keywords} />
             <AIRecommendations recommendations={analysis.recommendations} />
-            <MissingSkills missingSkills={analysis.missingSkills} />
+            <MissingSkills missingSkills={analysis.missingSkills || analysis.missingKeywords || []} />
           </div>
 
           <div className="space-y-6">
-            <ResumePreview data={analysis.extractedData} />
+            <ResumePreview data={analysis.extractedData || { fileName: 'No resume selected' }} />
           </div>
         </div>
       </div>

@@ -77,5 +77,15 @@ export const resumeService = {
     }
     return await response.blob();
   },
+
+  /**
+   * Fetch live ATS score, keyword breakdown, and AI recommendations for a resume.
+   */
+  async getResumeAtsScore(resumeId?: string) {
+    const endpoint = resumeId ? `/api/resumes/${resumeId}/ats-score` : `/api/resumes/me/ats-score`;
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume").ResumeAtsAnalysis }>(endpoint);
+    return res.data;
+  },
 };
+
 

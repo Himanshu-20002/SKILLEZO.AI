@@ -1,12 +1,13 @@
 import { ResumeRepository } from "@/database/repositories/resume/ResumeRepository";
 import { IResume, IResumeExtractedData } from "@/database/models/Resume.model";
-import { UpdateResumeDTO } from "./resume.dto";
+import { UpdateResumeDTO, ResumeAtsResponseDTO } from "./resume.dto";
 import { AppError } from "@/core/utils/AppError";
 import { HTTP_STATUS } from "@/core/constants/http-status";
 import { ERROR_CODES } from "@/core/constants/error-codes";
 import { ResumeStatus } from "@/core/constants/enums";
 import { IResumeStorageService, resumeStorageService } from "@/core/storage/storage.service";
 import { ResumeParserService, resumeParserService } from "./resume.parser";
+import { resumeAtsEngine, ResumeAtsEngine } from "./resume.ats";
 import path from "path";
 import fs from "fs";
 import { Readable } from "stream";
@@ -74,8 +75,9 @@ export class ResumeService {
 
     // Extract structured data from uploaded resume buffer
     let extractedData: IResumeExtractedData | null = null;
-    let parsingError: string | null = null;
+    let rawText: string | null = null;
     let status: ResumeStatus = ResumeStatus.UPLOADED;
+    let parsingError: string | null = null;
 
     try {
       let fileBuffer: Buffer | null = file.buffer || null;
@@ -91,6 +93,7 @@ export class ResumeService {
         file.originalname.toLowerCase().endsWith(".pdf");
 
       if (fileBuffer && isPdf) {
+        rawText = await this.parserService.extractRawTextFromBuffer(fileBuffer);
         extractedData = await this.parserService.parseResumeBuffer(fileBuffer);
         status = ResumeStatus.PARSED;
       }
@@ -119,6 +122,7 @@ export class ResumeService {
         status,
         version: 1,
         extractedData,
+        rawText,
         parsingError,
         uploadedAt: new Date(),
       } as any);
@@ -221,4 +225,63 @@ export class ResumeService {
       }
     }
   }
+
+  async getResumeAtsScore(userId: string, resumeId?: string): Promise<ResumeAtsResponseDTO> {
+    let resume: IResume | null = null;
+    if (resumeId) {
+      resume = await this.resumeRepository.findById(resumeId);
+      if (!resume) {
+        throw new AppError("Resume not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.RESUME_NOT_FOUND);
+      }
+      if (resume.userId !== userId) {
+        throw new AppError("Unauthorized access to resume", HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
+      }
+    } else {
+      resume = await this.resumeRepository.findDefaultByUserId(userId);
+      if (!resume) {
+        const resumes = await this.resumeRepository.findByUserId(userId);
+        if (resumes.length > 0) {
+          resume = resumes[0];
+        }
+      }
+      if (!resume) {
+        throw new AppError("No resume found for candidate. Please upload a resume first.", HTTP_STATUS.NOT_FOUND, ERROR_CODES.RESUME_NOT_FOUND);
+      }
+    }
+
+    const extractedData = resume.extractedData || {
+      skills: [],
+      education: [],
+      experience: [],
+      projects: [],
+      certifications: [],
+    };
+
+    const effectiveText = resume.rawText || [
+      extractedData.summary,
+      ...(extractedData.skills || []).map((s) => s.name),
+      ...(extractedData.experience || []).map((e) => `${e.jobTitle} ${e.companyName} ${e.description || ""}`),
+      ...(extractedData.education || []).map((ed) => `${ed.degree || ""} ${ed.institution || ""}`),
+    ].filter(Boolean).join(" ");
+
+    const analysis = resumeAtsEngine.analyze(extractedData, effectiveText);
+
+    return {
+      resumeId: resume._id.toString(),
+      resumeVersion: resume.version || 1,
+      fileName: resume.originalFileName || resume.fileName || "resume.pdf",
+      overallScore: analysis.overallScore,
+      atsScore: analysis.atsScore,
+      impactScore: analysis.impactScore,
+      brevityScore: analysis.brevityScore,
+      level: analysis.level,
+      breakdown: analysis.breakdown,
+      categories: analysis.categories,
+      atsCompatibility: analysis.atsCompatibility,
+      keywords: analysis.keywords,
+      missingKeywords: analysis.missingKeywords,
+      recommendations: analysis.recommendations,
+    };
+  }
 }
+
