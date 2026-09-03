@@ -55,10 +55,20 @@ function mapResumeToExtractedData(resume: ResumeRecord): ResumeAnalysisData['ext
   };
 }
 
+const TARGET_ROLES = [
+  'Full-Stack Engineer',
+  'Frontend Engineer',
+  'Backend Engineer',
+  'AI/ML Specialist',
+  'DevOps & Cloud Engineer',
+  'Mobile App Developer',
+];
+
 export default function ResumeIntelligencePage() {
   const [analysis, setAnalysis] = useState<ResumeAnalysisData>(mockCareerIntelligence.resumeAnalysis);
   const [userResumes, setUserResumes] = useState<ResumeRecord[]>([]);
   const [activeResume, setActiveResume] = useState<ResumeRecord | null>(null);
+  const [targetRole, setTargetRole] = useState('Full-Stack Engineer');
   const [isUploading, setIsUploading] = useState(false);
 
   const applyResumeToAnalysis = async (resume: ResumeRecord) => {
@@ -140,6 +150,11 @@ export default function ResumeIntelligencePage() {
     toast.info(`Switched active resume to "${resume.title || resume.fileName}"`);
   };
 
+  const handleTargetRoleChange = (role: string) => {
+    setTargetRole(role);
+    toast.info(`Target role benchmark set to "${role}"`);
+  };
+
   const handleDeleteResume = async (resumeId: string) => {
     try {
       await resumeService.deleteResume(resumeId);
@@ -177,8 +192,31 @@ export default function ResumeIntelligencePage() {
       <div className="space-y-6">
         <PageHeader
           title="AI Resume Intelligence"
-          description="Analyze your resume against your target career role with automated ATS scoring & keyword audit."
+          description={`Benchmarking your resume against ${targetRole} industry requirements with automated ATS scoring & keyword audit.`}
           badge=" • Resume Intelligence"
+          actions={
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1.5 shadow-sm">
+              <div className="flex items-center gap-1.5 px-2.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="hidden sm:inline">Target Role:</span>
+              </div>
+              <div className="relative">
+                <select
+                  aria-label="Target Role Selector"
+                  value={targetRole}
+                  onChange={(e) => handleTargetRoleChange(e.target.value)}
+                  className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold py-1.5 pl-2.5 pr-7 rounded-lg border-0 focus:ring-2 focus:ring-[#3D5AFE] cursor-pointer appearance-none"
+                >
+                  {TARGET_ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-slate-400 text-[10px] absolute right-2.5 top-2 pointer-events-none">▼</span>
+              </div>
+            </div>
+          }
         />
 
         {/* Upload & Score Card Grid */}
@@ -209,9 +247,9 @@ export default function ResumeIntelligencePage() {
         {/* Keyword Matrix & AI Recommendations */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <KeywordAnalysis keywords={analysis.keywords} />
+            <KeywordAnalysis keywords={analysis.keywords} targetRole={targetRole} />
             <AIRecommendations recommendations={analysis.recommendations} />
-            <MissingSkills missingSkills={analysis.missingSkills || analysis.missingKeywords || []} />
+            <MissingSkills missingSkills={analysis.missingSkills || analysis.missingKeywords || []} targetRole={targetRole} />
           </div>
 
           <div className="space-y-6">
@@ -222,5 +260,6 @@ export default function ResumeIntelligencePage() {
     </DashboardLayout>
   );
 }
+
 
 

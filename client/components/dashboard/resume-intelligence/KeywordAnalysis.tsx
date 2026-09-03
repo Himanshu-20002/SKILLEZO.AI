@@ -6,9 +6,13 @@ import { KeywordMatchItem } from '@/types/resume';
 
 interface KeywordAnalysisProps {
   keywords: KeywordMatchItem[];
+  targetRole?: string;
 }
 
-export const KeywordAnalysis: React.FC<KeywordAnalysisProps> = ({ keywords }) => {
+export const KeywordAnalysis: React.FC<KeywordAnalysisProps> = ({
+  keywords,
+  targetRole = 'Full-Stack Engineer',
+}) => {
   const [filter, setFilter] = useState<'All' | 'Matched' | 'Missing'>('All');
 
   const filteredKeywords = keywords.filter((k) => {
@@ -25,8 +29,15 @@ export const KeywordAnalysis: React.FC<KeywordAnalysisProps> = ({ keywords }) =>
             <Tag className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Keyword & Skill Matrix</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Target role keywords detected in resume</p>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Keyword & Skill Matrix</h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
+                {targetRole}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Keywords matched against {targetRole} requirements
+            </p>
           </div>
         </div>
 

@@ -7,11 +7,13 @@ import { MissingSkillItem } from '@/types/resume';
 interface MissingSkillsProps {
   missingSkills: MissingSkillItem[];
   defaultVisibleCount?: number;
+  targetRole?: string;
 }
 
 export const MissingSkills: React.FC<MissingSkillsProps> = ({
   missingSkills,
   defaultVisibleCount = 3,
+  targetRole = 'Full-Stack Engineer',
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -42,7 +44,7 @@ export const MissingSkills: React.FC<MissingSkillsProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              High-impact skills missing for your target technical role
+              High-impact skills missing for {targetRole} roles
             </p>
           </div>
         </div>
