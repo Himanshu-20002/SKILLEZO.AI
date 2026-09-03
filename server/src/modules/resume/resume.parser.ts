@@ -1,4 +1,5 @@
-import { PDFParse } from "pdf-parse";
+// @ts-ignore
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import {
   IResumeExtractedData,
   IResumePersonalInfo,
@@ -15,10 +16,8 @@ export class ResumeParserService {
    */
   async extractRawTextFromBuffer(buffer: Buffer): Promise<string> {
     try {
-      const parser = new PDFParse({ data: buffer });
-      const result = await parser.getText();
-      await parser.destroy().catch(() => {});
-      return result.text || "";
+      const data = await (pdfParse as any)(buffer);
+      return data.text || "";
     } catch (err: any) {
       throw new Error(`Failed to parse PDF text: ${err.message}`);
     }
