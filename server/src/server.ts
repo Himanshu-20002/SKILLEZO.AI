@@ -29,6 +29,8 @@ import { Server } from "http";
 
 const app: Application = express();
 
+app.set("trust proxy", true);
+
 const allowedOrigins = [
   env.CLIENT_URL,
   "https://skillezo-ai-rho.vercel.app",

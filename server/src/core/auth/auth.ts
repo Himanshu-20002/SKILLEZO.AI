@@ -32,6 +32,10 @@ export function getAuth() {
           sameSite: "none",
           secure: true,
         },
+        ipAddress: {
+          ipAddressHeaders: ["x-forwarded-for", "cf-connecting-ip", "x-real-ip"],
+          trustedProxies: ["*"],
+        },
       },
       plugins: [bearer()],
       checkOrigin: () => true,
