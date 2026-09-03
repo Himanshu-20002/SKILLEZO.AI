@@ -10,6 +10,94 @@ import {
   IResumeCertification,
 } from "@/database/models/Resume.model";
 
+// Static compiled regex constants for fast single-compilation parsing
+const HEADER_EXCLUDE_REGEX = /resume|curriculum|vitae|contact|phone|email|linkedin|github|portfolio|page/i;
+const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+const PHONE_REGEX = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/;
+const EXPLICIT_LOC_REGEX = /(?:location|address|based in)\s*[:\-]?\s*([A-Za-z\s,.-]+?)(?:\n|\||$)/i;
+const CITY_STATE_REGEX = /\b([A-Za-z]{2,15}(?:\s+[A-Za-z]{2,15})?,\s*(?:[A-Za-z]{2,20}|India|USA|UK|Canada|Germany|Australia|Remote))\b/i;
+const CATEGORY_LINE_REGEX = /(?:^|\n)\s*(?:[-•*]\s*)?([A-Za-z0-9\s&/\\+-_]+?)\s*:\s*([A-Za-z0-9\s,.\-+/#@&()]+)(?=\n|$)/g;
+const VALID_CATEGORY_HEADER = /frontend|backend|database|analytics|performance|tools|platforms|languages?|frameworks?|libraries|technologies|cloud|devops|soft\s*skills?|mobile|testing|infrastructure/i;
+const INVALID_CATEGORY_HEADER = /experience|education|university|college|summary|profile|achievements|projects|contact|email|phone|location|address/i;
+
+const SKILL_TAXONOMY: Record<string, { regex: RegExp; category: string }> = {
+  // Languages
+  TypeScript: { regex: /\bTypeScript\b/i, category: "Language" },
+  JavaScript: { regex: /\bJavaScript\b|\bES6\b/i, category: "Language" },
+  Python: { regex: /\bPython\b/i, category: "Language" },
+  Java: { regex: /\bJava\b(?!Script)/i, category: "Language" },
+  "C++": { regex: /\bC\+\+\b/i, category: "Language" },
+  Go: { regex: /\bGolang\b|\bGo\s+lang\b/i, category: "Language" },
+  Rust: { regex: /\bRust\b/i, category: "Language" },
+  SQL: { regex: /\bSQL\b/i, category: "Language" },
+
+  // Frontend
+  React: { regex: /\bReact(?:\.js)?\b/i, category: "Frontend" },
+  "Next.js": { regex: /\bNext(?:\.js)?\b/i, category: "Frontend" },
+  Vue: { regex: /\bVue(?:\.js)?\b/i, category: "Frontend" },
+  Angular: { regex: /\bAngular\b/i, category: "Frontend" },
+  "Tailwind CSS": { regex: /\bTailwind(?:\s*CSS)?\b/i, category: "Frontend" },
+  GSAP: { regex: /\bGSAP\b/i, category: "Frontend" },
+  "Framer Motion": { regex: /\bFramer\s*Motion\b/i, category: "Frontend" },
+  Redux: { regex: /\bRedux\b/i, category: "Frontend" },
+  "HTML/CSS": { regex: /\bHTML5?\b|\bCSS3?\b/i, category: "Frontend" },
+
+  // Backend & Database
+  "Node.js": { regex: /\bNode(?:\.js)?\b/i, category: "Backend" },
+  "Express.js": { regex: /\bExpress(?:\.js)?\b/i, category: "Backend" },
+  "REST APIs": { regex: /\bREST(?:ful)?(?:\s*APIs?)?\b/i, category: "Backend" },
+  JWT: { regex: /\bJWT\b|\bJSON\s*Web\s*Tokens?\b/i, category: "Backend" },
+  NestJS: { regex: /\bNest(?:\.js)?\b/i, category: "Backend" },
+  FastAPI: { regex: /\bFastAPI\b/i, category: "Backend" },
+  Django: { regex: /\bDjango\b/i, category: "Backend" },
+  "Spring Boot": { regex: /\bSpring\s*Boot\b/i, category: "Backend" },
+  GraphQL: { regex: /\bGraphQL\b/i, category: "Backend" },
+  MongoDB: { regex: /\bMongoDB\b/i, category: "Database" },
+  PostgreSQL: { regex: /\bPostgreSQL\b|\bPostgres\b/i, category: "Database" },
+  Firebase: { regex: /\bFirebase\b/i, category: "Database" },
+  Redis: { regex: /\bRedis\b/i, category: "Database" },
+  MySQL: { regex: /\bMySQL\b/i, category: "Database" },
+  DynamoDB: { regex: /\bDynamoDB\b/i, category: "Database" },
+
+  // Analytics & Performance
+  SEO: { regex: /\bSEO\b|\bSearch\s*Engine\s*Optimization\b/i, category: "Analytics & Performance" },
+  Lighthouse: { regex: /\bLighthouse\b/i, category: "Analytics & Performance" },
+  "Web Vitals": { regex: /\bWeb\s*Vitals\b|\bCore\s*Web\s*Vitals\b/i, category: "Analytics & Performance" },
+  "Google Analytics 4": { regex: /\bGoogle\s*Analytics(?:\s*4)?\b|\bGA4\b/i, category: "Analytics & Performance" },
+  "Google Tag Manager": { regex: /\bGoogle\s*Tag\s*Manager\b|\bGTM\b/i, category: "Analytics & Performance" },
+
+  // Tools & Platforms
+  Git: { regex: /\bGit\b(?!Hub|Lab)/i, category: "Tools & Platforms" },
+  GitHub: { regex: /\bGitHub\b/i, category: "Tools & Platforms" },
+  Postman: { regex: /\bPostman\b/i, category: "Tools & Platforms" },
+  Docker: { regex: /\bDocker\b/i, category: "Tools & Platforms" },
+  Figma: { regex: /\bFigma\b/i, category: "Tools & Platforms" },
+  Vercel: { regex: /\bVercel\b/i, category: "Tools & Platforms" },
+  Zapier: { regex: /\bZapier\b/i, category: "Tools & Platforms" },
+  Kubernetes: { regex: /\bKubernetes\b|\bK8s\b/i, category: "Tools & Platforms" },
+  "CI/CD": { regex: /\bCI[\/-]?CD\b/i, category: "Tools & Platforms" },
+  AWS: { regex: /\bAWS\b|\bAmazon\s*Web\s*Services\b/i, category: "Tools & Platforms" },
+  Azure: { regex: /\bAzure\b/i, category: "Tools & Platforms" },
+  GCP: { regex: /\bGCP\b|\bGoogle\s*Cloud\b/i, category: "Tools & Platforms" },
+  Linux: { regex: /\bLinux\b|\bUbuntu\b/i, category: "Tools & Platforms" },
+
+  // Soft Skills
+  "Problem Solving": { regex: /\bProblem\s*Solving\b/i, category: "Soft Skill" },
+  Communication: { regex: /\bCommunication\b/i, category: "Soft Skill" },
+  Teamwork: { regex: /\bTeamwork\b|\bTeam\s*Collaboration\b/i, category: "Soft Skill" },
+  "Analytical Thinking": { regex: /\bAnalytical\s*Thinking\b/i, category: "Soft Skill" },
+  Debugging: { regex: /\bDebugging\b/i, category: "Soft Skill" },
+
+  // AI & Machine Learning
+  "Machine Learning": { regex: /\bMachine\s*Learning\b|\bML\b/i, category: "AI & ML" },
+  "Generative AI": { regex: /\bGenerative\s*AI\b|\bGenAI\b/i, category: "AI & ML" },
+  PyTorch: { regex: /\bPyTorch\b/i, category: "AI & ML" },
+  TensorFlow: { regex: /\bTensorFlow\b/i, category: "AI & ML" },
+  RAG: { regex: /\bRAG\b|\bRetrieval[\s-]Augmented\b/i, category: "AI & ML" },
+  LLMs: { regex: /\bLLMs?\b|\bLarge\s*Language\s*Models?\b/i, category: "AI & ML" },
+  NLP: { regex: /\bNLP\b|\bNatural\s*Language\s*Processing\b/i, category: "AI & ML" },
+};
+
 export class ResumeParserService {
   /**
    * Extract raw text from a PDF Buffer using pdf-parse.
@@ -33,19 +121,17 @@ export class ResumeParserService {
       .filter((l) => l.length > 0);
 
     // 1. Email extraction
-    const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    const emailMatch = text.match(EMAIL_REGEX);
     const email = emailMatch ? emailMatch[0] : null;
 
     // 2. Phone extraction
-    const phoneMatch = text.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/);
+    const phoneMatch = text.match(PHONE_REGEX);
     const phone = phoneMatch ? phoneMatch[0].trim() : null;
 
     // 3. Name extraction (first valid non-header line)
     let fullName: string | null = null;
-    const headerExcludeRegex = /resume|curriculum|vitae|contact|phone|email|linkedin|github|portfolio|page/i;
     for (const line of lines.slice(0, 5)) {
-      if (!headerExcludeRegex.test(line) && !line.includes("@") && line.length > 2 && line.length < 50) {
-        // Name usually has 2-4 words with alphabetic characters
+      if (!HEADER_EXCLUDE_REGEX.test(line) && !line.includes("@") && line.length > 2 && line.length < 50) {
         if (/^[a-zA-Z\s.'-]+$/.test(line) && line.split(" ").length <= 5) {
           fullName = line;
           break;
@@ -55,11 +141,11 @@ export class ResumeParserService {
 
     // 4. Location extraction
     let location: string | null = null;
-    const explicitLocationMatch = text.match(/(?:location|address|based in)\s*[:\-]?\s*([A-Za-z\s,.-]+?)(?:\n|\||$)/i);
+    const explicitLocationMatch = text.match(EXPLICIT_LOC_REGEX);
     if (explicitLocationMatch && !/university|institute|college|school|academy/i.test(explicitLocationMatch[1])) {
       location = explicitLocationMatch[1].trim();
     } else {
-      const cityStateMatch = text.match(/\b([A-Za-z]{2,15}(?:\s+[A-Za-z]{2,15})?,\s*(?:[A-Za-z]{2,20}|India|USA|UK|Canada|Germany|Australia|Remote))\b/i);
+      const cityStateMatch = text.match(CITY_STATE_REGEX);
       if (cityStateMatch && !/university|institute|college|school|academy|technology|science|engineering/i.test(cityStateMatch[1])) {
         location = cityStateMatch[1].trim();
       }
@@ -90,25 +176,19 @@ export class ResumeParserService {
   extractSkills(text: string): IResumeSkill[] {
     const skillsMap = new Map<string, string>(); // Skill Name -> Category
 
-    // 1. Direct Category-Line Parsing: Handles "Frontend: React, GSAP...", "Tools & Platforms: Docker, Postman...", etc.
-    const categoryLineRegex = /(?:^|\n)\s*(?:[-•*]\s*)?([A-Za-z0-9\s&/\\+-_]+?)\s*:\s*([A-Za-z0-9\s,.\-+/#@&()]+)(?=\n|$)/g;
+    // 1. Direct Category-Line Parsing
+    const categoryLineRegex = new RegExp(CATEGORY_LINE_REGEX.source, "g");
     let match: RegExpExecArray | null;
-
-    const validCategoryHeader =
-      /frontend|backend|database|analytics|performance|tools|platforms|languages?|frameworks?|libraries|technologies|cloud|devops|soft\s*skills?|mobile|testing|infrastructure/i;
-    const invalidCategoryHeader =
-      /experience|education|university|college|summary|profile|achievements|projects|contact|email|phone|location|address/i;
 
     while ((match = categoryLineRegex.exec(text)) !== null) {
       const rawCategory = match[1].trim();
       const rawSkills = match[2].trim();
 
-      if (validCategoryHeader.test(rawCategory) && !invalidCategoryHeader.test(rawCategory) && rawCategory.length < 35) {
+      if (VALID_CATEGORY_HEADER.test(rawCategory) && !INVALID_CATEGORY_HEADER.test(rawCategory) && rawCategory.length < 35) {
         const category = rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1);
         const tokens = rawSkills.split(/[,•|/]/).map((s) => s.trim()).filter((s) => s.length >= 2 && s.length <= 35);
 
         for (const token of tokens) {
-          // Normalize capitalization (e.g., "figma" -> "Figma")
           const cleanToken = token.charAt(0).toUpperCase() + token.slice(1);
           if (!/^\d+$/.test(cleanToken) && !/present|year|month/i.test(cleanToken)) {
             skillsMap.set(cleanToken, category);
@@ -118,85 +198,7 @@ export class ResumeParserService {
     }
 
     // 2. Comprehensive Taxonomy Dictionary
-    const skillTaxonomy: Record<string, { regex: RegExp; category: string }> = {
-      // Languages
-      TypeScript: { regex: /\bTypeScript\b/i, category: "Language" },
-      JavaScript: { regex: /\bJavaScript\b|\bES6\b/i, category: "Language" },
-      Python: { regex: /\bPython\b/i, category: "Language" },
-      Java: { regex: /\bJava\b(?!Script)/i, category: "Language" },
-      "C++": { regex: /\bC\+\+\b/i, category: "Language" },
-      Go: { regex: /\bGolang\b|\bGo\s+lang\b/i, category: "Language" },
-      Rust: { regex: /\bRust\b/i, category: "Language" },
-      SQL: { regex: /\bSQL\b/i, category: "Language" },
-
-      // Frontend
-      React: { regex: /\bReact(?:\.js)?\b/i, category: "Frontend" },
-      "Next.js": { regex: /\bNext(?:\.js)?\b/i, category: "Frontend" },
-      Vue: { regex: /\bVue(?:\.js)?\b/i, category: "Frontend" },
-      Angular: { regex: /\bAngular\b/i, category: "Frontend" },
-      "Tailwind CSS": { regex: /\bTailwind(?:\s*CSS)?\b/i, category: "Frontend" },
-      GSAP: { regex: /\bGSAP\b/i, category: "Frontend" },
-      "Framer Motion": { regex: /\bFramer\s*Motion\b/i, category: "Frontend" },
-      Redux: { regex: /\bRedux\b/i, category: "Frontend" },
-      "HTML/CSS": { regex: /\bHTML5?\b|\bCSS3?\b/i, category: "Frontend" },
-
-      // Backend & Database
-      "Node.js": { regex: /\bNode(?:\.js)?\b/i, category: "Backend" },
-      "Express.js": { regex: /\bExpress(?:\.js)?\b/i, category: "Backend" },
-      "REST APIs": { regex: /\bREST(?:ful)?(?:\s*APIs?)?\b/i, category: "Backend" },
-      JWT: { regex: /\bJWT\b|\bJSON\s*Web\s*Tokens?\b/i, category: "Backend" },
-      NestJS: { regex: /\bNest(?:\.js)?\b/i, category: "Backend" },
-      FastAPI: { regex: /\bFastAPI\b/i, category: "Backend" },
-      Django: { regex: /\bDjango\b/i, category: "Backend" },
-      "Spring Boot": { regex: /\bSpring\s*Boot\b/i, category: "Backend" },
-      GraphQL: { regex: /\bGraphQL\b/i, category: "Backend" },
-      MongoDB: { regex: /\bMongoDB\b/i, category: "Database" },
-      PostgreSQL: { regex: /\bPostgreSQL\b|\bPostgres\b/i, category: "Database" },
-      Firebase: { regex: /\bFirebase\b/i, category: "Database" },
-      Redis: { regex: /\bRedis\b/i, category: "Database" },
-      MySQL: { regex: /\bMySQL\b/i, category: "Database" },
-      DynamoDB: { regex: /\bDynamoDB\b/i, category: "Database" },
-
-      // Analytics & Performance
-      SEO: { regex: /\bSEO\b|\bSearch\s*Engine\s*Optimization\b/i, category: "Analytics & Performance" },
-      Lighthouse: { regex: /\bLighthouse\b/i, category: "Analytics & Performance" },
-      "Web Vitals": { regex: /\bWeb\s*Vitals\b|\bCore\s*Web\s*Vitals\b/i, category: "Analytics & Performance" },
-      "Google Analytics 4": { regex: /\bGoogle\s*Analytics(?:\s*4)?\b|\bGA4\b/i, category: "Analytics & Performance" },
-      "Google Tag Manager": { regex: /\bGoogle\s*Tag\s*Manager\b|\bGTM\b/i, category: "Analytics & Performance" },
-
-      // Tools & Platforms
-      Git: { regex: /\bGit\b(?!Hub|Lab)/i, category: "Tools & Platforms" },
-      GitHub: { regex: /\bGitHub\b/i, category: "Tools & Platforms" },
-      Postman: { regex: /\bPostman\b/i, category: "Tools & Platforms" },
-      Docker: { regex: /\bDocker\b/i, category: "Tools & Platforms" },
-      Figma: { regex: /\bFigma\b/i, category: "Tools & Platforms" },
-      Vercel: { regex: /\bVercel\b/i, category: "Tools & Platforms" },
-      Zapier: { regex: /\bZapier\b/i, category: "Tools & Platforms" },
-      Kubernetes: { regex: /\bKubernetes\b|\bK8s\b/i, category: "Tools & Platforms" },
-      "CI/CD": { regex: /\bCI[\/-]?CD\b/i, category: "Tools & Platforms" },
-      AWS: { regex: /\bAWS\b|\bAmazon\s*Web\s*Services\b/i, category: "Tools & Platforms" },
-      Azure: { regex: /\bAzure\b/i, category: "Tools & Platforms" },
-      GCP: { regex: /\bGCP\b|\bGoogle\s*Cloud\b/i, category: "Tools & Platforms" },
-      Linux: { regex: /\bLinux\b|\bUbuntu\b/i, category: "Tools & Platforms" },
-
-      // Soft Skills
-      "Problem Solving": { regex: /\bProblem\s*Solving\b/i, category: "Soft Skill" },
-      Communication: { regex: /\bCommunication\b/i, category: "Soft Skill" },
-      Teamwork: { regex: /\bTeamwork\b|\bTeam\s*Collaboration\b/i, category: "Soft Skill" },
-      "Analytical Thinking": { regex: /\bAnalytical\s*Thinking\b/i, category: "Soft Skill" },
-      Debugging: { regex: /\bDebugging\b/i, category: "Soft Skill" },
-
-      // AI & Machine Learning
-      "Machine Learning": { regex: /\bMachine\s*Learning\b|\bML\b/i, category: "AI & ML" },
-      "Generative AI": { regex: /\bGenerative\s*AI\b|\bGenAI\b/i, category: "AI & ML" },
-      PyTorch: { regex: /\bPyTorch\b/i, category: "AI & ML" },
-      TensorFlow: { regex: /\bTensorFlow\b/i, category: "AI & ML" },
-      RAG: { regex: /\bRAG\b|\bRetrieval[\s-]Augmented\b/i, category: "AI & ML" },
-      LLMs: { regex: /\bLLMs?\b|\bLarge\s*Language\s*Models?\b/i, category: "AI & ML" },
-      NLP: { regex: /\bNLP\b|\bNatural\s*Language\s*Processing\b/i, category: "AI & ML" },
-    };
-
-    for (const [skillName, { regex, category }] of Object.entries(skillTaxonomy)) {
+    for (const [skillName, { regex, category }] of Object.entries(SKILL_TAXONOMY)) {
       if (regex.test(text)) {
         skillsMap.set(skillName, category);
       }

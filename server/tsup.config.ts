@@ -6,6 +6,8 @@ export default defineConfig({
   target: "node20",
   outDir: "dist",
   clean: true,
-  sourcemap: true,
+  sourcemap: false,
+  minify: true,
+  treeshake: true,
   noExternal: [/^better-auth/],
 });

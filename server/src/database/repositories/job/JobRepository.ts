@@ -136,7 +136,7 @@ export class JobRepository extends BaseRepository<IJob> {
       options.sort === "oldest" ? { createdAt: 1 } : { createdAt: -1 };
 
     const [jobs, total] = await Promise.all([
-      this.model.find(filter).sort(sortOption).skip(skip).limit(limit).exec(),
+      this.model.find(filter).sort(sortOption).skip(skip).limit(limit).lean().exec(),
       this.model.countDocuments(filter).exec(),
     ]);
 
