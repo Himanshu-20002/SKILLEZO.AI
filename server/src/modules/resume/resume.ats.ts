@@ -24,9 +24,11 @@ export interface ATSCategoryResult {
 }
 
 export interface ATSMissingKeyword {
+  skill?: string;
   keyword: string;
   category: string;
   priority: "High" | "Medium" | "Low";
+  impactLevel?: "High" | "Medium" | "Low";
   recommendation: string;
 }
 
@@ -159,9 +161,11 @@ export class ResumeAtsEngine {
           totalMatchedKeywords += isRequired ? 1.5 : 1;
         } else {
           missingKeywords.push({
+            skill: kw,
             keyword: kw,
             category: categoryName,
             priority: isRequired ? "High" : "Medium",
+            impactLevel: isRequired ? "High" : "Medium",
             recommendation: isRequired
               ? `Core requirement for modern roles. Add ${kw} into your technical skills or project experience.`
               : `Recommended supporting skill for ${categoryName}. Consider listing ${kw} where applicable.`,
