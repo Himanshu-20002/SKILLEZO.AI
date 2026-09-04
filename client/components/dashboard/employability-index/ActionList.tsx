@@ -23,33 +23,38 @@ export const ActionList: React.FC<ActionListProps> = ({ actions }) => {
       </div>
 
       <div className="space-y-3">
-        {actions.map((act, idx) => (
-          <div
-            key={act.id}
-            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 gap-4 text-xs"
-          >
-            <div className="flex items-center gap-3">
-              <span className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800 font-extrabold text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                {idx + 1}
-              </span>
-              <div>
-                <span className="font-bold text-slate-900 dark:text-slate-100 block">{act.action}</span>
-                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" />
-                  Estimated Impact: {act.estimatedImpact}
-                </span>
-              </div>
-            </div>
+        {actions.map((act, idx) => {
+          const actionTitle = act.action || act.title || 'Recommended Action';
+          const impactLabel = act.estimatedImpact || (act.impactScore ? `+${act.impactScore}% Readiness` : '+10% Readiness');
 
-            <button
-              onClick={() => toast.success(`Started: ${act.action}`)}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 text-white font-semibold cursor-pointer shrink-0 transition-colors"
+          return (
+            <div
+              key={act.id}
+              className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 gap-4 text-xs"
             >
-              <span>Execute Task</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
+              <div className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800 font-extrabold text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
+                  {idx + 1}
+                </span>
+                <div>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block">{actionTitle}</span>
+                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    Estimated Impact: {impactLabel}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => toast.success(`Started: ${actionTitle}`)}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 text-white font-semibold cursor-pointer shrink-0 transition-colors"
+              >
+                <span>Execute Task</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -54,10 +54,24 @@ export interface EmployabilityMetric {
   description: string;
 }
 
+export interface EmployabilityActionItem {
+  id: string;
+  action?: string;
+  title?: string;
+  priority: 'High' | 'Medium' | 'Low';
+  estimatedImpact?: string;
+  impactScore?: number;
+  category?: string;
+  effort?: 'Low' | 'Medium' | 'High';
+  description?: string;
+  actionUrl?: string;
+}
+
 export interface EmployabilityIndexData {
   overallScore: number; // e.g. 78/100
   tierStatus: 'Top 5%' | 'Top 15%' | 'Top 30%' | 'Developing';
   targetTier: 'Top 5%';
+  targetRole?: string;
   metrics: {
     technicalReadiness: number;
     resumeStrength: number;
@@ -67,12 +81,7 @@ export interface EmployabilityIndexData {
   };
   strengths: string[];
   improvementAreas: string[];
-  actionList: {
-    id: string;
-    action: string;
-    priority: 'High' | 'Medium' | 'Low';
-    estimatedImpact: string;
-  }[];
+  actionList: EmployabilityActionItem[];
 }
 
 // Module 23 — Career GPS Roadmap Types
