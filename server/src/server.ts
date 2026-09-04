@@ -21,6 +21,7 @@ import { jobsRouter } from "@/modules/jobs";
 import { resumeRouter } from "@/modules/resume";
 import applicationRouter from "@/modules/application";
 import recruiterApplicationRouter from "@/modules/recruiter-application";
+import { skillGapRoutes } from "@/modules/career-plan/skill-gap.routes";
 import { notFoundMiddleware } from "@/core/middleware/notFound.middleware";
 import { errorMiddleware } from "@/core/middleware/error.middleware";
 import { env } from "@/core/config/env";
@@ -74,6 +75,7 @@ app.use("/api/jobs", jobsRouter);
 app.use("/api/resumes", resumeRouter);
 app.use("/api/applications", applicationRouter);
 app.use("/api/recruiter/applications", recruiterApplicationRouter);
+app.use("/api/skill-gap", skillGapRoutes);
 
 
 app.get("/", (_req: Request, res: Response) => {

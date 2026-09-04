@@ -9,6 +9,8 @@
 
 | Date | Task ID | Status | Team | Task Title | Commit Hash | Verified By | Verification Evidence |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :--- |
+| **04-Sep-2026** | `FE-402` | 🟢 **Completed** | Dev 2 | Live Skill Gap Dashboard, 6-Axis Radar & Role Switcher | `HEAD` | Dev Lead | Connected `/api/skill-gap/me` and `/api/skill-gap/roles`. Live 6-axis radar, 4 KPI cards, competency breakdown table, and roadmap actions. Next.js 28/28 routes build passing. |
+| **04-Sep-2026** | `BE-402` | 🟢 **Completed** | Dev 1 | 6-Axis Skill Gap Calculation Engine & API Endpoints (Phase 19.2) | `HEAD` | Dev Lead | Built `SkillGapEngine`, 6-axis competency calculation, 6 role benchmark taxonomies, priority recommendation sorting, and 6/6 unit tests passing (41 total tests green). |
 | **03-Sep-2026** | `FE-401` | 🟢 **Completed** | Dev 2 | Live Resume Intelligence UI, Target Role Selector & Radial Gauge | `800ace2` | Dev Lead | Connected live `/api/resumes/:id/ats-score`, radial circular score ring, target role switcher dropdown, collapsible skill gaps card. Next.js 28/28 routes build passing. |
 | **03-Sep-2026** | `BE-401` | 🟢 **Completed** | Dev 1 | Deterministic ATS Scoring Engine & API Endpoints (Phase 19.1) | `b9c82e5` | Dev Lead | Built `ResumeAtsEngine`, weighted composite scoring (0-100), 5-category taxonomy, enterprise ATS simulations (Greenhouse, Lever, Workday, Taleo), and 5/5 unit tests passing. |
 | **01-Sep-2026** | `BE-202` | 🟢 **Completed** | Dev 1 | Duplicate Application Prevention & Active Job Check | `d36924a` | Dev Lead | Compound uniqueness index on `(userId, jobId)`, active job validation, and 9/9 unit tests passing. |
