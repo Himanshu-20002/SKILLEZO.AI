@@ -6,6 +6,7 @@ import { ResumeAtsResponseDTO } from "@/modules/resume/resume.dto";
 describe("EmployabilityEngine (Module 22 & 23)", () => {
   const mockAtsAnalysis: ResumeAtsResponseDTO = {
     resumeId: "res-123",
+    fileName: "mock_resume.pdf",
     resumeVersion: 1,
     overallScore: 80,
     atsScore: 80,

@@ -17,10 +17,8 @@ export class SkillGapService {
     if (activeResume) {
       const extracted = activeResume.extractedData;
       if (extracted) {
-        if (Array.isArray(extracted.skillsExtracted) && extracted.skillsExtracted.length > 0) {
-          candidateSkills = extracted.skillsExtracted;
-        } else if (Array.isArray(extracted.skills) && extracted.skills.length > 0) {
-          candidateSkills = extracted.skills.map((s: any) => (typeof s === "string" ? s : s.name));
+        if (Array.isArray(extracted.skills) && extracted.skills.length > 0) {
+          candidateSkills = extracted.skills.map((s: any) => (typeof s === "string" ? s : s?.name || ""));
         }
       }
 

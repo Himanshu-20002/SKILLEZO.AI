@@ -35,15 +35,15 @@ export class EmployabilityService {
       await ResumeModel.findOne({ userId }).sort({ updatedAt: -1 }).lean();
 
     const rawText = resume?.rawText?.toLowerCase() || "";
-    const hasGithubLink = rawText.includes("github.com") || !!profile?.headline?.toLowerCase().includes("github");
-    const hasLiveDemoLink = rawText.includes("vercel.app") || rawText.includes("http") || rawText.includes(".com");
+    const hasGithubLink = rawText.includes("github.com") || !!profile?.links?.github;
+    const hasLiveDemoLink = rawText.includes("vercel.app") || rawText.includes("http") || rawText.includes(".com") || !!profile?.links?.portfolio;
     const projectCount = (resume?.extractedData?.experience?.length || 0) + (rawText.includes("project") ? 2 : 1);
 
     // 4. Calculate Profile Completeness (0-100)
     let completeness = 40;
-    if (profile?.fullName || resume?.extractedData?.personalInfo?.fullName) completeness += 20;
+    if (resume?.extractedData?.personalInfo?.fullName || profile?.bio) completeness += 20;
     if (profile?.bio || resume?.extractedData?.summary) completeness += 15;
-    if (profile?.location || resume?.extractedData?.personalInfo?.location) completeness += 15;
+    if (profile?.location?.city || resume?.extractedData?.personalInfo?.location) completeness += 15;
     if (hasGithubLink || hasLiveDemoLink) completeness += 10;
 
     // 5. Execute Employability Engine

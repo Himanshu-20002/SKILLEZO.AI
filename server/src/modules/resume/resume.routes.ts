@@ -35,6 +35,12 @@ router.get(
 );
 
 router.get(
+  "/:resumeId/analysis",
+  validate({ params: resumeIdParamValidator }),
+  asyncHandler(controller.getAtsScore)
+);
+
+router.get(
   "/:resumeId",
   validate({ params: resumeIdParamValidator }),
   asyncHandler(controller.getResumeById)
