@@ -128,3 +128,10 @@ Origin GitHub Remote Sync    : Synced with Himanshu-20002/SKILLEZO.AI (Commit: d
 
 1. **Sprint 3 Kickoff**: AI Auto-Apply Bot Engine (Resume Matching, Application Payload Builder, Rate Limiter & Scheduled Submission Queue).
 2. **Phase 20 Recruiter Portal Foundation**: Recruiter search, talent pool ranking by Employability Index, and candidate shortlisting workflows.
+
+
+![alt text](image.png)
+
+![alt text](image-1.png)
+
+![alt text](image-2.png)
