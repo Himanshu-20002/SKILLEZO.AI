@@ -41,6 +41,11 @@ export default function ProfilePage() {
     ],
     education: [],
     experience: [],
+    links: {
+      github: 'https://github.com/Himanshu-20002',
+      linkedin: 'https://linkedin.com/in/candidate',
+      portfolio: 'https://candidate.dev',
+    },
     location: { city: 'San Francisco', state: 'California', country: 'United States' },
     completionPercentage: 92,
   });
@@ -61,6 +66,7 @@ export default function ProfilePage() {
           phone: liveProfile.phone || prev.phone,
           targetRole: liveProfile.targetRole || prev.targetRole,
           bio: liveProfile.bio || prev.bio,
+          links: liveProfile.links || prev.links,
           location: liveProfile.location || prev.location,
           skills: liveProfile.skills && liveProfile.skills.length > 0 ? liveProfile.skills : prev.skills,
           completionPercentage: liveProfile.completionPercentage || prev.completionPercentage,

@@ -65,6 +65,26 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   <span className="font-medium text-slate-700 dark:text-slate-300">{displayPhone}</span>
                 </div>
               )}
+              {profile.links?.github && (
+                <a
+                  href={profile.links.github.startsWith('http') ? profile.links.github : `https://${profile.links.github}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-slate-700 hover:text-[#3D5AFE] dark:text-slate-300 dark:hover:text-[#00D9C0] transition-colors"
+                >
+                  <span className="underline underline-offset-2">GitHub</span>
+                </a>
+              )}
+              {profile.links?.linkedin && (
+                <a
+                  href={profile.links.linkedin.startsWith('http') ? profile.links.linkedin : `https://${profile.links.linkedin}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-slate-700 hover:text-[#3D5AFE] dark:text-slate-300 dark:hover:text-[#00D9C0] transition-colors"
+                >
+                  <span className="underline underline-offset-2">LinkedIn</span>
+                </a>
+              )}
             </div>
           </div>
         </div>
