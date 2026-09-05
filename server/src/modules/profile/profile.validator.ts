@@ -4,7 +4,10 @@ import { SkillSource, EmploymentType } from "@/core/constants/enums";
 
 export const profileSkillSchema = z.object({
   name: z.string().trim().min(1, "Skill name is required"),
-  level: z.number().int().min(1, "Skill level minimum is 1").max(5, "Skill level maximum is 5"),
+  category: z.string().trim().optional().default("Technical"),
+  level: z.number().int().min(1).max(5).optional().default(4),
+  proficiency: z.string().trim().optional().default("Advanced"),
+  score: z.number().min(0).max(100).optional().default(85),
   source: z.nativeEnum(SkillSource).optional().default(SkillSource.PROFILE),
   verified: z.boolean().optional().default(false),
 });
@@ -40,6 +43,9 @@ export const profileLocationSchema = z.object({
 });
 
 export const createProfileValidator = z.object({
+  headline: z.string().trim().max(300).nullable().optional(),
+  phone: z.string().trim().max(50).nullable().optional(),
+  targetRole: z.string().trim().max(100).nullable().optional(),
   targetRoleId: objectIdSchema.nullable().optional(),
   bio: z.string().trim().max(2000, "Bio cannot exceed 2000 characters").nullable().optional(),
   skills: z.array(profileSkillSchema).optional().default([]),
@@ -50,6 +56,8 @@ export const createProfileValidator = z.object({
 });
 
 export const updateProfileValidator = createProfileValidator.partial();
+
+export const addSkillValidator = profileSkillSchema;
 
 export const updateSkillsValidator = z.object({
   skills: z.array(profileSkillSchema),

@@ -6,6 +6,7 @@ import { asyncHandler } from "@/core/utils/asyncHandler";
 import {
   createProfileValidator,
   updateProfileValidator,
+  addSkillValidator,
   updateSkillsValidator,
   updateEducationValidator,
   updateExperienceValidator,
@@ -41,6 +42,19 @@ router.patch(
   requireAuth,
   validate({ body: updateSkillsValidator }),
   asyncHandler(controller.updateSkills)
+);
+
+router.post(
+  "/me/skills",
+  requireAuth,
+  validate({ body: addSkillValidator }),
+  asyncHandler(controller.addSkill)
+);
+
+router.delete(
+  "/me/skills/:skillName",
+  requireAuth,
+  asyncHandler(controller.deleteSkill)
 );
 
 router.patch(

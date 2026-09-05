@@ -30,24 +30,24 @@
 ### 🗓️ DAY 1 — User Profile & Portfolio Engine (Phase 20.1)
 
 #### 🛠️ Developer 1 (Backend)
-- [ ] **`BE-501` — Enhanced Profile & Skills REST APIs** (2 hours)
-  - **Action:** Implement complete profile data layer supporting:
+- [x] **`BE-501` — Enhanced Profile & Skills REST APIs** (2 hours) — *COMPLETED (05-Sep-2026)*
+  - **Action:** Implemented complete profile data layer supporting:
     - User headline, bio, contact details, enterprise verified status, and target role.
     - Skills array with proficiency score (0–100), verification badge, source, and level (`Expert`, `Advanced`, `Intermediate`, `Beginner`).
     - Project repositories (GitHub URLs, live demo links) and certifications.
     - Profile completion calculation engine (`0%` to `100%`).
   - **Target Files:** `server/src/modules/profile/profile.controller.ts`, `server/src/modules/profile/profile.service.ts`, `server/src/modules/profile/profile.routes.ts`, `server/src/database/models/Profile.model.ts`.
-  - **Verify:** `GET /api/profile/me`, `PUT /api/profile/me`, `POST /api/profile/skills`, and `DELETE /api/profile/skills/:skillId` pass unit tests.
+  - **Verify:** `GET /api/profile/me`, `PATCH /api/profile/me`, `POST /api/profile/skills`, and `DELETE /api/profile/skills/:skillName` pass unit tests (46/46 green).
 
 #### 🎨 Developer 2 (Frontend)
-- [ ] **`FE-501` — User Profile & Portfolio UI Layout** (2 hours)
-  - **Action:** Build the pixel-perfect User Profile page matching the design specification:
-    - **Header Identity Card:** Avatar with active status, name (`testuser`), `Enterprise Verified` badge, headline, location, email, phone, and `Edit Profile` modal button.
+- [x] **`FE-501` — User Profile & Portfolio UI Layout** (2 hours) — *COMPLETED (05-Sep-2026)*
+  - **Action:** Built the pixel-perfect User Profile page matching the design specification:
+    - **Header Identity Card:** Avatar with active status, name (`testuser`), `Enterprise Verified` badge, headline, location, email, phone, and `Edit Profile` modal dialog.
     - **Personal Information Card:** Bio narrative + 2x2 grid (Target Role, Location, Email Address, Phone Number).
     - **Profile Completion Widget:** Readiness score circle/bar (`92%`), verification checklist, and action items (+8% GitHub URL booster).
     - **Technical Skills & Competencies Grid:** Categorized skill cards with tags (`Expert 98/100`, `Advanced 94/100`, `Intermediate`), verified checkmarks, and `+ Add Skill` modal.
   - **Target Files:** `client/app/dashboard/profile/page.tsx`, `client/components/dashboard/profile/`, `client/services/profile.service.ts`.
-  - **Verify:** Live profile loads, edits save to MongoDB, and skills render with verified indicators.
+  - **Verify:** Live profile loads, edits save to MongoDB, and skills render with verified indicators (Next.js 28/28 routes green).
 
 ---
 

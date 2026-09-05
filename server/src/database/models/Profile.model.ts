@@ -3,7 +3,10 @@ import { SkillSource, EmploymentType } from "@/core/constants/enums";
 
 export interface IProfileSkill {
   name: string;
+  category?: string | null;
   level: number;
+  proficiency?: string | null;
+  score?: number | null;
   source: SkillSource;
   verified: boolean;
 }
@@ -41,6 +44,9 @@ export interface IProfileLocation {
 export interface IProfile extends Document {
   _id: Types.ObjectId;
   userId: string;
+  headline?: string | null;
+  phone?: string | null;
+  targetRole?: string | null;
   targetRoleId?: Types.ObjectId | null;
   bio?: string | null;
   skills: IProfileSkill[];
@@ -48,6 +54,7 @@ export interface IProfile extends Document {
   experience: IProfileExperience[];
   links?: IProfileLinks | null;
   location?: IProfileLocation | null;
+  completionPercentage?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,7 +62,10 @@ export interface IProfile extends Document {
 const profileSkillSchema = new Schema<IProfileSkill>(
   {
     name: { type: String, required: true, trim: true },
-    level: { type: Number, required: true, min: 1, max: 5 },
+    category: { type: String, default: "Technical", trim: true },
+    level: { type: Number, required: true, min: 1, max: 5, default: 4 },
+    proficiency: { type: String, default: "Advanced", trim: true },
+    score: { type: Number, min: 0, max: 100, default: 85 },
     source: {
       type: String,
       enum: Object.values(SkillSource),
@@ -120,6 +130,21 @@ const profileSchema = new Schema<IProfile>(
       required: true,
       unique: true,
       index: true,
+    },
+    headline: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    phone: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    targetRole: {
+      type: String,
+      default: "Senior Full Stack Engineer",
+      trim: true,
     },
     targetRoleId: {
       type: Schema.Types.ObjectId,

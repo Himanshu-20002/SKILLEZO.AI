@@ -57,4 +57,17 @@ export class ProfileController {
     const profile = await this.profileService.updateTargetRole(userId, req.body);
     res.status(HTTP_STATUS.OK).json(successResponse(profile));
   };
+
+  addSkill = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const profile = await this.profileService.addSkill(userId, req.body);
+    res.status(HTTP_STATUS.OK).json(successResponse(profile));
+  };
+
+  deleteSkill = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const skillName = req.params.skillName as string;
+    const profile = await this.profileService.deleteSkill(userId, skillName);
+    res.status(HTTP_STATUS.OK).json(successResponse(profile));
+  };
 }

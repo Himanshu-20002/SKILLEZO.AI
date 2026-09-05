@@ -1,33 +1,45 @@
 import { apiFetch } from "@/lib/api";
 
+export interface CandidateSkill {
+  name: string;
+  category?: string;
+  level?: number;
+  proficiency?: string;
+  score?: number;
+  source?: string;
+  verified?: boolean;
+}
+
+export interface CandidateEducation {
+  institution: string;
+  degree: string;
+  fieldOfStudy?: string;
+  startYear?: number;
+  endYear?: number;
+}
+
+export interface CandidateExperience {
+  companyName: string;
+  jobTitle: string;
+  employmentType?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent?: boolean;
+  description?: string;
+}
+
 export interface CandidateProfile {
   _id?: string;
   userId: string;
+  headline?: string;
+  phone?: string;
+  targetRole?: string;
   targetRoleId?: string;
   bio?: string;
-  skills: Array<{
-    name: string;
-    level?: number;
-    source?: string;
-    verified?: boolean;
-  }>;
-  education: Array<{
-    institution: string;
-    degree: string;
-    fieldOfStudy?: string;
-    startYear?: number;
-    endYear?: number;
-  }>;
-  experience: Array<{
-    companyName: string;
-    jobTitle: string;
-    employmentType?: string;
-    startDate?: string;
-    endDate?: string;
-    isCurrent?: boolean;
-    description?: string;
-  }>;
-  links: {
+  skills: CandidateSkill[];
+  education: CandidateEducation[];
+  experience: CandidateExperience[];
+  links?: {
     github?: string;
     linkedin?: string;
     portfolio?: string;
@@ -38,6 +50,7 @@ export interface CandidateProfile {
     state?: string;
     country?: string;
   };
+  completionPercentage?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -64,7 +77,22 @@ export const profileService = {
     return res.data;
   },
 
-  async updateSkills(skills: CandidateProfile["skills"]): Promise<CandidateProfile> {
+  async addSkill(skill: CandidateSkill): Promise<CandidateProfile> {
+    const res = await apiFetch<{ success: boolean; data: CandidateProfile }>("/api/profile/me/skills", {
+      method: "POST",
+      body: JSON.stringify(skill),
+    });
+    return res.data;
+  },
+
+  async deleteSkill(skillName: string): Promise<CandidateProfile> {
+    const res = await apiFetch<{ success: boolean; data: CandidateProfile }>(`/api/profile/me/skills/${encodeURIComponent(skillName)}`, {
+      method: "DELETE",
+    });
+    return res.data;
+  },
+
+  async updateSkills(skills: CandidateSkill[]): Promise<CandidateProfile> {
     const res = await apiFetch<{ success: boolean; data: CandidateProfile }>("/api/profile/me/skills", {
       method: "PATCH",
       body: JSON.stringify({ skills }),
@@ -72,7 +100,7 @@ export const profileService = {
     return res.data;
   },
 
-  async updateEducation(education: CandidateProfile["education"]): Promise<CandidateProfile> {
+  async updateEducation(education: CandidateEducation[]): Promise<CandidateProfile> {
     const res = await apiFetch<{ success: boolean; data: CandidateProfile }>("/api/profile/me/education", {
       method: "PATCH",
       body: JSON.stringify({ education }),
@@ -80,7 +108,7 @@ export const profileService = {
     return res.data;
   },
 
-  async updateExperience(experience: CandidateProfile["experience"]): Promise<CandidateProfile> {
+  async updateExperience(experience: CandidateExperience[]): Promise<CandidateProfile> {
     const res = await apiFetch<{ success: boolean; data: CandidateProfile }>("/api/profile/me/experience", {
       method: "PATCH",
       body: JSON.stringify({ experience }),

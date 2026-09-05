@@ -2,7 +2,10 @@ import { SkillSource, EmploymentType } from "@/core/constants/enums";
 
 export interface ProfileSkillDTO {
   name: string;
-  level: number;
+  category?: string | null;
+  level?: number;
+  proficiency?: string | null;
+  score?: number | null;
   source?: SkillSource;
   verified?: boolean;
 }
@@ -38,6 +41,9 @@ export interface ProfileLocationDTO {
 }
 
 export interface CreateProfileDTO {
+  headline?: string | null;
+  phone?: string | null;
+  targetRole?: string | null;
   targetRoleId?: string | null;
   bio?: string | null;
   skills?: ProfileSkillDTO[];
@@ -48,6 +54,9 @@ export interface CreateProfileDTO {
 }
 
 export interface UpdateProfileDTO {
+  headline?: string | null;
+  phone?: string | null;
+  targetRole?: string | null;
   targetRoleId?: string | null;
   bio?: string | null;
   skills?: ProfileSkillDTO[];
