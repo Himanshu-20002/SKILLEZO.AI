@@ -3,7 +3,6 @@
 import React from 'react';
 import { Award, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import { CandidateSkill } from '@/services/profile.service';
-import { CardHeader } from '@/components/dashboard/common/CardHeader';
 
 interface SkillsSectionProps {
   skills: CandidateSkill[];
@@ -17,47 +16,50 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   onDeleteSkill,
 }) => {
   return (
-    <div className="p-6 sm:p-7 rounded-3xl bg-[#0c1427]/90 dark:bg-slate-900/90 border border-slate-800 text-white backdrop-blur-xl space-y-5 shadow-sm dark:shadow-md relative overflow-hidden">
-      {/* Background Accent */}
+    <div className="p-6 sm:p-8 rounded-3xl bg-[#131b2e] border border-slate-800/90 text-white space-y-6 shadow-xl relative overflow-hidden backdrop-blur-xl">
+      {/* Background Glow */}
       <div className="absolute top-0 right-1/4 w-80 h-80 bg-[#3D5AFE]/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header with + Add Skill button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">Technical Skills & Competencies</h2>
-            <p className="text-xs text-slate-400">Verified skill badges and proficiency metrics</p>
+            <h2 className="text-xl font-extrabold text-white tracking-tight">Technical Skills & Competencies</h2>
+            <p className="text-xs text-slate-400 font-medium">Verified skill badges and proficiency metrics</p>
           </div>
         </div>
 
         <button
           onClick={onAddSkill}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-750 text-white border border-slate-700/80 transition-all text-xs font-bold shrink-0 cursor-pointer shadow-sm hover:border-slate-600"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-750 text-white border border-slate-700/80 hover:border-emerald-500/40 transition-all text-xs font-bold shrink-0 cursor-pointer shadow-sm"
         >
           <Plus className="w-4 h-4 text-emerald-400" />
           <span>Add Skill</span>
         </button>
       </div>
 
-      {/* 2-Column Skill Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 relative z-10">
+      {/* 2-Column Skill Cards Grid matching the theme */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
         {skills.map((skill, idx) => {
           const isExpert = skill.proficiency === 'Expert' || (skill.score && skill.score >= 95);
           const isAdvanced = skill.proficiency === 'Advanced' || (skill.score && skill.score >= 90);
+          const isIntermediate = !isExpert && !isAdvanced;
 
           return (
             <div
               key={idx}
-              className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 flex items-center justify-between gap-4 transition-all group relative overflow-hidden shadow-sm"
+              className="p-4 sm:p-4.5 rounded-2xl bg-[#1c263d] border border-slate-800/90 hover:border-slate-700/90 flex items-center justify-between gap-4 transition-all group relative overflow-hidden shadow-sm"
             >
               <div className="space-y-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-black text-white truncate tracking-tight">{skill.name}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm sm:text-base font-extrabold text-white truncate tracking-tight">
+                    {skill.name}
+                  </span>
                   {skill.verified !== false && (
-                    <span title="Verified Competency" className="shrink-0">
+                    <span title="Verified Skill" className="shrink-0">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     </span>
                   )}
@@ -68,20 +70,20 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
               </div>
 
               <div className="flex items-center gap-3 shrink-0">
-                <div className="text-right space-y-0.5">
+                <div className="text-right space-y-1">
                   <span
-                    className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                    className={`inline-block px-3.5 py-0.5 rounded-full text-[11px] font-bold text-center border ${
                       isExpert
-                        ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+                        ? 'bg-[#3b1e54] text-[#d8b4fe] border-[#6b21a8]/60'
                         : isAdvanced
-                        ? 'bg-blue-500/15 text-blue-300 border-blue-500/30'
-                        : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                        ? 'bg-[#172554] text-[#93c5fd] border-[#1e40af]/60'
+                        : 'bg-[#064e3b] text-[#6ee7b7] border-[#047857]/60'
                     }`}
                   >
                     {skill.proficiency || (isExpert ? 'Expert' : isAdvanced ? 'Advanced' : 'Intermediate')}
                   </span>
                   {skill.score && (
-                    <span className="text-xs font-black text-emerald-400 block tracking-tight">
+                    <span className="text-xs sm:text-sm font-black text-emerald-400 block tracking-tight">
                       {skill.score}/100
                     </span>
                   )}
