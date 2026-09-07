@@ -15,6 +15,11 @@ const controller = new RecruiterApplicationController();
 router.use(requireAuth);
 
 router.get(
+  "/stats",
+  asyncHandler(controller.getDashboardStats)
+);
+
+router.get(
   "/",
   validate({ query: getRecruiterApplicationsQueryValidator }),
   asyncHandler(controller.getCompanyApplications)

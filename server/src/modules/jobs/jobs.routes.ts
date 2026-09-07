@@ -4,8 +4,28 @@ import { validate } from "@/core/middleware/validate.middleware";
 import { jobSearchQueryValidator, jobParamsValidator } from "./jobs.validator";
 import { asyncHandler } from "@/core/utils/asyncHandler";
 
+import { requireAuth } from "@/core/auth/middleware/requireAuth";
+
 const router = Router();
 const controller = new JobsController();
+
+router.get(
+  "/company",
+  requireAuth,
+  asyncHandler(controller.getCompanyJobs)
+);
+
+router.post(
+  "/",
+  requireAuth,
+  asyncHandler(controller.createJob)
+);
+
+router.patch(
+  "/:jobId/status",
+  requireAuth,
+  asyncHandler(controller.updateJobStatus)
+);
 
 router.get(
   "/",

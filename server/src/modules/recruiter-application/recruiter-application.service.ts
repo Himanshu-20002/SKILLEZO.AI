@@ -265,6 +265,59 @@ export class RecruiterApplicationService {
     };
   }
 
+  async getDashboardStats(userId: string) {
+    const { companyJobIds, companyIds } = await this.assertRecruiterAuthorization(userId);
+    
+    // Aggregation of applications across statuses
+    const apps = await this.applicationRepository.findCompanyApplications(companyJobIds, { limit: 500 });
+    const allItems = apps.items || [];
+    
+    const stageCounts: Record<string, number> = {
+      applied: 0,
+      under_review: 0,
+      shortlisted: 0,
+      interview: 0,
+      offered: 0,
+      hired: 0,
+      rejected: 0,
+    };
+    
+    allItems.forEach((app) => {
+      const st = app.status || "applied";
+      if (stageCounts[st] !== undefined) {
+        stageCounts[st]++;
+      } else {
+        stageCounts[st] = 1;
+      }
+    });
+
+    const activeJobs = await this.jobRepository.findMany({ 
+      $or: [
+        { _id: { $in: companyJobIds }, status: "active" },
+        { companyId: { $in: companyIds }, status: "active" }
+      ]
+    });
+
+    const recentApplications = allItems.slice(0, 5).map((app) => ({
+      id: app._id.toString(),
+      status: app.status,
+      jobTitle: (app.jobId as any)?.title || "Engineering Role",
+      candidateName: (app as any).candidateName || "Candidate Applicant",
+      appliedAt: app.appliedAt || app.createdAt,
+    }));
+
+    return {
+      totalCandidates: allItems.length,
+      activeJobsCount: activeJobs.length,
+      underReviewCount: stageCounts.under_review,
+      interviewCount: stageCounts.interview,
+      offerCount: stageCounts.offered,
+      hiredCount: stageCounts.hired,
+      stageCounts,
+      recentApplications,
+    };
+  }
+
   async updateApplicationStatus(
     userId: string,
     applicationId: string,

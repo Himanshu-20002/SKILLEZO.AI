@@ -95,4 +95,69 @@ export class JobsService {
 
     return job.sourceUrl;
   }
+
+  async createJob(userId: string, data: any): Promise<IJob> {
+    if (!data.title || !data.description) {
+      throw new AppError(
+        "Job title and description are required",
+        HTTP_STATUS.BAD_REQUEST,
+        ERROR_CODES.BAD_REQUEST
+      );
+    }
+
+    const skills = Array.isArray(data.requiredSkills)
+      ? data.requiredSkills.map((s: any) =>
+          typeof s === "string"
+            ? { name: s, requiredLevel: 4, importance: "mandatory" }
+            : s
+        )
+      : [];
+
+    const job = await this.jobRepository.create({
+      title: data.title,
+      description: data.description,
+      companyName: data.companyName || "SKILLEZO Enterprise Hiring",
+      department: data.department || "Engineering",
+      employmentType: data.employmentType || "full_time",
+      workplaceType: data.workplaceType || "remote",
+      location: data.location || { city: "Remote", country: "Global" },
+      rawLocation: typeof data.location === "string" ? data.location : "Remote",
+      requiredSkills: skills,
+      minExperienceYears: data.minExperienceYears || 2,
+      salary: data.salary || { min: 90000, max: 140000, currency: "USD" },
+      status: data.status || JobStatus.ACTIVE,
+      sourceType: JobSourceType.INTERNAL,
+      createdBy: userId,
+      publishedAt: new Date(),
+    } as any);
+
+    return job;
+  }
+
+  async getCompanyJobs(userId: string): Promise<any[]> {
+    const jobs = await this.jobRepository.findMany({
+      $or: [
+        { createdBy: userId },
+        { sourceType: JobSourceType.INTERNAL },
+        { status: JobStatus.ACTIVE },
+      ],
+    });
+
+    return jobs;
+  }
+
+  async updateJobStatus(userId: string, jobId: string, status: string): Promise<IJob> {
+    const job = await this.jobRepository.findById(jobId);
+    if (!job) {
+      throw new AppError("Job not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.JOB_NOT_FOUND);
+    }
+
+    job.status = status as any;
+    if (status === JobStatus.CLOSED) {
+      job.closesAt = new Date();
+    }
+    await job.save();
+    return job;
+  }
 }
+

@@ -10,6 +10,12 @@ export class RecruiterApplicationController {
     this.service = service || new RecruiterApplicationService();
   }
 
+  getDashboardStats = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const result = await this.service.getDashboardStats(userId);
+    res.status(HTTP_STATUS.OK).json(successResponse(result));
+  };
+
   getCompanyApplications = async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;

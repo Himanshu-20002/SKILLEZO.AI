@@ -30,12 +30,25 @@ import { toast } from 'sonner';
 
 export default function RecruiterApplicationsPage() {
   const [applications, setApplications] = useState<RecruiterApplicationItem[]>([]);
+  const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState('all');
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [selectedApplication, setSelectedApplication] =
     useState<RecruiterApplicationItem | null>(null);
+
+  useEffect(() => {
+    async function fetchJobs() {
+      try {
+        const jList = await recruiterService.getCompanyJobs();
+        setJobs(jList);
+      } catch {
+        setJobs(recruiterService.getFallbackJobs());
+      }
+    }
+    fetchJobs();
+  }, []);
 
   const loadApplications = useCallback(async () => {
     try {
@@ -323,10 +336,12 @@ export default function RecruiterApplicationsPage() {
               onChange={(e) => setSelectedJobId(e.target.value)}
               className="text-xs px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#151D42] border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
             >
-              <option value="all">All Company Job Openings</option>
-              <option value="job_1">Senior Full Stack Engineer</option>
-              <option value="job_2">Cloud Infrastructure Lead</option>
-              <option value="job_3">AI Platform Engineer</option>
+              <option value="all">All Company Job Openings ({jobs.length})</option>
+              {jobs.map((j) => (
+                <option key={j.id || j._id} value={j.id || j._id}>
+                  {j.title}
+                </option>
+              ))}
             </select>
           </div>
         </div>
