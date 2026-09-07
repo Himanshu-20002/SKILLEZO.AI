@@ -1,11 +1,45 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Compass, UserCheck, TrendingUp, Award, ArrowUpRight, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from '@/lib/auth-client';
+import { profileService, CandidateProfile } from '@/services/profile.service';
 
 export const StudentPortalHeader: React.FC = () => {
+  const { data: session } = useSession();
+  const [profile, setProfile] = useState<CandidateProfile | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    profileService
+      .getMyProfile()
+      .then((data) => {
+        if (isMounted && data) {
+          setProfile(data);
+        }
+      })
+      .catch(() => {
+        // Fallback gracefully
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const displayName = session?.user?.name
+    ? session.user.name.trim().split(' ')[0]
+    : session?.user?.email
+    ? session.user.email.split('@')[0].replace(/[._]/g, ' ')
+    : 'Candidate';
+
+  const targetRole = profile?.targetRole || 'Full-Stack Engineer';
+  const readinessScore = profile?.completionPercentage || 78;
+  const verifiedSkillsCount = profile?.skills?.filter((s) => s.verified).length ?? 4;
+  const tier = readinessScore >= 90 ? 'Top 5%' : readinessScore >= 75 ? 'Top 15%' : 'Top 30%';
+  const tierLabel = readinessScore >= 85 ? 'Advanced' : readinessScore >= 65 ? 'Intermediate' : 'Foundational';
+
   return (
     <div className="relative overflow-hidden rounded-3xl bg-slate-900 dark:bg-[#0E1535] text-white p-6 sm:p-10 border border-slate-800 shadow-2xl">
       {/* Subtle Ambient Background Gradients */}
@@ -20,16 +54,16 @@ export const StudentPortalHeader: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> AI Career Portal
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 backdrop-blur-md">
-              <UserCheck className="w-3.5 h-3.5 text-emerald-400" /> Target: Full-Stack Engineer
+              <UserCheck className="w-3.5 h-3.5 text-emerald-400" /> Target: {targetRole}
             </span>
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              Welcome, Alex
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight capitalize">
+              Welcome, {displayName}
             </h1>
             <p className="text-slate-300 text-sm sm:text-base max-w-xl font-normal leading-relaxed">
-              Your AI career assistant analyzed your skill progress. You’re on track for your target role with an elevated <span className="text-emerald-400 font-semibold">78% readiness index</span>.
+              Your AI career assistant analyzed your skill progress. You’re on track for your target role with an elevated <span className="text-emerald-400 font-semibold">{readinessScore}% readiness index</span>.
             </p>
           </div>
 
@@ -60,13 +94,13 @@ export const StudentPortalHeader: React.FC = () => {
                 <TrendingUp className="w-4 h-4 text-emerald-400" /> Employability Index
               </span>
               <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 font-medium border border-emerald-500/20">
-                Top 15%
+                {tier}
               </span>
             </div>
 
             <div className="flex items-baseline justify-between pt-1">
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-black text-white tracking-tight">78</span>
+                <span className="text-4xl font-black text-white tracking-tight">{readinessScore}</span>
                 <span className="text-sm font-semibold text-slate-400">/100</span>
               </div>
               <span className="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-1 rounded-md">
@@ -79,18 +113,18 @@ export const StudentPortalHeader: React.FC = () => {
               <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 h-2 rounded-full transition-all duration-1000"
-                  style={{ width: '78%' }}
+                  style={{ width: `${Math.min(readinessScore, 100)}%` }}
                 />
               </div>
               <div className="flex justify-between text-[11px] text-slate-400">
-                <span>Intermediate</span>
+                <span>{tierLabel}</span>
                 <span className="text-indigo-300 font-medium">Goal: 85+</span>
               </div>
             </div>
 
             <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
               <span className="flex items-center gap-1.5 text-slate-400">
-                <Award className="w-4 h-4 text-amber-400" /> 4 Skills Verified
+                <Award className="w-4 h-4 text-amber-400" /> {verifiedSkillsCount} Skills Verified
               </span>
               <Link href="/dashboard/employability-index" className="text-indigo-300 hover:text-white font-medium flex items-center gap-0.5">
                 Full Report <ChevronRight className="w-3.5 h-3.5" />
@@ -102,3 +136,4 @@ export const StudentPortalHeader: React.FC = () => {
     </div>
   );
 };
+

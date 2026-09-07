@@ -40,6 +40,29 @@ export interface ProfileLocationDTO {
   country?: string | null;
 }
 
+export interface ProfileProjectDTO {
+  _id?: string;
+  title: string;
+  description: string;
+  techStack?: string[];
+  githubUrl?: string | null;
+  liveDemoUrl?: string | null;
+  featured?: boolean;
+  startDate?: string | Date | null;
+  endDate?: string | Date | null;
+}
+
+export interface AddProjectDTO {
+  title: string;
+  description: string;
+  techStack?: string[];
+  githubUrl?: string | null;
+  liveDemoUrl?: string | null;
+  featured?: boolean;
+  startDate?: string | Date | null;
+  endDate?: string | Date | null;
+}
+
 export interface CreateProfileDTO {
   headline?: string | null;
   phone?: string | null;

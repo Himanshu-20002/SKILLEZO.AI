@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import LoginCard from "./components/LoginCard";
 
@@ -9,7 +10,9 @@ export const metadata = {
 export default function LoginPage() {
   return (
     <AuthLayout>
-      <LoginCard />
+      <Suspense fallback={<div className="h-96 w-full max-w-md bg-white/5 animate-pulse rounded-3xl" />}>
+        <LoginCard />
+      </Suspense>
     </AuthLayout>
   );
-}
+}

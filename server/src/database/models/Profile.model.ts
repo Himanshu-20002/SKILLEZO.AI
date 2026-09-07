@@ -41,6 +41,18 @@ export interface IProfileLocation {
   country?: string | null;
 }
 
+export interface IProfileProject {
+  _id?: Types.ObjectId;
+  title: string;
+  description: string;
+  techStack: string[];
+  githubUrl?: string | null;
+  liveDemoUrl?: string | null;
+  featured?: boolean;
+  startDate?: Date | null;
+  endDate?: Date | null;
+}
+
 export interface IProfile extends Document {
   _id: Types.ObjectId;
   userId: string;
@@ -52,6 +64,7 @@ export interface IProfile extends Document {
   skills: IProfileSkill[];
   education: IProfileEducation[];
   experience: IProfileExperience[];
+  projects: IProfileProject[];
   links?: IProfileLinks | null;
   location?: IProfileLocation | null;
   completionPercentage?: number;
@@ -123,6 +136,20 @@ const profileLocationSchema = new Schema<IProfileLocation>(
   { _id: false }
 );
 
+const profileProjectSchema = new Schema<IProfileProject>(
+  {
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
+    techStack: [{ type: String, trim: true }],
+    githubUrl: { type: String, default: null, trim: true },
+    liveDemoUrl: { type: String, default: null, trim: true },
+    featured: { type: Boolean, default: false },
+    startDate: { type: Date, default: null },
+    endDate: { type: Date, default: null },
+  },
+  { timestamps: true }
+);
+
 const profileSchema = new Schema<IProfile>(
   {
     userId: {
@@ -160,6 +187,7 @@ const profileSchema = new Schema<IProfile>(
     skills: [profileSkillSchema],
     education: [profileEducationSchema],
     experience: [profileExperienceSchema],
+    projects: [profileProjectSchema],
     links: {
       type: profileLinksSchema,
       default: null,

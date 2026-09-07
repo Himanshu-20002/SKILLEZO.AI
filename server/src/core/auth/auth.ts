@@ -48,7 +48,12 @@ export function getAuth() {
             type: "string",
             required: false,
             defaultValue: UserRole.CANDIDATE,
-            input: false,
+            input: true,
+          },
+          companyName: {
+            type: "string",
+            required: false,
+            input: true,
           },
           accountStatus: {
             type: "string",

@@ -12,6 +12,7 @@ import {
   updateExperienceValidator,
   updateLinksValidator,
   updateTargetRoleValidator,
+  profileProjectValidator,
 } from "./profile.validator";
 
 const router = Router();
@@ -85,4 +86,31 @@ router.patch(
   asyncHandler(controller.updateTargetRole)
 );
 
+router.post(
+  "/me/projects",
+  requireAuth,
+  validate({ body: profileProjectValidator }),
+  asyncHandler(controller.addProject)
+);
+
+router.post(
+  "/me/projects/seed",
+  requireAuth,
+  asyncHandler(controller.seedSampleProjects)
+);
+
+router.patch(
+  "/me/projects/:projectId",
+  requireAuth,
+  validate({ body: profileProjectValidator.partial() }),
+  asyncHandler(controller.updateProject)
+);
+
+router.delete(
+  "/me/projects/:projectId",
+  requireAuth,
+  asyncHandler(controller.deleteProject)
+);
+
 export default router;
+

@@ -14,12 +14,13 @@ interface ProfileHeaderProps {
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   profile,
-  name = 'testuser',
-  email = 'testuser@gmail.com',
+  name = 'Candidate',
+  email = 'candidate@example.com',
   onEditProfile,
 }) => {
-  const displayName = name || 'testuser';
-  const displayEmail = email || profile.links?.portfolio || 'testuser@gmail.com';
+  const displayName = name || 'Candidate';
+  const displayEmail = email || profile.links?.portfolio || 'candidate@example.com';
+
   const displayHeadline = profile.headline || 'Building AI-driven Enterprise Systems | Next.js, React & Node.js Specialist';
   const displayLocation = profile.location
     ? [profile.location.city, profile.location.state].filter(Boolean).join(', ') || 'San Francisco, California'

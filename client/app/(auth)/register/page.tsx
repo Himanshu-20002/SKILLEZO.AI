@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import RegisterCard from "./components/RegisterCard";
 
@@ -9,7 +10,10 @@ export const metadata = {
 export default function RegisterPage() {
   return (
     <AuthLayout>
-      <RegisterCard />
+      <Suspense fallback={<div className="h-96 w-full max-w-md bg-white/5 animate-pulse rounded-3xl" />}>
+        <RegisterCard />
+      </Suspense>
     </AuthLayout>
   );
 }
+

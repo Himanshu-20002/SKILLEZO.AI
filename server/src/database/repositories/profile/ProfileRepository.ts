@@ -54,4 +54,47 @@ export class ProfileRepository extends BaseRepository<IProfile> {
   async findProfilesByRole(targetRoleId: string | Types.ObjectId): Promise<IProfile[]> {
     return await this.findMany({ targetRoleId });
   }
+
+  async addProject(userId: string, project: any): Promise<IProfile | null> {
+    return await this.model
+      .findOneAndUpdate({ userId }, { $push: { projects: project } }, { new: true, runValidators: true })
+      .exec();
+  }
+
+  async updateProject(userId: string, projectId: string, projectData: any): Promise<IProfile | null> {
+    const isObjectId = Types.ObjectId.isValid(projectId);
+    const filter = isObjectId
+      ? { userId, "projects._id": new Types.ObjectId(projectId) }
+      : { userId, "projects.title": projectId };
+
+    return await this.model
+      .findOneAndUpdate(
+        filter,
+        {
+          $set: {
+            "projects.$": {
+              ...projectData,
+              ...(isObjectId ? { _id: new Types.ObjectId(projectId) } : {}),
+            },
+          },
+        },
+        { new: true, runValidators: true }
+      )
+      .exec();
+  }
+
+  async deleteProject(userId: string, projectId: string): Promise<IProfile | null> {
+    const isObjectId = Types.ObjectId.isValid(projectId);
+    const pullCondition = isObjectId
+      ? { _id: new Types.ObjectId(projectId) }
+      : { title: projectId };
+
+    return await this.model
+      .findOneAndUpdate(
+        { userId },
+        { $pull: { projects: pullCondition } },
+        { new: true, runValidators: true }
+      )
+      .exec();
+  }
 }

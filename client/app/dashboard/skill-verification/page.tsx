@@ -1,21 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Award, Plus, LayoutGrid, ListFilter, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Award, Plus, LayoutGrid, ListFilter, X, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/dashboard/common/PageHeader';
 import { VerificationSearch } from '@/components/dashboard/verification/VerificationSearch';
 import { VerificationFilters } from '@/components/dashboard/verification/VerificationFilters';
 import { VerificationTable } from '@/components/dashboard/verification/VerificationTable';
 import { VerificationCard } from '@/components/dashboard/verification/VerificationCard';
+import { CertificateModal } from '@/components/dashboard/verification/CertificateModal';
 import { Pagination } from '@/components/dashboard/common/Pagination';
 import { EmptyState } from '@/components/dashboard/common/EmptyState';
 import { mockVerificationRecords } from '@/mock/verification';
 import { SkillVerificationRecord } from '@/types/verification';
 import { VerificationStatusBadge } from '@/components/dashboard/verification/VerificationStatusBadge';
+import { verificationService } from '@/services/verification.service';
 import { toast } from 'sonner';
 
 export default function SkillVerificationPage() {
+  const [records, setRecords] = useState<SkillVerificationRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -23,9 +28,45 @@ export default function SkillVerificationPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRecord, setSelectedRecord] = useState<SkillVerificationRecord | null>(null);
 
+  // Certificate Modal State
+  const [certificateData, setCertificateData] = useState<{
+    skillName: string;
+    category?: string;
+    candidateName?: string;
+    score: number;
+    proficiency?: string;
+    credentialHash: string;
+    issueDate?: string;
+  } | null>(null);
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
+
+  useEffect(() => {
+    async function loadRecords() {
+      try {
+        setLoading(true);
+        const liveRecords = await verificationService.getUserRecords();
+        if (liveRecords && liveRecords.length > 0) {
+          // Merge with mock records avoiding duplicates by skillName
+          const liveSkillNames = new Set(liveRecords.map((r) => r.skillName.toLowerCase()));
+          const remainingMock = mockVerificationRecords.filter(
+            (m) => !liveSkillNames.has(m.skillName.toLowerCase())
+          );
+          setRecords([...liveRecords, ...remainingMock]);
+        } else {
+          setRecords(mockVerificationRecords);
+        }
+      } catch {
+        setRecords(mockVerificationRecords);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadRecords();
+  }, []);
+
   const itemsPerPage = 5;
 
-  const filteredRecords = mockVerificationRecords.filter((record) => {
+  const filteredRecords = records.filter((record) => {
     const matchesSearch =
       record.skillName.toLowerCase().includes(search.toLowerCase()) ||
       record.category.toLowerCase().includes(search.toLowerCase()) ||
@@ -37,11 +78,24 @@ export default function SkillVerificationPage() {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / itemsPerPage));
   const paginatedRecords = filteredRecords.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleRequestNewVerification = () => {
-    toast.success('Skill verification request submitted to AI Audit Queue!');
+  const handleOpenCertificate = (record: SkillVerificationRecord) => {
+    if (record.credentialHash) {
+      setCertificateData({
+        skillName: record.skillName,
+        category: record.category,
+        candidateName: record.applicantName || 'Candidate',
+        score: record.score,
+        proficiency: record.proficiency || (record.score >= 90 ? 'Expert' : record.score >= 75 ? 'Advanced' : 'Intermediate'),
+        credentialHash: record.credentialHash,
+        issueDate: record.verifiedDate,
+      });
+      setIsCertificateModalOpen(true);
+    } else {
+      setSelectedRecord(record);
+    }
   };
 
   return (
@@ -50,16 +104,17 @@ export default function SkillVerificationPage() {
         {/* Page Header */}
         <PageHeader
           title="Skill Verification Engine"
-          description="Cryptographic & AI-powered skill audit credentials and real-time assessments."
+          description="Cryptographic & AI-powered skill audit credentials, verifiable certificates, and real-time assessments."
           badge="AI v4.2"
           actions={
-            <button
-              onClick={handleRequestNewVerification}
+            <Link
+              href="/dashboard/assessments"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#3D5AFE] to-[#00D9C0] text-white text-xs sm:text-sm font-semibold shadow-md shadow-[#3D5AFE]/20 hover:opacity-95 transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              <span>New Audit Request</span>
-            </button>
+              <Sparkles className="w-4 h-4" />
+              <span>Take Skill Assessment</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           }
         />
 
@@ -115,21 +170,21 @@ export default function SkillVerificationPage() {
           />
         ) : viewMode === 'table' ? (
           <div className="space-y-4">
-            <VerificationTable records={paginatedRecords} onSelectRecord={(r) => setSelectedRecord(r)} />
+            <VerificationTable records={paginatedRecords} onSelectRecord={handleOpenCertificate} />
             <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
           </div>
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {paginatedRecords.map((record) => (
-                <VerificationCard key={record.id} record={record} onSelect={(r) => setSelectedRecord(r)} />
+                <VerificationCard key={record.id} record={record} onSelect={handleOpenCertificate} />
               ))}
             </div>
             <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
           </div>
         )}
 
-        {/* Detail Modal Overlay */}
+        {/* Detail Modal Overlay for pending/failed items without full certificate */}
         {selectedRecord && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
@@ -197,6 +252,13 @@ export default function SkillVerificationPage() {
             </div>
           </div>
         )}
+
+        {/* Verifiable Certificate Modal */}
+        <CertificateModal
+          isOpen={isCertificateModalOpen}
+          onClose={() => setIsCertificateModalOpen(false)}
+          certificate={certificateData}
+        />
       </div>
     </DashboardLayout>
   );

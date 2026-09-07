@@ -29,7 +29,11 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function LoginForm() {
+interface LoginFormProps {
+  activeRole?: "candidate" | "recruiter";
+}
+
+export default function LoginForm({ activeRole = "candidate" }: LoginFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -62,8 +66,14 @@ export default function LoginForm() {
         setAuthError(errorMsg);
         toast.error("Authentication Failed", { description: errorMsg });
       } else {
-        toast.success("Welcome back!", { description: "Signed in successfully." });
-        router.push("/dashboard");
+        const userRole = (res.data?.user as any)?.role || activeRole;
+        if (userRole === "recruiter") {
+          toast.success("Recruiter Workspace", { description: "Opening applicant management portal..." });
+          router.push("/recruiter/applications");
+        } else {
+          toast.success("Welcome back!", { description: "Opening candidate dashboard..." });
+          router.push("/dashboard");
+        }
       }
     } catch (err: any) {
       const fallbackMsg = err?.message || "An unexpected error occurred during sign in.";
@@ -86,7 +96,7 @@ export default function LoginForm() {
       {/* Email Input */}
       <div className="flex flex-col gap-1.5 w-full">
         <label className="text-xs sm:text-sm font-medium text-white/90">
-          Email Address
+          {activeRole === "recruiter" ? "Company / Work Email" : "Email Address"}
         </label>
         <div className="relative flex items-center">
           <div className="pointer-events-none absolute left-3.5 text-[#8A90A6]">
@@ -94,7 +104,11 @@ export default function LoginForm() {
           </div>
           <input
             type="email"
-            placeholder="name@company.com"
+            placeholder={
+              activeRole === "recruiter"
+                ? "recruiter@enterprise.com"
+                : "alex@example.com"
+            }
             disabled={isSubmitting}
             {...register("email")}
             className={cn(

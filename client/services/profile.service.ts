@@ -28,6 +28,18 @@ export interface CandidateExperience {
   description?: string;
 }
 
+export interface CandidateProject {
+  _id?: string;
+  title: string;
+  description: string;
+  techStack?: string[];
+  githubUrl?: string | null;
+  liveDemoUrl?: string | null;
+  featured?: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
 export interface CandidateProfile {
   _id?: string;
   userId: string;
@@ -39,6 +51,7 @@ export interface CandidateProfile {
   skills: CandidateSkill[];
   education: CandidateEducation[];
   experience: CandidateExperience[];
+  projects?: CandidateProject[];
   links?: {
     github?: string;
     linkedin?: string;
@@ -123,4 +136,35 @@ export const profileService = {
     });
     return res.data;
   },
+
+  async addProject(project: CandidateProject): Promise<CandidateProfile> {
+    const res = await apiFetch<{ success: boolean; data: CandidateProfile }>("/api/profile/me/projects", {
+      method: "POST",
+      body: JSON.stringify(project),
+    });
+    return res.data;
+  },
+
+  async updateProject(projectId: string, project: Partial<CandidateProject>): Promise<CandidateProfile> {
+    const res = await apiFetch<{ success: boolean; data: CandidateProfile }>(`/api/profile/me/projects/${encodeURIComponent(projectId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(project),
+    });
+    return res.data;
+  },
+
+  async deleteProject(projectId: string): Promise<CandidateProfile> {
+    const res = await apiFetch<{ success: boolean; data: CandidateProfile }>(`/api/profile/me/projects/${encodeURIComponent(projectId)}`, {
+      method: "DELETE",
+    });
+    return res.data;
+  },
+
+  async seedSampleProjects(): Promise<CandidateProfile> {
+    const res = await apiFetch<{ success: boolean; data: CandidateProfile }>("/api/profile/me/projects/seed", {
+      method: "POST",
+    });
+    return res.data;
+  },
 };
+

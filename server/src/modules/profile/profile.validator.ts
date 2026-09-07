@@ -78,3 +78,14 @@ export const updateLinksValidator = z.object({
 export const updateTargetRoleValidator = z.object({
   targetRoleId: objectIdSchema.nullable(),
 });
+
+export const profileProjectValidator = z.object({
+  title: z.string().trim().min(1, "Project title is required"),
+  description: z.string().trim().min(1, "Project description is required"),
+  techStack: z.array(z.string().trim()).optional().default([]),
+  githubUrl: z.string().trim().url("Invalid GitHub URL").nullable().optional().or(z.literal("")),
+  liveDemoUrl: z.string().trim().url("Invalid Live Demo URL").nullable().optional().or(z.literal("")),
+  featured: z.boolean().optional().default(false),
+  startDate: z.coerce.date().nullable().optional(),
+  endDate: z.coerce.date().nullable().optional(),
+});

@@ -83,12 +83,12 @@
 
 ### 🗓️ DAY 4 — Recruiter / Employer Applicant Management Portal
 
-- [ ] **`BE-404` — Recruiter Applications Pipeline API** (2h 00m)
+- [x] **`BE-404` — Recruiter Applications Pipeline API** (2h 00m)
   - **Action:** Implement `GET /api/recruiter/applications` (paginated, filterable by job & status) and `PATCH /api/recruiter/applications/:id/status` with role-based access control (RBAC).
   - **Target Files:** `server/src/modules/recruiter-application/`.
   - **Verify:** Recruiter can query all applicants for their company jobs and update stages.
 
-- [ ] **`FE-404` — Recruiter Applicant Kanban & Review Drawer** (2h 00m)
+- [x] **`FE-404` — Recruiter Applicant Kanban & Review Drawer** (2h 00m)
   - **Action:** Build recruiter dashboard with Kanban columns (`Under Review`, `Shortlisted`, `Interview`, `Offer`, `Hired`).
   - **Action:** Add candidate deep-dive drawer with inline authenticated PDF resume streaming and recruiter review notes.
   - **Target Files:** `client/app/recruiter/applications/page.tsx`, `client/components/recruiter/`.

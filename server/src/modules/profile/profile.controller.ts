@@ -70,4 +70,31 @@ export class ProfileController {
     const profile = await this.profileService.deleteSkill(userId, skillName);
     res.status(HTTP_STATUS.OK).json(successResponse(profile));
   };
+
+  addProject = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const profile = await this.profileService.addProject(userId, req.body);
+    res.status(HTTP_STATUS.CREATED).json(successResponse(profile));
+  };
+
+  updateProject = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const projectId = req.params.projectId as string;
+    const profile = await this.profileService.updateProject(userId, projectId, req.body);
+    res.status(HTTP_STATUS.OK).json(successResponse(profile));
+  };
+
+  deleteProject = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const projectId = req.params.projectId as string;
+    const profile = await this.profileService.deleteProject(userId, projectId);
+    res.status(HTTP_STATUS.OK).json(successResponse(profile));
+  };
+
+  seedSampleProjects = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const profile = await this.profileService.seedSampleProjects(userId);
+    res.status(HTTP_STATUS.OK).json(successResponse(profile));
+  };
 }
+

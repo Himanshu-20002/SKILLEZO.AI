@@ -73,12 +73,20 @@ export function Navbar({ onGetScore }: NavbarProps) {
             <div className="h-10 w-32 rounded-full bg-white/10 animate-pulse" />
           ) : isLoggedIn ? (
             <Button
-              onClick={() => router.push("/dashboard")}
+              onClick={() =>
+                router.push(
+                  (session?.user as any)?.role === "recruiter"
+                    ? "/recruiter/applications"
+                    : "/dashboard"
+                )
+              }
               data-testid="nav-dashboard-btn"
               className="rounded-full bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 hover:shadow-[0_0_20px_rgba(61,90,254,0.45)] transition-all font-semibold flex items-center gap-2"
             >
               <LayoutDashboard className="h-4 w-4" />
-              Go to Dashboard
+              {(session?.user as any)?.role === "recruiter"
+                ? "Recruiter Portal"
+                : "Go to Dashboard"}
             </Button>
           ) : (
             <>
@@ -90,7 +98,7 @@ export function Navbar({ onGetScore }: NavbarProps) {
                 Login
               </Link>
               <Button
-                onClick={() => router.push("/login")}
+                onClick={() => router.push("/register")}
                 data-testid="nav-cta-btn"
                 className="rounded-full bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 hover:shadow-[0_0_20px_rgba(61,90,254,0.45)] transition-all font-semibold"
               >
@@ -99,6 +107,7 @@ export function Navbar({ onGetScore }: NavbarProps) {
             </>
           )}
         </div>
+
 
         <div className="flex items-center gap-2 lg:hidden">
           {isPending ? (
@@ -158,13 +167,19 @@ export function Navbar({ onGetScore }: NavbarProps) {
                   <Button
                     onClick={() => {
                       setOpen(false);
-                      router.push("/dashboard");
+                      router.push(
+                        (session?.user as any)?.role === "recruiter"
+                          ? "/recruiter/applications"
+                          : "/dashboard"
+                      );
                     }}
                     className="w-full rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 py-2.5 text-white font-semibold flex items-center justify-center gap-2"
                     data-testid="mobile-cta-btn"
                   >
                     <LayoutDashboard className="h-4 w-4" />
-                    Go to Dashboard
+                    {(session?.user as any)?.role === "recruiter"
+                      ? "Recruiter Portal"
+                      : "Go to Dashboard"}
                   </Button>
                 ) : (
                   <>

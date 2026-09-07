@@ -24,13 +24,14 @@ export class ProfileService {
   }
 
   public calculateProfileCompletion(profile: Partial<IProfile>): number {
-    let score = 30; // base score for account registration
-    if (profile.headline) score += 15;
-    if (profile.bio && profile.bio.length > 20) score += 15;
+    let score = 25; // base score for account registration
+    if (profile.headline) score += 10;
+    if (profile.bio && profile.bio.length > 20) score += 10;
     if (profile.location?.city || profile.location?.country) score += 10;
     if (profile.phone) score += 10;
-    if (profile.skills && profile.skills.length >= 3) score += 12;
-    if (profile.links?.github || profile.links?.portfolio) score += 8;
+    if (profile.skills && profile.skills.length >= 3) score += 15;
+    if (profile.projects && profile.projects.length >= 1) score += 10;
+    if (profile.links?.github || profile.links?.portfolio) score += 10;
     return Math.min(score, 100);
   }
 
@@ -63,6 +64,40 @@ export class ProfileService {
       ],
       education: (data.education as IProfileEducation[]) || [],
       experience: (data.experience as IProfileExperience[]) || [],
+      projects: [
+        {
+          title: "SKILLEZO AI — Enterprise Career Intelligence Platform",
+          description: "Architected a full-stack career acceleration ecosystem with ATS resume optimization, cryptographic skill verification badges, and automated 7-stage Career GPS roadmap tracking.",
+          techStack: ["Next.js 15", "React 19", "TypeScript", "Node.js", "MongoDB", "Tailwind CSS", "Redis"],
+          githubUrl: "https://github.com/Himanshu-20002/SKILLEZO.AI",
+          liveDemoUrl: "https://skillezo-ai.vercel.app",
+          featured: true,
+        },
+        {
+          title: "Distributed Real-Time Job Ingestion & Crawler Engine",
+          description: "High-throughput asynchronous job stream processing pipeline that ingests, deduplicates, and vector-indexes multi-source tech listings from Remotive, Arbeitnow, and custom ATS feeds.",
+          techStack: ["Node.js", "Express", "Redis Pub/Sub", "Docker", "MongoDB", "BullMQ"],
+          githubUrl: "https://github.com/Himanshu-20002/job-ingestion-worker",
+          liveDemoUrl: "https://skillezo-api.vercel.app",
+          featured: true,
+        },
+        {
+          title: "CloudScale — Microservices Orchestration & Kubernetes Mesh",
+          description: "Zero-trust service mesh architecture managing multi-region container deployments with automated canary rollouts, Prometheus telemetry dashboards, and AWS ECS Fargate autoscaling.",
+          techStack: ["Kubernetes", "Docker", "AWS ECS", "Terraform", "Prometheus", "Grafana"],
+          githubUrl: "https://github.com/Himanshu-20002/cloudscale-mesh",
+          liveDemoUrl: "https://cloudscale-demo.vercel.app",
+          featured: false,
+        },
+        {
+          title: "DevFlow — Collaborative Real-Time Code Canvas",
+          description: "Interactive developer collaboration workspace featuring CRDT-based multi-user state synchronization, WebSockets room management, and automated AST syntax parsing.",
+          techStack: ["React", "TypeScript", "WebSockets", "Tailwind CSS", "PostgreSQL", "Zustand"],
+          githubUrl: "https://github.com/Himanshu-20002/devflow-canvas",
+          liveDemoUrl: "https://devflow-canvas.vercel.app",
+          featured: false,
+        },
+      ],
       links: (data.links as IProfileLinks) || { github: "https://github.com/candidate", linkedin: "https://linkedin.com/in/candidate", portfolio: "https://candidate.dev" },
       location: data.location || { city: "San Francisco", state: "California", country: "United States" },
     };
@@ -220,4 +255,93 @@ export class ProfileService {
     }
     return updated;
   }
+
+  async addProject(userId: string, data: any): Promise<IProfile> {
+    const exists = await this.profileRepository.existsByUserId(userId);
+    if (!exists) {
+      await this.createProfile(userId, {});
+    }
+    const updated = await this.profileRepository.addProject(userId, data);
+    if (!updated) {
+      throw new AppError("Failed to add project to portfolio", HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.DATABASE_ERROR);
+    }
+    return updated;
+  }
+
+  async updateProject(userId: string, projectId: string, data: any): Promise<IProfile> {
+    const exists = await this.profileRepository.existsByUserId(userId);
+    if (!exists) {
+      throw new AppError("Candidate profile not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.PROFILE_NOT_FOUND);
+    }
+    const updated = await this.profileRepository.updateProject(userId, projectId, data);
+    if (!updated) {
+      throw new AppError("Failed to update project", HTTP_STATUS.NOT_FOUND, ERROR_CODES.PROFILE_NOT_FOUND);
+    }
+    return updated;
+  }
+
+  async deleteProject(userId: string, projectId: string): Promise<IProfile> {
+    let profile = await this.profileRepository.findByUserId(userId);
+    if (!profile) {
+      profile = await this.createProfile(userId, {});
+    }
+
+    await this.profileRepository.deleteProject(userId, projectId);
+
+    if (profile.projects && profile.projects.length > 0) {
+      profile.projects = profile.projects.filter(
+        (p: any) =>
+          p._id?.toString() !== projectId &&
+          p.title !== projectId &&
+          p.id !== projectId
+      );
+      await profile.save();
+    }
+
+    const doc = profile.toObject ? profile.toObject() : profile;
+    (doc as any).completionPercentage = this.calculateProfileCompletion(doc);
+    return doc as IProfile;
+  }
+
+  async seedSampleProjects(userId: string): Promise<IProfile> {
+    let profile = await this.profileRepository.findByUserId(userId);
+    if (!profile) {
+      profile = await this.createProfile(userId, {});
+    }
+
+    const sampleProjects = [
+      {
+        title: "SKILLEZO AI — Enterprise Career Intelligence Platform",
+        description: "Architected a full-stack career acceleration ecosystem with ATS resume optimization, cryptographic skill verification badges, and automated 7-stage Career GPS roadmap tracking.",
+        techStack: ["Next.js 15", "React 19", "TypeScript", "Node.js", "MongoDB", "Tailwind CSS"],
+        githubUrl: "https://github.com/Himanshu-20002/SKILLEZO.AI",
+        liveDemoUrl: "https://skillezo-ai.vercel.app",
+        featured: true,
+      },
+      {
+        title: "Distributed Real-Time Job Ingestion & Crawler Engine",
+        description: "High-throughput asynchronous job stream processing pipeline that ingests, deduplicates, and vector-indexes multi-source tech listings from Remotive, Arbeitnow, and custom ATS feeds.",
+        techStack: ["Node.js", "Express", "Redis Pub/Sub", "Docker", "MongoDB", "BullMQ"],
+        githubUrl: "https://github.com/Himanshu-20002/job-ingestion-worker",
+        liveDemoUrl: "https://skillezo-api.vercel.app",
+        featured: true,
+      },
+      {
+        title: "DevFlow — Collaborative Real-Time Code Canvas",
+        description: "Interactive developer collaboration workspace featuring CRDT-based multi-user state synchronization, WebSockets room management, and automated AST syntax parsing.",
+        techStack: ["React", "TypeScript", "WebSockets", "Tailwind CSS", "PostgreSQL", "Zustand"],
+        githubUrl: "https://github.com/Himanshu-20002/devflow-canvas",
+        liveDemoUrl: "https://devflow-canvas.vercel.app",
+        featured: false,
+      },
+    ];
+
+    profile.projects = sampleProjects as any;
+    await profile.save();
+
+    const doc = profile.toObject ? profile.toObject() : profile;
+    (doc as any).completionPercentage = this.calculateProfileCompletion(doc);
+    return doc as IProfile;
+  }
 }
+

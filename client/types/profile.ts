@@ -43,6 +43,15 @@ export interface ExtendedUserProfile {
   skills: UserSkill[];
   certifications: UserCertification[];
   education: UserEducation[];
+  projects?: {
+    id?: string;
+    title: string;
+    description: string;
+    techStack?: string[];
+    githubUrl?: string;
+    liveDemoUrl?: string;
+    featured?: boolean;
+  }[];
   links?: {
     github?: string;
     linkedin?: string;

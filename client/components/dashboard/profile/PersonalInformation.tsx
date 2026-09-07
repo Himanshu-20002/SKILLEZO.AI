@@ -14,7 +14,8 @@ export const PersonalInformation: React.FC<PersonalInformationProps> = ({ profil
   const displayLocation = profile.location
     ? [profile.location.city, profile.location.state].filter(Boolean).join(', ') || 'San Francisco, California'
     : 'San Francisco, California';
-  const displayEmail = email || 'testuser@gmail.com';
+  const displayEmail = email || profile.links?.portfolio || 'candidate@example.com';
+
   const displayPhone = profile.phone || '+1 (555) 234-5678';
   const displayRole = profile.targetRole || 'Senior Full Stack Engineer';
   const displayBio = profile.bio || 'Passionate software engineer with 6+ years of experience designing scalable cloud solutions, microservices, and modern web applications. Focused on automated skill verification and AI integrations.';

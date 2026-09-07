@@ -48,5 +48,43 @@ export const mockExtendedProfile: ExtendedUserProfile = {
       endYear: '2020',
       grade: '3.9 GPA'
     }
+  ],
+  projects: [
+    {
+      id: 'proj-1',
+      title: 'SKILLEZO AI — Enterprise Career Intelligence Platform',
+      description: 'Architected a full-stack career acceleration ecosystem with ATS resume optimization, cryptographic skill verification badges, and automated 7-stage Career GPS roadmap tracking.',
+      techStack: ['Next.js 15', 'React 19', 'TypeScript', 'Node.js', 'MongoDB', 'Tailwind CSS', 'Redis'],
+      githubUrl: 'https://github.com/Himanshu-20002/SKILLEZO.AI',
+      liveDemoUrl: 'https://skillezo-ai.vercel.app',
+      featured: true,
+    },
+    {
+      id: 'proj-2',
+      title: 'Distributed Real-Time Job Ingestion & Crawler Engine',
+      description: 'High-throughput asynchronous job stream processing pipeline that ingests, deduplicates, and vector-indexes multi-source tech listings from Remotive, Arbeitnow, and custom ATS feeds.',
+      techStack: ['Node.js', 'Express', 'Redis Pub/Sub', 'Docker', 'MongoDB', 'BullMQ'],
+      githubUrl: 'https://github.com/Himanshu-20002/job-ingestion-worker',
+      liveDemoUrl: 'https://skillezo-api.vercel.app',
+      featured: true,
+    },
+    {
+      id: 'proj-3',
+      title: 'CloudScale — Microservices Orchestration & Kubernetes Mesh',
+      description: 'Zero-trust service mesh architecture managing multi-region container deployments with automated canary rollouts, Prometheus telemetry dashboards, and AWS ECS Fargate autoscaling.',
+      techStack: ['Kubernetes', 'Docker', 'AWS ECS', 'Terraform', 'Prometheus', 'Grafana'],
+      githubUrl: 'https://github.com/Himanshu-20002/cloudscale-mesh',
+      liveDemoUrl: 'https://cloudscale-demo.vercel.app',
+      featured: false,
+    },
+    {
+      id: 'proj-4',
+      title: 'DevFlow — Collaborative Real-Time Code Canvas',
+      description: 'Interactive developer collaboration workspace featuring CRDT-based multi-user state synchronization, WebSockets room management, and automated AST syntax parsing.',
+      techStack: ['React', 'TypeScript', 'WebSockets', 'Tailwind CSS', 'PostgreSQL', 'Zustand'],
+      githubUrl: 'https://github.com/Himanshu-20002/devflow-canvas',
+      liveDemoUrl: 'https://devflow-canvas.vercel.app',
+      featured: false,
+    },
   ]
 };

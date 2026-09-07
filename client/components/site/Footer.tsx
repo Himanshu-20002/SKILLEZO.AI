@@ -5,24 +5,48 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Zap, ArrowRight, Share2, Globe, MessageSquare, Mail } from "lucide-react";
 
+import Link from "next/link";
+
 const COLUMNS = [
   {
     title: "Product",
-    links: ["Employability Index", "Resume Intelligence", "Career GPS", "AI Coach", "Job Center"],
+    links: [
+      { label: "Employability Index", href: "/dashboard/employability-index" },
+      { label: "Resume Intelligence", href: "/dashboard/resume-intelligence" },
+      { label: "Career GPS", href: "/dashboard/career-gps" },
+      { label: "AI Coach", href: "/dashboard/ai-career-coach" },
+      { label: "Job Center", href: "/dashboard/job-center" },
+    ],
   },
   {
     title: "Solutions",
-    links: ["For Students", "For Universities", "For Recruiters", "Pricing"],
+    links: [
+      { label: "For Students", href: "/dashboard/student-portal" },
+      { label: "For Recruiters", href: "/recruiter/applications" },
+      { label: "For Job Seekers", href: "/dashboard/job-center" },
+      { label: "Pricing", href: "#pricing" },
+    ],
   },
   {
     title: "Company",
-    links: ["About", "Careers", "Press", "Contact"],
+    links: [
+      { label: "About", href: "#features" },
+      { label: "Solutions", href: "#solutions" },
+      { label: "Press", href: "#stories" },
+      { label: "Contact", href: "#resources" },
+    ],
   },
   {
     title: "Resources",
-    links: ["Blog", "Guides", "Help Center", "Legal"],
+    links: [
+      { label: "Skill Assessments", href: "/dashboard/assessments" },
+      { label: "Skill Verification", href: "/dashboard/skill-verification" },
+      { label: "Portfolio Projects", href: "/dashboard/projects" },
+      { label: "Recruiter Portal", href: "/recruiter/applications" },
+    ],
   },
 ];
+
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -86,15 +110,16 @@ export function Footer() {
                 <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white mb-3 sm:mb-4">{c.title}</p>
                 <ul className="space-y-2.5 sm:space-y-3">
                   {c.links.map((l) => (
-                    <li key={l}>
-                      <a
-                        href="#top"
+                    <li key={l.label}>
+                      <Link
+                        href={l.href}
                         className="text-xs sm:text-sm text-[#8A90A6] hover:text-[#00D9C0] transition-colors"
                       >
-                        {l}
-                      </a>
+                        {l.label}
+                      </Link>
                     </li>
                   ))}
+
                 </ul>
               </div>
             ))}

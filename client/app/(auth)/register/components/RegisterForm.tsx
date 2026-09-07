@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { User, Mail, Check, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, Mail, Check, AlertCircle, Building2 } from "lucide-react";
 import PasswordInput from "@/components/auth/PasswordInput";
 import LoadingSpinner from "@/components/auth/LoadingSpinner";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ const registerSchema = z
       .string()
       .min(1, { message: "Full name is required" })
       .min(3, { message: "Full name must be at least 3 characters long" }),
+    companyName: z.string().optional(),
     email: z
       .string()
       .min(1, { message: "Email address is required" })
@@ -43,7 +45,11 @@ const registerSchema = z
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-export default function RegisterForm() {
+interface RegisterFormProps {
+  activeRole?: "candidate" | "recruiter";
+}
+
+export default function RegisterForm({ activeRole = "candidate" }: RegisterFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -56,6 +62,7 @@ export default function RegisterForm() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       fullName: "",
+      companyName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -72,15 +79,26 @@ export default function RegisterForm() {
         email: data.email,
         password: data.password,
         name: data.fullName,
-      });
+        role: activeRole,
+        companyName: data.companyName,
+      } as any);
 
       if (res.error) {
         const errorMsg = res.error.message || "Failed to create account. Please try again.";
         setAuthError(errorMsg);
         toast.error("Registration Failed", { description: errorMsg });
       } else {
-        toast.success("Account Created!", { description: "Your account has been created successfully." });
-        router.push("/dashboard");
+        if (activeRole === "recruiter") {
+          toast.success("Recruiter Account Created!", {
+            description: "Opening your candidate management workspace...",
+          });
+          router.push("/recruiter/applications");
+        } else {
+          toast.success("Account Created!", {
+            description: "Your candidate profile is ready.",
+          });
+          router.push("/dashboard");
+        }
       }
     } catch (err: any) {
       const fallbackMsg = err?.message || "An unexpected error occurred during registration.";
@@ -99,10 +117,11 @@ export default function RegisterForm() {
           <span>{authError}</span>
         </div>
       )}
+
       {/* Full Name Input */}
       <div className="flex flex-col gap-1.5 w-full">
         <label className="text-xs sm:text-sm font-medium text-white/90">
-          Full Name
+          {activeRole === "recruiter" ? "Recruiter / Contact Name" : "Full Name"}
         </label>
         <div className="relative flex items-center">
           <div className="pointer-events-none absolute left-3.5 text-[#8A90A6]">
@@ -110,7 +129,7 @@ export default function RegisterForm() {
           </div>
           <input
             type="text"
-            placeholder="Alex Morgan"
+            placeholder={activeRole === "recruiter" ? "Sarah Connor" : "Alex Morgan"}
             disabled={isSubmitting}
             {...register("fullName")}
             className={cn(
@@ -130,10 +149,47 @@ export default function RegisterForm() {
         )}
       </div>
 
+      {/* Company Name (For Recruiters) */}
+      <AnimatePresence initial={false}>
+        {activeRole === "recruiter" && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="flex flex-col gap-1.5 w-full pb-1">
+              <label className="text-xs sm:text-sm font-medium text-white/90">
+                Company / Organization Name
+              </label>
+              <div className="relative flex items-center">
+                <div className="pointer-events-none absolute left-3.5 text-[#8A90A6]">
+                  <Building2 className="h-4 w-4" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Acme Corp / Tech Ventures"
+                  disabled={isSubmitting}
+                  {...register("companyName")}
+                  className={cn(
+                    "w-full rounded-xl bg-[#0B1130]/80 border border-white/10 py-3 pl-10 pr-4 text-sm text-white placeholder-[#8A90A6]/60",
+                    "transition-all duration-200 outline-none",
+                    "focus:border-[#3D5AFE] focus:ring-2 focus:ring-[#3D5AFE]/30 focus:bg-[#0B1130]",
+                    "hover:border-white/20",
+                    isSubmitting && "opacity-50 cursor-not-allowed"
+                  )}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Email Input */}
       <div className="flex flex-col gap-1.5 w-full">
         <label className="text-xs sm:text-sm font-medium text-white/90">
-          Email Address
+          {activeRole === "recruiter" ? "Company / Work Email" : "Email Address"}
         </label>
         <div className="relative flex items-center">
           <div className="pointer-events-none absolute left-3.5 text-[#8A90A6]">
@@ -141,7 +197,7 @@ export default function RegisterForm() {
           </div>
           <input
             type="email"
-            placeholder="name@company.com"
+            placeholder={activeRole === "recruiter" ? "recruiter@acme.com" : "name@example.com"}
             disabled={isSubmitting}
             {...register("email")}
             className={cn(
