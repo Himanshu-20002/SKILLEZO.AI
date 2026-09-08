@@ -84,6 +84,7 @@ export default function ResumeIntelligencePage() {
           impactScore: liveAts.impactScore,
           brevityScore: liveAts.brevityScore,
           extractedData: extracted,
+          auditPillars: liveAts.auditPillars,
           atsCompatibility: liveAts.atsCompatibility || [],
           keywords: liveAts.keywords || [],
           missingSkills: liveAts.missingKeywords || [],
@@ -241,8 +242,12 @@ export default function ResumeIntelligencePage() {
           />
         </div>
 
-        {/* ATS Compatibility Breakdown */}
-        <ATSCompatibility items={analysis.atsCompatibility} />
+        {/* Resume Health & Recruiter Readiness Audit */}
+        <ATSCompatibility
+          auditPillars={analysis.auditPillars}
+          items={analysis.atsCompatibility}
+          targetRole={targetRole}
+        />
 
         {/* Keyword Matrix & AI Recommendations */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -55,6 +55,37 @@ export interface ATSRecommendation {
   actionText: string;
 }
 
+export interface ResumeAuditPillars {
+  formatting: {
+    score: number;
+    status: "Passed" | "Needs Attention" | "Incomplete";
+    summary: string;
+    details: string[];
+  };
+  keywordAlignment: {
+    score: number;
+    matchedCount: number;
+    totalTargetCount: number;
+    status: "High Alignment" | "Moderate Alignment" | "Low Alignment";
+    topMatched: string[];
+    missingCritical: string[];
+  };
+  measurableImpact: {
+    score: number;
+    metricsCount: number;
+    status: "Strong Impact" | "Needs Metrics" | "Lacks Quantifiable Results";
+    summary: string;
+    tip: string;
+  };
+  sectionStructure: {
+    score: number;
+    detectedSections: string[];
+    missingSections: string[];
+    wordCount: number;
+    wordCountStatus: "Optimal (1 Page)" | "Slightly Long" | "Needs Content";
+  };
+}
+
 export interface ATSAnalysisResult {
   overallScore: number;
   atsScore: number;
@@ -69,6 +100,7 @@ export interface ATSAnalysisResult {
     readability: number;
   };
   categories: Record<string, ATSCategoryResult>;
+  auditPillars: ResumeAuditPillars;
   atsCompatibility: ATSCompatibilityItem[];
   keywords: KeywordMatchItem[];
   missingKeywords: ATSMissingKeyword[];
@@ -298,7 +330,73 @@ export class ResumeAtsEngine {
       },
     ];
 
-    // 9. Generate Actionable AI Improvement Recommendations
+    // 9. Generate 4 Core Audit Pillars (Health & Recruiter Readiness)
+    const formattingDetails: string[] = [];
+    if (personalInfo?.fullName) formattingDetails.push("Full candidate name verified");
+    else formattingDetails.push("Missing or unparsed full name");
+    if (personalInfo?.email) formattingDetails.push("Contact email address detected");
+    else formattingDetails.push("Missing email address");
+    if (personalInfo?.phone) formattingDetails.push("Phone number detected");
+    formattingDetails.push("Single-column ATS parsable layout compliant");
+
+    const detectedSections: string[] = [];
+    const missingSections: string[] = [];
+    if (personalInfo?.fullName || personalInfo?.email) detectedSections.push("Contact Information");
+    else missingSections.push("Contact Information");
+
+    if (extractedData.experience && extractedData.experience.length > 0) detectedSections.push("Work Experience");
+    else missingSections.push("Work Experience");
+
+    if (extractedData.skills && extractedData.skills.length > 0) detectedSections.push("Technical Skills");
+    else missingSections.push("Technical Skills");
+
+    if (extractedData.education && extractedData.education.length > 0) detectedSections.push("Education");
+    else missingSections.push("Education");
+
+    if ((extractedData.projects && extractedData.projects.length > 0) || (extractedData.summary && extractedData.summary.length > 0)) {
+      detectedSections.push("Projects / Summary");
+    }
+
+    const auditPillars: ResumeAuditPillars = {
+      formatting: {
+        score: readabilityScore,
+        status: readabilityScore >= 80 && personalInfo?.email ? "Passed" : "Needs Attention",
+        summary: readabilityScore >= 80 && personalInfo?.email
+          ? "Clean, single-column parsable structure with full contact info"
+          : "Layout or contact information needs attention",
+        details: formattingDetails,
+      },
+      keywordAlignment: {
+        score: keywordMatchScore,
+        matchedCount,
+        totalTargetCount: totalTargetKeywords,
+        status: keywordMatchScore >= 75 ? "High Alignment" : keywordMatchScore >= 50 ? "Moderate Alignment" : "Low Alignment",
+        topMatched: keywordsList.filter((k) => k.matched).slice(0, 4).map((k) => k.keyword),
+        missingCritical: missingKeywords.filter((m) => m.priority === "High").slice(0, 3).map((m) => m.keyword),
+      },
+      measurableImpact: {
+        score: impactScore,
+        metricsCount: impactCount,
+        status: impactCount >= 3 ? "Strong Impact" : impactCount >= 1 ? "Needs Metrics" : "Lacks Quantifiable Results",
+        summary: impactCount >= 3
+          ? `${impactCount}+ quantifiable metrics detected across experience bullets`
+          : impactCount > 0
+          ? `${impactCount} metric detected. Recruiters look for %, $, or scale numbers`
+          : "No quantifiable outcomes found (e.g. %, $, numbers, latency gains)",
+        tip: impactCount >= 3
+          ? "Great job using action verbs and measurable performance metrics."
+          : "Add metrics like 'reduced latency by 30%', 'served 10k+ users', or 'improved throughput by 25%'.",
+      },
+      sectionStructure: {
+        score: structureScore,
+        detectedSections,
+        missingSections,
+        wordCount: words,
+        wordCountStatus: words >= 400 && words <= 850 ? "Optimal (1 Page)" : words > 850 ? "Slightly Long" : "Needs Content",
+      },
+    };
+
+    // 10. Generate Actionable AI Improvement Recommendations
     const recommendations: ATSRecommendation[] = [];
 
     if (impactScore < 85) {
@@ -362,6 +460,7 @@ export class ResumeAtsEngine {
         readability: readabilityScore,
       },
       categories,
+      auditPillars,
       atsCompatibility,
       keywords: keywordsList.slice(0, 15),
       missingKeywords: missingKeywords

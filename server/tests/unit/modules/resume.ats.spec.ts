@@ -111,6 +111,19 @@ B.Tech Computer Science, State University
       expect(greenhouse?.compatibilityScore).toBeGreaterThanOrEqual(70);
     });
 
+    it("should generate 4-Pillar Resume Health Audit accurately", () => {
+      const result = engine.analyze(strongExtractedData, strongRawText);
+
+      expect(result.auditPillars).toBeDefined();
+      expect(result.auditPillars.formatting.status).toBe("Passed");
+      expect(result.auditPillars.formatting.details.length).toBeGreaterThanOrEqual(3);
+      expect(result.auditPillars.keywordAlignment.matchedCount).toBeGreaterThanOrEqual(5);
+      expect(result.auditPillars.measurableImpact.metricsCount).toBeGreaterThanOrEqual(3);
+      expect(result.auditPillars.measurableImpact.status).toBe("Strong Impact");
+      expect(result.auditPillars.sectionStructure.detectedSections).toContain("Work Experience");
+      expect(result.auditPillars.sectionStructure.detectedSections).toContain("Technical Skills");
+    });
+
     it("should identify missing keywords and provide recommendations", () => {
       const partialData: IResumeExtractedData = {
         personalInfo: { fullName: "Jane Doe", email: "jane@example.com" },

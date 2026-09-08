@@ -277,6 +277,7 @@ export class ResumeService {
       level: analysis.level,
       breakdown: analysis.breakdown,
       categories: analysis.categories,
+      auditPillars: analysis.auditPillars,
       atsCompatibility: analysis.atsCompatibility,
       keywords: analysis.keywords,
       missingKeywords: analysis.missingKeywords,

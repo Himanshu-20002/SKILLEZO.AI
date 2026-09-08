@@ -15,6 +15,41 @@ export const mockResumeAnalysis: ResumeAnalysisData = {
     skillsExtracted: ['React 19', 'Next.js 15', 'TypeScript', 'Node.js', 'PostgreSQL', 'AWS', 'Docker'],
     totalExperienceYears: 6,
   },
+  auditPillars: {
+    formatting: {
+      score: 95,
+      status: 'Passed',
+      summary: 'Clean, single-column parsable structure with full contact info',
+      details: [
+        'Full candidate name verified',
+        'Contact email address detected',
+        'Phone number detected',
+        'Single-column ATS parsable layout compliant',
+      ],
+    },
+    keywordAlignment: {
+      score: 84,
+      matchedCount: 14,
+      totalTargetCount: 18,
+      status: 'High Alignment',
+      topMatched: ['React 19 & Next.js', 'TypeScript', 'Node.js & Express', 'PostgreSQL'],
+      missingCritical: ['CI/CD Pipelines', 'Docker & Kubernetes'],
+    },
+    measurableImpact: {
+      score: 82,
+      metricsCount: 4,
+      status: 'Strong Impact',
+      summary: '4+ quantifiable metrics detected across experience bullets',
+      tip: 'Great job using action verbs and measurable performance metrics.',
+    },
+    sectionStructure: {
+      score: 95,
+      detectedSections: ['Contact Information', 'Work Experience', 'Technical Skills', 'Education', 'Projects / Summary'],
+      missingSections: [],
+      wordCount: 580,
+      wordCountStatus: 'Optimal (1 Page)',
+    },
+  },
   atsCompatibility: [
     { system: 'Greenhouse', compatibilityScore: 92, status: 'High Match' },
     { system: 'Lever', compatibilityScore: 88, status: 'High Match' },

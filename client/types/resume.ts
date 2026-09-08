@@ -92,6 +92,37 @@ export interface AIResumeRecommendation {
   actionText: string;
 }
 
+export interface ResumeAuditPillars {
+  formatting: {
+    score: number;
+    status: 'Passed' | 'Needs Attention' | 'Incomplete';
+    summary: string;
+    details: string[];
+  };
+  keywordAlignment: {
+    score: number;
+    matchedCount: number;
+    totalTargetCount: number;
+    status: 'High Alignment' | 'Moderate Alignment' | 'Low Alignment';
+    topMatched: string[];
+    missingCritical: string[];
+  };
+  measurableImpact: {
+    score: number;
+    metricsCount: number;
+    status: 'Strong Impact' | 'Needs Metrics' | 'Lacks Quantifiable Results';
+    summary: string;
+    tip: string;
+  };
+  sectionStructure: {
+    score: number;
+    detectedSections: string[];
+    missingSections: string[];
+    wordCount: number;
+    wordCountStatus: 'Optimal (1 Page)' | 'Slightly Long' | 'Needs Content';
+  };
+}
+
 export interface ResumeAtsAnalysis {
   resumeId?: string;
   resumeVersion?: number;
@@ -114,7 +145,8 @@ export interface ResumeAtsAnalysis {
     total: number;
     matchedSkills: string[];
   }>;
-  atsCompatibility: ATSCompatibilityItem[];
+  auditPillars?: ResumeAuditPillars;
+  atsCompatibility?: ATSCompatibilityItem[];
   keywords: KeywordMatchItem[];
   missingKeywords?: MissingSkillItem[];
   missingSkills?: MissingSkillItem[];

@@ -43,6 +43,7 @@ export interface ResumeAtsResponseDTO {
     readability: number;
   };
   categories: Record<string, any>;
+  auditPillars?: any;
   atsCompatibility: any[];
   keywords: any[];
   missingKeywords: any[];
