@@ -82,29 +82,36 @@ export const WelcomeBanner: React.FC = () => {
             href="/dashboard/employability-index"
             className="group flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 hover:border-white/40 shadow-[0_8px_24px_rgba(0,0,0,0.15)] hover:shadow-[0_16px_36px_rgba(0,0,0,0.3)] backdrop-blur-md transition-all duration-300 transform hover:scale-105 cursor-pointer"
           >
-            {/* SVG Circular Gauge */}
+            {/* SVG Circular Gauge with Luminous Gradient */}
             <div className="relative w-16 h-16 sm:w-18 sm:h-18 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <defs>
+                  <linearGradient id="scoreRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#00E5FF" />
+                    <stop offset="60%" stopColor="#00D9C0" />
+                    <stop offset="100%" stopColor="#10B981" />
+                  </linearGradient>
+                </defs>
                 <path
-                  className="text-white/20"
+                  className="text-white/15"
                   strokeWidth="3.2"
                   stroke="currentColor"
                   fill="none"
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 />
                 <path
-                  className="text-cyan-300 transition-all duration-1000 ease-out"
+                  stroke="url(#scoreRingGrad)"
                   strokeDasharray="100, 100"
                   strokeDashoffset={strokeDashoffset}
                   strokeWidth="3.2"
                   strokeLinecap="round"
-                  stroke="currentColor"
                   fill="none"
+                  className="transition-all duration-1000 ease-out filter drop-shadow-[0_0_6px_rgba(0,229,255,0.5)]"
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-sm sm:text-base font-black text-white leading-none">
+                <span className="text-sm sm:text-base font-black text-white leading-none tracking-tight">
                   {readinessScore}%
                 </span>
               </div>
