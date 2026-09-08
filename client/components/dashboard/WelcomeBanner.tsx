@@ -76,11 +76,14 @@ export const WelcomeBanner: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Readiness Score Circular Badge Capsule */}
+        {/* Right Column: Readiness Score Circular Badge Capsule (Expands on Hover) */}
         <div className="shrink-0 flex items-center justify-center">
-          <div className="flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white/15 border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.15)] backdrop-blur-md">
+          <Link
+            href="/dashboard/employability-index"
+            className="group flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 hover:border-white/40 shadow-[0_8px_24px_rgba(0,0,0,0.15)] hover:shadow-[0_16px_36px_rgba(0,0,0,0.3)] backdrop-blur-md transition-all duration-300 transform hover:scale-105 cursor-pointer"
+          >
             {/* SVG Circular Gauge */}
-            <div className="relative w-16 h-16 sm:w-18 sm:h-18 flex items-center justify-center">
+            <div className="relative w-16 h-16 sm:w-18 sm:h-18 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                 <path
                   className="text-white/20"
@@ -110,19 +113,24 @@ export const WelcomeBanner: React.FC = () => {
             {/* Gauge Description */}
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5">
-                <Award className="w-3.5 h-3.5 text-amber-300" />
+                <Award className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-100">
                   Profile Rank
                 </span>
               </div>
-              <p className="text-sm font-black text-white">
+              <p className="text-sm font-black text-white whitespace-nowrap">
                 Top 5% Talent
               </p>
               <p className="text-[11px] text-emerald-300 font-bold flex items-center gap-1">
                 <span>●</span> Recruiter Ready
               </p>
             </div>
-          </div>
+
+            {/* Expanding Arrow Indicator on Hover */}
+            <div className="w-0 opacity-0 group-hover:w-5 group-hover:opacity-100 transition-all duration-300 overflow-hidden flex items-center justify-center shrink-0">
+              <ArrowRight className="w-4 h-4 text-cyan-300" />
+            </div>
+          </Link>
         </div>
       </div>
     </div>
