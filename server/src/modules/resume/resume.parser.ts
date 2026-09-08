@@ -323,6 +323,83 @@ export class ResumeParserService {
   }
 
   /**
+   * Extract projects from resume text (common in student and developer resumes).
+   */
+  extractProjects(text: string): IResumeProject[] {
+    const projects: IResumeProject[] = [];
+    const projectSectionMatch = text.match(
+      /(?:projects?|key\s+projects?|personal\s+projects?|technical\s+projects?)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:education|achievements?|certifications?|skills?|experience|work\s+history|\b[A-Z\s]{4,}\b\n|$))/i
+    );
+
+    if (!projectSectionMatch || !projectSectionMatch[1]) {
+      return projects;
+    }
+
+    const sectionContent = projectSectionMatch[1].trim();
+    const blocks = sectionContent.split(/\n(?=[A-Z0-9][A-Za-z0-9\s&'’\-_]{2,50}(?:\s*[-–|:]|\s*\(|\s*\n))/g);
+
+    for (const block of blocks) {
+      const trimmed = block.trim();
+      if (trimmed.length < 10) continue;
+
+      const lines = trimmed.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (lines.length === 0) continue;
+
+      const titleLine = lines[0];
+      const title = titleLine.split(/[-–|:(]/)[0].trim();
+
+      // Extract technologies if line 2 or inline mentions tech
+      let technologies: string[] = [];
+      if (lines.length > 1 && /^(?:tech|technologies|tools|stack|built with)\s*[:\-]/i.test(lines[1])) {
+        technologies = lines[1].replace(/^(?:tech|technologies|tools|stack|built with)\s*[:\-]/i, "").split(/[,|•]/).map((t) => t.trim()).filter(Boolean);
+      } else if (lines.length > 1 && lines[1].includes(",")) {
+        technologies = lines[1].split(/[,|•]/).map((t) => t.trim()).filter((t) => t.length > 1 && t.length < 30);
+      }
+
+      const description = lines.slice(technologies.length > 0 ? 2 : 1).join(" ").slice(0, 500);
+
+      if (title.length > 2 && title.length < 80) {
+        projects.push({
+          title,
+          technologies,
+          description: description || trimmed,
+        });
+      }
+    }
+
+    return projects;
+  }
+
+  /**
+   * Extract certifications and achievements.
+   */
+  extractCertifications(text: string): IResumeCertification[] {
+    const certs: IResumeCertification[] = [];
+    const certSectionMatch = text.match(
+      /(?:certifications?|certificates?|licenses?|achievements?|honors?|awards?)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:education|skills?|projects?|experience|\b[A-Z\s]{4,}\b\n|$))/i
+    );
+
+    if (!certSectionMatch || !certSectionMatch[1]) {
+      return certs;
+    }
+
+    const lines = certSectionMatch[1]
+      .split("\n")
+      .map((l) => l.replace(/^[-•*]\s*/, "").trim())
+      .filter((l) => l.length > 4 && l.length < 120);
+
+    for (const line of lines) {
+      const parts = line.split(/[-–|:,]/);
+      certs.push({
+        name: parts[0].trim(),
+        issuer: parts.length > 1 ? parts[1].trim() : null,
+      });
+    }
+
+    return certs;
+  }
+
+  /**
    * Master extraction orchestrator.
    */
   async parseResumeBuffer(buffer: Buffer): Promise<IResumeExtractedData> {
@@ -338,6 +415,8 @@ export class ResumeParserService {
     const skills = this.extractSkills(text);
     const education = this.extractEducation(text);
     const experience = this.extractExperience(text);
+    const projects = this.extractProjects(text);
+    const certifications = this.extractCertifications(text);
 
     // Summary extraction (look for dedicated summary/profile section, avoid education/achievements)
     let summary: string | null = null;
@@ -352,8 +431,11 @@ export class ResumeParserService {
       }
     }
 
-    // Estimate total experience
-    const totalExperienceYears = Math.min(15, Math.max(1, experience.length * 1.5));
+    // Estimate total experience (considering experience and project portfolio)
+    const totalExperienceYears = Math.min(
+      15,
+      Math.max(1, Math.round((experience.length * 1.5) + (projects.length * 0.8)))
+    );
 
     return {
       personalInfo,
@@ -361,8 +443,8 @@ export class ResumeParserService {
       skills,
       education,
       experience,
-      projects: [],
-      certifications: [],
+      projects,
+      certifications,
       totalExperienceYears,
       parserVersion: "1.0.0-pdf-parse",
     };

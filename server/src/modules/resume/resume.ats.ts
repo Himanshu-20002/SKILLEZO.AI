@@ -240,21 +240,24 @@ export class ResumeAtsEngine {
     if (personalInfo?.phone) structurePoints += 5;
     if (extractedData.skills && extractedData.skills.length >= 5) structurePoints += 30;
     else if (extractedData.skills && extractedData.skills.length > 0) structurePoints += 15;
-    if (extractedData.experience && extractedData.experience.length >= 1) structurePoints += 30;
+    if ((extractedData.experience && extractedData.experience.length >= 1) || (extractedData.projects && extractedData.projects.length >= 1)) structurePoints += 30;
     if (extractedData.education && extractedData.education.length >= 1) structurePoints += 10;
     if (extractedData.summary && extractedData.summary.length > 20) structurePoints += 5;
+    if (extractedData.certifications && extractedData.certifications.length >= 1) structurePoints += 5;
     const structureScore = Math.min(100, structurePoints);
 
-    // 4. Brevity Score (Optimal 250 - 1200 words)
+    // 4. Brevity Score (Optimal 250 - 850 words for 1 page, 850 - 1300 for 2 pages)
     const words = rawText ? rawText.trim().split(/\s+/).filter(Boolean).length : 0;
     let brevityScore = 80;
-    if (words >= 50 && words <= 1200) {
+    if (words >= 200 && words <= 900) {
       brevityScore = 95;
-    } else if (words > 1200 && words <= 1600) {
-      brevityScore = 80;
-    } else if (words > 1600) {
-      brevityScore = 65;
-    } else if (words > 0 && words < 50) {
+    } else if (words > 900 && words <= 1400) {
+      brevityScore = 85;
+    } else if (words > 1400) {
+      brevityScore = 70;
+    } else if (words >= 100 && words < 200) {
+      brevityScore = 75;
+    } else if (words > 0 && words < 100) {
       brevityScore = 60;
     } else if (words === 0) {
       brevityScore = 40;
@@ -341,10 +344,15 @@ export class ResumeAtsEngine {
 
     const detectedSections: string[] = [];
     const missingSections: string[] = [];
+
     if (personalInfo?.fullName || personalInfo?.email) detectedSections.push("Contact Information");
     else missingSections.push("Contact Information");
 
-    if (extractedData.experience && extractedData.experience.length > 0) detectedSections.push("Work Experience");
+    const hasExperience =
+      (extractedData.experience && extractedData.experience.length > 0) ||
+      (extractedData.projects && extractedData.projects.length > 0);
+
+    if (hasExperience) detectedSections.push("Work Experience");
     else missingSections.push("Work Experience");
 
     if (extractedData.skills && extractedData.skills.length > 0) detectedSections.push("Technical Skills");
@@ -353,9 +361,24 @@ export class ResumeAtsEngine {
     if (extractedData.education && extractedData.education.length > 0) detectedSections.push("Education");
     else missingSections.push("Education");
 
-    if ((extractedData.projects && extractedData.projects.length > 0) || (extractedData.summary && extractedData.summary.length > 0)) {
+    if (
+      (extractedData.projects && extractedData.projects.length > 0) ||
+      (extractedData.summary && extractedData.summary.length > 0) ||
+      (extractedData.certifications && extractedData.certifications.length > 0)
+    ) {
       detectedSections.push("Projects / Summary");
     }
+
+    const wordCountStatus =
+      words >= 250 && words <= 850
+        ? "Optimal (1 Page)"
+        : words > 850 && words <= 1300
+        ? "2 Pages (Good)"
+        : words > 1300
+        ? "Too Long"
+        : words >= 120
+        ? "Good (Compact)"
+        : "Needs Content";
 
     const auditPillars: ResumeAuditPillars = {
       formatting: {
@@ -392,7 +415,7 @@ export class ResumeAtsEngine {
         detectedSections,
         missingSections,
         wordCount: words,
-        wordCountStatus: words >= 400 && words <= 850 ? "Optimal (1 Page)" : words > 850 ? "Slightly Long" : "Needs Content",
+        wordCountStatus: wordCountStatus as any,
       },
     };
 

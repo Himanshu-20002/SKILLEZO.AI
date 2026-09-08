@@ -257,12 +257,27 @@ export class ResumeService {
       certifications: [],
     };
 
-    const effectiveText = resume.rawText || [
-      extractedData.summary,
-      ...(extractedData.skills || []).map((s) => s.name),
-      ...(extractedData.experience || []).map((e) => `${e.jobTitle} ${e.companyName} ${e.description || ""}`),
-      ...(extractedData.education || []).map((ed) => `${ed.degree || ""} ${ed.institution || ""}`),
-    ].filter(Boolean).join(" ");
+    const effectiveText =
+      (resume.rawText && resume.rawText.length > 50)
+        ? resume.rawText
+        : [
+            extractedData.summary,
+            ...(extractedData.skills || []).map((s) => s.name),
+            ...(extractedData.experience || []).map(
+              (e) => `${e.jobTitle} ${e.companyName} ${e.description || ""}`
+            ),
+            ...(extractedData.projects || []).map(
+              (p) => `${p.title} ${(p.technologies || []).join(" ")} ${p.description || ""}`
+            ),
+            ...(extractedData.certifications || []).map(
+              (c) => `${c.name} ${c.issuer || ""}`
+            ),
+            ...(extractedData.education || []).map(
+              (ed) => `${ed.degree || ""} ${ed.institution || ""}`
+            ),
+          ]
+            .filter(Boolean)
+            .join(" ");
 
     const analysis = resumeAtsEngine.analyze(extractedData, effectiveText);
 

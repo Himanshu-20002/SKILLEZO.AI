@@ -279,7 +279,7 @@ export const ATSCompatibility: React.FC<ATSCompatibilityProps> = ({
             </div>
 
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-              Word Count: <strong className="text-slate-800 dark:text-slate-200">{sectionStructure.wordCount} words</strong> (Ideal: 450–850)
+              Word Count: <strong className="text-slate-800 dark:text-slate-200">{sectionStructure.wordCount} words</strong> (Ideal: 250–800)
             </p>
           </div>
 
