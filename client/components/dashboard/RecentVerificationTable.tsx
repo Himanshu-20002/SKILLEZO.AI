@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Shield, ExternalLink, Code2, PlusCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Shield, ExternalLink, Code2, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { DataTable, Column } from '@/components/dashboard/common/DataTable';
 import { StatusBadge } from '@/components/dashboard/common/StatusBadge';
-import { SkillVerificationRecord, ProficiencyLevel, VerificationStatus } from '@/types/verification';
+import { SkillVerificationRecord, VerificationStatus } from '@/types/verification';
 import { CardHeader } from '@/components/dashboard/common/CardHeader';
 import { verificationService } from '@/services/verification.service';
-import { profileService } from '@/services/profile.service';
+import { mockVerificationRecords } from '@/mock/verification';
 
 export const RecentVerificationTable: React.FC = () => {
   const [records, setRecords] = useState<SkillVerificationRecord[]>([]);
@@ -19,53 +19,23 @@ export const RecentVerificationTable: React.FC = () => {
 
     async function loadRecentVerifications() {
       try {
-        const [liveRecords, profile] = await Promise.all([
-          verificationService.getUserRecords().catch(() => []),
-          profileService.getMyProfile().catch(() => null),
-        ]);
+        const liveRecords = await verificationService.getUserRecords().catch(() => []);
 
         if (!isMounted) return;
 
         if (liveRecords && liveRecords.length > 0) {
-          setRecords(liveRecords.slice(0, 5));
-        } else if (profile && profile.skills && profile.skills.length > 0) {
-          // Construct real records from candidate's profile skills
-          const profileRecords: SkillVerificationRecord[] = profile.skills.map((skill, index) => {
-            const isVerified = Boolean(skill.verified);
-            const status: VerificationStatus = isVerified ? 'verified' : 'pending';
-            const proficiency: ProficiencyLevel =
-              (skill.proficiency as ProficiencyLevel) || (isVerified ? 'Advanced' : 'Intermediate');
-
-            // Browser-safe hex hash generator
-            const hexHash = isVerified
-              ? `0x${Array.from(skill.name)
-                  .map((c) => c.charCodeAt(0).toString(16).padStart(2, '0'))
-                  .join('')
-                  .slice(0, 16)}`
-              : undefined;
-
-            return {
-              id: `profile-skill-${index}`,
-              skillName: skill.name,
-              category: skill.category || 'Engineering',
-              topicId: skill.name.toLowerCase().replace(/\s+/g, '-'),
-              applicantName: profile.headline || 'Candidate',
-              score: skill.score || (isVerified ? 92 : 0),
-              maxScore: 100,
-              status,
-              proficiency,
-              submittedDate: new Date().toISOString().split('T')[0],
-              assessor: 'SKILLEZO AI Engine v4.2',
-              credentialHash: hexHash,
-            };
-          });
-
-          setRecords(profileRecords.slice(0, 5));
+          // Merge live records with catalog mock records to match Skill Verification page exactly
+          const liveSkillNames = new Set(liveRecords.map((r) => r.skillName.toLowerCase()));
+          const remainingMock = mockVerificationRecords.filter(
+            (m) => !liveSkillNames.has(m.skillName.toLowerCase())
+          );
+          setRecords([...liveRecords, ...remainingMock].slice(0, 5));
         } else {
-          setRecords([]);
+          setRecords(mockVerificationRecords.slice(0, 5));
         }
       } catch (err) {
         console.error('Failed to load recent verification records:', err);
+        if (isMounted) setRecords(mockVerificationRecords.slice(0, 5));
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -101,7 +71,9 @@ export const RecentVerificationTable: React.FC = () => {
     {
       header: 'Audit Score',
       cell: (row) => {
-        const hasScore = row.status === 'verified' || (row.score !== undefined && row.score > 0);
+        const isFailed = row.status === 'failed';
+        const isVerified = row.status === 'verified';
+        const hasScore = isVerified || isFailed || (row.score !== undefined && row.score > 0);
         const scorePercent = hasScore ? Math.min(100, Math.round((row.score / (row.maxScore || 100)) * 100)) : 0;
         const isHigh = scorePercent >= 75;
 
@@ -110,7 +82,15 @@ export const RecentVerificationTable: React.FC = () => {
             <div className="flex items-center justify-between text-xs font-bold">
               {hasScore ? (
                 <>
-                  <span className={isHigh ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
+                  <span
+                    className={
+                      isFailed
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : isHigh
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-amber-600 dark:text-amber-400'
+                    }
+                  >
                     {row.score}/{row.maxScore || 100}
                   </span>
                   <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
@@ -126,7 +106,9 @@ export const RecentVerificationTable: React.FC = () => {
               <div className="w-full bg-slate-100 dark:bg-white/[0.06] h-1.5 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
-                    isHigh
+                    isFailed
+                      ? 'bg-rose-500'
+                      : isHigh
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
                       : 'bg-gradient-to-r from-amber-500 to-yellow-400'
                   }`}
@@ -180,7 +162,7 @@ export const RecentVerificationTable: React.FC = () => {
     <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.4)]">
       <CardHeader
         title="Recent Skill Verifications"
-        subtitle="Cryptographically sealed AI evaluations & real-time audits"
+        subtitle="AI-evaluated skills and verifiable skill credentials"
         icon={<Shield className="w-4 h-4 text-[#00897B] dark:text-[#00D9C0]" />}
         action={
           <Link
@@ -203,33 +185,12 @@ export const RecentVerificationTable: React.FC = () => {
               />
             ))}
           </div>
-        ) : records.length > 0 ? (
+        ) : (
           <DataTable
             columns={columns}
             data={records}
             keyExtractor={(row) => row.id}
           />
-        ) : (
-          <div className="py-10 text-center space-y-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-800">
-            <div className="w-12 h-12 rounded-2xl bg-[#3D5AFE]/10 text-[#3D5AFE] dark:text-[#00D9C0] flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-slate-800 dark:text-white">
-                No skill audits recorded yet
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Audit and verify your technical skills to generate verifiable credentials for recruiters.
-              </p>
-            </div>
-            <Link
-              href="/dashboard/skill-verification"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#3D5AFE] to-[#00D9C0] text-white text-xs font-bold shadow-md hover:opacity-95 transition-opacity"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Start Your First Skill Audit</span>
-            </Link>
-          </div>
         )}
       </div>
     </div>
