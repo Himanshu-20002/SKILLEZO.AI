@@ -17,13 +17,13 @@ export const WelcomeBanner: React.FC = () => {
   const strokeDashoffset = 100 - readinessScore;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 dark:from-[#0f2766] dark:via-[#131f4e] dark:to-[#091129] border border-blue-500/30 dark:border-blue-500/20 p-6 sm:p-8 shadow-[0_12px_36px_-8px_rgba(29,78,216,0.35)] dark:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.8)] text-white transition-all">
+    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 dark:from-[#0f2766] dark:via-[#131f4e] dark:to-[#091129] border border-blue-500/30 dark:border-blue-500/20 p-6 sm:p-8 shadow-[0_12px_36px_-8px_rgba(29,78,216,0.35)] dark:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.8)] text-white transition-all group">
       {/* Vibrant Corner Shapes & Geometric Accent Meshes */}
-      <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-400/20 dark:bg-cyan-400/15 rounded-bl-full pointer-events-none transition-all" />
-      <div className="absolute -bottom-10 right-1/4 w-36 h-36 bg-indigo-400/25 dark:bg-indigo-400/15 rounded-full blur-2xl pointer-events-none" />
-      <div className="absolute -top-12 -left-12 w-48 h-48 bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
-      <div 
-        className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:18px_18px]" 
+      <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-400/20 dark:bg-cyan-400/15 rounded-bl-full pointer-events-none transition-all duration-500 ease-out group-hover:scale-125 group-hover:bg-cyan-400/30 dark:group-hover:bg-cyan-400/25" />
+      <div className="absolute -bottom-10 right-1/4 w-36 h-36 bg-indigo-400/25 dark:bg-indigo-400/15 rounded-full blur-2xl pointer-events-none transition-all duration-500 group-hover:scale-110" />
+      <div className="absolute -top-12 -left-12 w-48 h-48 bg-blue-400/20 rounded-full blur-3xl pointer-events-none transition-all duration-500 group-hover:scale-110" />
+      <div
+        className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:18px_18px]"
       />
 
       <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
