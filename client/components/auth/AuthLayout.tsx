@@ -30,7 +30,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       {/* Top Header Navbar */}
       <header className="relative z-20 w-full border-b border-white/5 bg-[#0B1130]/60 backdrop-blur-md">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
-          <BrandLogo size="md" href="/" />
+          <BrandLogo size="md" href="/" variant="darkOnly" />
 
           <Link
             href="/"

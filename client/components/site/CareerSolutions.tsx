@@ -9,9 +9,10 @@ const SOLUTIONS = [
     icon: GraduationCap,
     title: "For Students",
     desc: "Transform academic projects into industry-grade portfolio assets. Get step-by-step guidance to land your first software engineering role.",
-    cta: "Explore Student Portal",
-    href: "/dashboard/student-portal",
+    cta: "Explore Candidate Hub",
+    href: "/dashboard",
   },
+
   {
     icon: Briefcase,
     title: "For Job Seekers",

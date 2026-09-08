@@ -38,7 +38,7 @@ export function BrandSection() {
 
       {/* Top Header */}
       <div className="relative z-10 space-y-6">
-        <BrandLogo size="lg" showTagline />
+        <BrandLogo size="lg" showTagline variant="darkOnly" />
 
         <div className="space-y-3 pt-4">
           <motion.div

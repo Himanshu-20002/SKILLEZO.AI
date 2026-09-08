@@ -55,38 +55,42 @@ export const mockStatMetrics: StatMetric[] = [
 export const mockQuickActions: QuickAction[] = [
   {
     id: 'qa-1',
-    label: 'Request Verification',
-    description: 'Submit your code or project for AI audit',
-    href: '/dashboard/skill-verification',
-    iconName: 'CheckSquare',
+    label: 'Employability Score',
+    description: 'Assess market readiness, salary benchmarks & recruiter index',
+    href: '/dashboard/employability-index',
+    iconName: 'BarChart3',
+    badge: 'AI Index 88%',
     variant: 'primary'
   },
   {
     id: 'qa-2',
-    label: 'Take AI Assessment',
-    description: 'Evaluate technical proficiency in real-time',
-    href: '/dashboard',
-    iconName: 'Cpu',
-    badge: 'Popular',
+    label: 'Career GPS',
+    description: 'Personalized step-by-step milestone & promotion navigator',
+    href: '/dashboard/career-gps',
+    iconName: 'Compass',
+    badge: 'Active Path',
     variant: 'accent'
   },
   {
     id: 'qa-3',
-    label: 'Update Profile Skills',
-    description: 'Add new tech stack capabilities',
-    href: '/dashboard/profile',
-    iconName: 'UserCheck',
+    label: 'Smart Job Center',
+    description: 'Browse verified high-match roles & apply with 1-click',
+    href: '/dashboard/job-center',
+    iconName: 'Briefcase',
+    badge: '14+ Openings',
     variant: 'outline'
   },
   {
     id: 'qa-4',
-    label: 'Account Preferences',
-    description: 'Manage security & notifications',
-    href: '/dashboard/settings',
-    iconName: 'Settings',
+    label: 'Skill Gap Analysis',
+    description: 'Identify high-demand missing skills for your target role',
+    href: '/dashboard/skill-gap-analysis',
+    iconName: 'Target',
+    badge: 'Smart Audit',
     variant: 'outline'
   }
 ];
+
 
 export const mockActivityTimeline: ActivityItem[] = [
   {

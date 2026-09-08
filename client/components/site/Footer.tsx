@@ -21,7 +21,8 @@ const COLUMNS = [
   {
     title: "Solutions",
     links: [
-      { label: "For Students", href: "/dashboard/student-portal" },
+      { label: "Candidate Dashboard", href: "/dashboard" },
+
       { label: "For Recruiters", href: "/recruiter/applications" },
       { label: "For Job Seekers", href: "/dashboard/job-center" },
       { label: "Pricing", href: "#pricing" },

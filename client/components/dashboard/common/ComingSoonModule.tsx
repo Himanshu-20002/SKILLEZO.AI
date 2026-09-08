@@ -45,12 +45,13 @@ export const ComingSoonModule: React.FC<ComingSoonModuleProps> = ({
 
           <div className="pt-4">
             <Link
-              href="/dashboard/student-portal"
+              href="/dashboard"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#3D5AFE] text-white hover:bg-[#3D5AFE]/90 text-xs font-semibold transition-all shadow-sm"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Return to Student Portal Hub</span>
+              <span>Return to Dashboard</span>
             </Link>
+
           </div>
         </div>
       </div>

@@ -7,17 +7,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
   Settings,
-  Shield,
+  Wallet,
+  LineChart,
   LogOut,
   ChevronDown,
   Moon,
   Sun,
   Laptop,
-  HelpCircle,
-  Lock,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/dashboard/common/UserAvatar';
-import { mockCurrentUser } from '@/mock/users';
 import { useTheme, ThemeMode } from '@/context/ThemeContext';
 import { toast } from 'sonner';
 import { useSession, signOut } from '@/lib/auth-client';
@@ -75,20 +73,6 @@ export const UserMenu: React.FC = () => {
     } finally {
       router.push('/login');
     }
-  };
-
-  const handleHelp = () => {
-    setIsOpen(false);
-    toast.info('Help & Support', {
-      description: 'Our support team is available 24/7 at support@skillezo.ai',
-    });
-  };
-
-  const handlePrivacy = () => {
-    setIsOpen(false);
-    toast.info('Privacy Policy', {
-      description: 'SKILLEZO AI protects candidate data under strict enterprise privacy standards.',
-    });
   };
 
   return (
@@ -158,21 +142,35 @@ export const UserMenu: React.FC = () => {
               </Link>
 
               <Link
+                href="/dashboard/wallet"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Wallet className="w-4 h-4 text-amber-500" />
+                  <span>Wallet & Tokens</span>
+                </div>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  Tokens
+                </span>
+              </Link>
+
+              <Link
+                href="/dashboard/progress-analytics"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+              >
+                <LineChart className="w-4 h-4 text-emerald-500" />
+                <span>Progress Analytics</span>
+              </Link>
+
+              <Link
                 href="/dashboard/settings"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
               >
                 <Settings className="w-4 h-4 text-[#00D9C0]" />
                 <span>Account Settings</span>
-              </Link>
-
-              <Link
-                href="/account-suspended"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
-              >
-                <Shield className="w-4 h-4 text-amber-500" />
-                <span>Security Status</span>
               </Link>
             </div>
 
@@ -212,27 +210,11 @@ export const UserMenu: React.FC = () => {
               </div>
             </div>
 
-            {/* Section 4: Account Actions */}
-            <div className="pt-1.5 space-y-0.5">
-              <button
-                onClick={handleHelp}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors cursor-pointer"
-              >
-                <HelpCircle className="w-4 h-4 text-slate-400" />
-                <span>Help & Support</span>
-              </button>
-
-              <button
-                onClick={handlePrivacy}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors cursor-pointer"
-              >
-                <Lock className="w-4 h-4 text-slate-400" />
-                <span>Privacy Policy</span>
-              </button>
-
+            {/* Section 4: Sign Out */}
+            <div className="pt-1.5">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer mt-1"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>
@@ -244,3 +226,4 @@ export const UserMenu: React.FC = () => {
     </div>
   );
 };
+

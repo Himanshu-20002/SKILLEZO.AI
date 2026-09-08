@@ -10,7 +10,7 @@ export default function RegisterLoading() {
       <div className="pointer-events-none absolute -right-40 bottom-0 h-[500px] w-[500px] rounded-full bg-[#00D9C0]/15 blur-[180px]" />
 
       <GlassCard className="flex flex-col items-center justify-center p-10 max-w-sm w-full text-center space-y-6">
-        <BrandLogo size="lg" />
+        <BrandLogo size="lg" variant="darkOnly" />
         <div className="flex items-center gap-3 text-sm text-[#8A90A6]">
           <LoadingSpinner size="md" />
           <span>Loading registration portal...</span>
