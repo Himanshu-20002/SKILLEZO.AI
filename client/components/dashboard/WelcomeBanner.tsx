@@ -1,20 +1,60 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Sparkles, ArrowRight, ShieldCheck, Zap, Award } from 'lucide-react';
-import { mockDashboardSummary } from '@/mock/dashboard';
 import { useSession } from '@/lib/auth-client';
+import { profileService, CandidateProfile } from '@/services/profile.service';
+import { verificationService } from '@/services/verification.service';
+import { SkillVerificationRecord } from '@/types/verification';
 
 export const WelcomeBanner: React.FC = () => {
   const { data: session } = useSession();
+  const [profile, setProfile] = useState<CandidateProfile | null>(null);
+  const [records, setRecords] = useState<SkillVerificationRecord[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadBannerData() {
+      try {
+        const [profileData, recordsData] = await Promise.all([
+          profileService.getMyProfile().catch(() => null),
+          verificationService.getUserRecords().catch(() => []),
+        ]);
+
+        if (isMounted) {
+          if (profileData) setProfile(profileData);
+          if (recordsData) setRecords(recordsData);
+        }
+      } catch (err) {
+        console.error('Error loading welcome banner data:', err);
+      }
+    }
+
+    loadBannerData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const displayName = session?.user?.name
     ? session.user.name.trim().split(' ')[0]
     : 'Candidate';
 
-  const readinessScore = mockDashboardSummary.completionRate || 88;
+  // Dynamic Metrics
+  const readinessScore = profile?.completionPercentage || 88;
   const strokeDashoffset = 100 - readinessScore;
+
+  const targetRole = profile?.targetRole || 'your target role';
+
+  const verifiedSkillsCount =
+    profile?.skills?.filter((s) => s.verified)?.length ||
+    records.filter((r) => r.status === 'verified').length ||
+    0;
+
+  const totalSkillsCount = profile?.skills?.length || 0;
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 dark:from-[#0f2766] dark:via-[#131f4e] dark:to-[#091129] border border-blue-500/30 dark:border-blue-500/20 p-6 sm:p-8 shadow-[0_12px_36px_-8px_rgba(29,78,216,0.35)] dark:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.8)] text-white transition-all group">
@@ -35,12 +75,12 @@ export const WelcomeBanner: React.FC = () => {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
             </span>
             <span className="text-[11px] font-bold tracking-wide uppercase text-white">
-              AI Verification Engine Online
+              AI Verification Active
             </span>
             <span className="text-white/40">|</span>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-cyan-300">
               <Zap className="w-3 h-3" />
-              <span>Multi-Model AI Active</span>
+              <span>Smart Career Assistant</span>
             </div>
           </div>
 
@@ -49,9 +89,9 @@ export const WelcomeBanner: React.FC = () => {
               Welcome back, <span className="text-cyan-300">{displayName}</span> 👋
             </h1>
             <p className="mt-1.5 text-blue-100 dark:text-blue-200 text-sm sm:text-base leading-relaxed font-normal">
-              Your cryptographic technical profile is <span className="font-bold text-white underline decoration-cyan-400/60 decoration-2 underline-offset-2">{readinessScore}% optimized</span> for enterprise engineering roles. You have{' '}
-              <span className="font-bold text-cyan-300">{mockDashboardSummary.activeVerificationsCount} live audits</span> and{' '}
-              <span className="font-bold text-emerald-300">{mockDashboardSummary.passedAssessmentsCount} verified credentials</span>.
+              Your career profile is <span className="font-bold text-white underline decoration-cyan-400/60 decoration-2 underline-offset-2">{readinessScore}% complete</span> for <span className="font-semibold text-cyan-200">{targetRole}</span>. You have{' '}
+              <span className="font-bold text-emerald-300">{verifiedSkillsCount} verified {verifiedSkillsCount === 1 ? 'skill' : 'skills'}</span> and{' '}
+              <span className="font-bold text-cyan-300">{totalSkillsCount} total {totalSkillsCount === 1 ? 'skill' : 'skills'}</span> highlighted for recruiters.
             </p>
           </div>
 
@@ -62,7 +102,7 @@ export const WelcomeBanner: React.FC = () => {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
             >
               <ShieldCheck className="w-4 h-4 text-blue-600" />
-              <span>Audit New Skill</span>
+              <span>Verify New Skill</span>
               <ArrowRight className="w-4 h-4 text-blue-600" />
             </Link>
 
@@ -71,7 +111,7 @@ export const WelcomeBanner: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-md text-xs sm:text-sm font-bold transition-all shadow-xs"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Take AI Assessment</span>
+              <span>Take Skill Assessment</span>
             </Link>
           </div>
         </div>
@@ -122,14 +162,14 @@ export const WelcomeBanner: React.FC = () => {
               <div className="flex items-center gap-1.5">
                 <Award className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-100">
-                  Profile Rank
+                  Profile Score
                 </span>
               </div>
               <p className="text-sm font-black text-white whitespace-nowrap">
-                Top 5% Talent
+                {readinessScore >= 85 ? 'Top 5% Talent' : 'Recruiter Ready'}
               </p>
               <p className="text-[11px] text-emerald-300 font-bold flex items-center gap-1">
-                <span>●</span> Recruiter Ready
+                <span>●</span> Verified Profile
               </p>
             </div>
 
