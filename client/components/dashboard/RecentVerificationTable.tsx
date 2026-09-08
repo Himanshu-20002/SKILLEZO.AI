@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Shield, ExternalLink, Code2, PlusCircle, CheckCircle2 } from 'lucide-react';
 import { DataTable, Column } from '@/components/dashboard/common/DataTable';
 import { StatusBadge } from '@/components/dashboard/common/StatusBadge';
-import { SkillVerificationRecord } from '@/types/verification';
+import { SkillVerificationRecord, ProficiencyLevel, VerificationStatus } from '@/types/verification';
 import { CardHeader } from '@/components/dashboard/common/CardHeader';
 import { verificationService } from '@/services/verification.service';
 import { profileService } from '@/services/profile.service';
@@ -30,22 +30,35 @@ export const RecentVerificationTable: React.FC = () => {
           setRecords(liveRecords.slice(0, 5));
         } else if (profile && profile.skills && profile.skills.length > 0) {
           // Construct real records from candidate's profile skills
-          const profileRecords: SkillVerificationRecord[] = profile.skills.map((skill, index) => ({
-            id: `profile-skill-${index}`,
-            skillName: skill.name,
-            category: skill.category || 'Engineering',
-            topicId: skill.name.toLowerCase().replace(/\s+/g, '-'),
-            applicantName: profile.headline || 'Candidate',
-            score: skill.score || (skill.verified ? 92 : 0),
-            maxScore: 100,
-            status: skill.verified ? 'verified' : 'pending',
-            proficiency: skill.proficiency || (skill.verified ? 'Advanced' : 'Intermediate'),
-            submittedDate: new Date().toISOString().split('T')[0],
-            assessor: 'SKILLEZO AI Engine v4.2',
-            credentialHash: skill.verified
-              ? `0x${Buffer.from(skill.name).toString('hex').slice(0, 16)}`
-              : undefined,
-          }));
+          const profileRecords: SkillVerificationRecord[] = profile.skills.map((skill, index) => {
+            const isVerified = Boolean(skill.verified);
+            const status: VerificationStatus = isVerified ? 'verified' : 'pending';
+            const proficiency: ProficiencyLevel =
+              (skill.proficiency as ProficiencyLevel) || (isVerified ? 'Advanced' : 'Intermediate');
+
+            // Browser-safe hex hash generator
+            const hexHash = isVerified
+              ? `0x${Array.from(skill.name)
+                  .map((c) => c.charCodeAt(0).toString(16).padStart(2, '0'))
+                  .join('')
+                  .slice(0, 16)}`
+              : undefined;
+
+            return {
+              id: `profile-skill-${index}`,
+              skillName: skill.name,
+              category: skill.category || 'Engineering',
+              topicId: skill.name.toLowerCase().replace(/\s+/g, '-'),
+              applicantName: profile.headline || 'Candidate',
+              score: skill.score || (isVerified ? 92 : 0),
+              maxScore: 100,
+              status,
+              proficiency,
+              submittedDate: new Date().toISOString().split('T')[0],
+              assessor: 'SKILLEZO AI Engine v4.2',
+              credentialHash: hexHash,
+            };
+          });
 
           setRecords(profileRecords.slice(0, 5));
         } else {
@@ -88,7 +101,7 @@ export const RecentVerificationTable: React.FC = () => {
     {
       header: 'Audit Score',
       cell: (row) => {
-        const hasScore = row.status === 'verified' || row.status === 'Passed' || (row.score && row.score > 0);
+        const hasScore = row.status === 'verified' || (row.score !== undefined && row.score > 0);
         const scorePercent = hasScore ? Math.min(100, Math.round((row.score / (row.maxScore || 100)) * 100)) : 0;
         const isHigh = scorePercent >= 75;
 
@@ -128,10 +141,10 @@ export const RecentVerificationTable: React.FC = () => {
     {
       header: 'Verification Status',
       cell: (row) => {
-        const normalizedStatus =
-          row.status === 'verified' || row.status === 'Passed'
+        const normalizedStatus: VerificationStatus =
+          row.status === 'verified'
             ? 'verified'
-            : row.status === 'failed' || row.status === 'Failed'
+            : row.status === 'failed'
             ? 'failed'
             : 'pending';
 

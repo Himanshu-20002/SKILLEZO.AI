@@ -49,7 +49,7 @@ export const DashboardSummary: React.FC = () => {
   const verifiedSkillsFromProfile =
     profile?.skills?.filter((s) => s.verified)?.length || 0;
   const verifiedRecordsCount = records.filter(
-    (r) => r.status === 'Passed' || (r.score && r.score >= 70)
+    (r) => r.status === 'verified' || (r.score && r.score >= 70)
   ).length;
 
   const totalCredentialsCount = Math.max(
@@ -64,7 +64,7 @@ export const DashboardSummary: React.FC = () => {
 
   if (records.length > 0) {
     const passedCount = records.filter(
-      (r) => r.status === 'Passed' || (r.score && r.score >= 70)
+      (r) => r.status === 'verified' || (r.score && r.score >= 70)
     ).length;
     verificationPassRate = Math.round((passedCount / records.length) * 100);
     if (verificationPassRate >= 90) verificationBadgeTier = 'Top Tier';
@@ -102,7 +102,7 @@ export const DashboardSummary: React.FC = () => {
         href="/dashboard/career-gps"
         className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.4)] backdrop-blur-md group hover:border-[#3D5AFE]/50 dark:hover:border-[#3D5AFE]/50 transition-all duration-300 block"
       >
-        <div className="absolute top-0 right-0 w-28 h-28 bg-blue-500/20 dark:bg-blue-500/25 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
+        <div className="absolute top-0 right-0 w-28 h-28 bg-blue-500/20 dark:bg-blue-500/25 rounded-bl-full pointer-events-none transition-all group-hover:scale-130" />
         <div className="flex items-center gap-3.5 relative z-10">
           <div className="p-3 rounded-xl bg-gradient-to-br from-[#3D5AFE]/15 to-[#3D5AFE]/5 dark:from-[#3D5AFE]/25 dark:to-[#3D5AFE]/10 text-[#3D5AFE] dark:text-indigo-400 border border-[#3D5AFE]/20 shadow-inner shrink-0 group-hover:scale-105 transition-transform">
             <Target className="w-5 h-5" />
@@ -129,7 +129,7 @@ export const DashboardSummary: React.FC = () => {
         href="/dashboard/certifications"
         className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.4)] backdrop-blur-md group hover:border-[#00D9C0]/50 dark:hover:border-[#00D9C0]/50 transition-all duration-300 block"
       >
-        <div className="absolute top-0 right-0 w-28 h-28 bg-[#00D9C0]/20 dark:bg-[#00D9C0]/25 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
+        <div className="absolute top-0 right-0 w-28 h-28 bg-[#00D9C0]/20 dark:bg-[#00D9C0]/25 rounded-bl-full pointer-events-none transition-all group-hover:scale-130" />
         <div className="flex items-center gap-3.5 relative z-10">
           <div className="p-3 rounded-xl bg-gradient-to-br from-[#00D9C0]/20 to-[#00D9C0]/5 dark:from-[#00D9C0]/25 dark:to-[#00D9C0]/10 text-[#00897B] dark:text-[#00D9C0] border border-[#00D9C0]/20 shadow-inner shrink-0 group-hover:scale-105 transition-transform">
             <Award className="w-5 h-5" />
@@ -158,7 +158,7 @@ export const DashboardSummary: React.FC = () => {
         href="/dashboard/skill-verification"
         className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.4)] backdrop-blur-md group hover:border-emerald-500/50 dark:hover:border-emerald-500/50 transition-all duration-300 block"
       >
-        <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-500/20 dark:bg-emerald-500/25 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
+        <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-500/20 dark:bg-emerald-500/25 rounded-bl-full pointer-events-none transition-all group-hover:scale-130" />
         <div className="flex items-center gap-3.5 relative z-10">
           <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 dark:from-emerald-500/25 dark:to-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-inner shrink-0 group-hover:scale-105 transition-transform">
             <CheckCircle2 className="w-5 h-5" />
