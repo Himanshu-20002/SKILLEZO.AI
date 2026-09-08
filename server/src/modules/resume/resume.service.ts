@@ -249,17 +249,52 @@ export class ResumeService {
       }
     }
 
-    const extractedData = resume.extractedData || {
+    let extractedData = resume.extractedData || {
       skills: [],
       education: [],
       experience: [],
       projects: [],
       certifications: [],
     };
+    let rawText = resume.rawText || "";
+
+    // Auto re-parse from file storage if rawText is short or projects were not extracted
+    if (
+      (!rawText || rawText.length < 200 || !extractedData.projects || extractedData.projects.length === 0) &&
+      resume.storageKey
+    ) {
+      try {
+        const absPath = this.storageService.getAbsolutePath(resume.storageKey);
+        if (fs.existsSync(absPath)) {
+          const fileBuffer = fs.readFileSync(absPath);
+          const isPdf =
+            resume.mimeType === "application/pdf" ||
+            (resume.originalFileName && resume.originalFileName.toLowerCase().endsWith(".pdf")) ||
+            resume.storageKey.toLowerCase().endsWith(".pdf");
+
+          if (isPdf && fileBuffer) {
+            const freshRawText = await this.parserService.extractRawTextFromBuffer(fileBuffer);
+            const freshExtractedData = await this.parserService.parseResumeBuffer(fileBuffer);
+            if (freshRawText && freshRawText.trim().length > 0) {
+              rawText = freshRawText;
+              extractedData = freshExtractedData;
+              // Silently persist upgraded extraction in database
+              this.resumeRepository.update(resume._id.toString(), {
+                rawText: freshRawText,
+                extractedData: freshExtractedData,
+                status: ResumeStatus.PARSED,
+              }).catch(() => {});
+            }
+          }
+        }
+      } catch {
+        // Fallback gracefully
+      }
+    }
 
     const effectiveText =
-      (resume.rawText && resume.rawText.length > 50)
-        ? resume.rawText
+      (rawText && rawText.length > 50)
+        ? rawText
         : [
             extractedData.summary,
             ...(extractedData.skills || []).map((s) => s.name),
