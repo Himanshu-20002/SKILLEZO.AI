@@ -9,7 +9,11 @@ import { IResumeStorageService, resumeStorageService } from "@/core/storage/stor
 import { ResumeParserService, resumeParserService } from "./resume.parser";
 import { resumeAtsEngine, ResumeAtsEngine } from "./resume.ats";
 import { AIContextBuilder } from "@/core/ai/ai.context";
-import { optimizationIntelligenceService, jobIntelligenceService } from "@/modules/resume-intelligence";
+import {
+  optimizationIntelligenceService,
+  jobIntelligenceService,
+  resumeDocumentNormalizer,
+} from "@/modules/resume-intelligence";
 import { GeminiProvider } from "@/core/ai/providers/gemini.provider";
 import path from "path";
 import fs from "fs";
@@ -105,6 +109,20 @@ export class ResumeService {
       status = ResumeStatus.UPLOADED;
     }
 
+    // Phase 1: Normalize into Canonical ResumeDocument
+    let resumeDocument = null;
+    if (extractedData) {
+      try {
+        resumeDocument = resumeDocumentNormalizer.normalize(extractedData, rawText, {
+          userId,
+          title,
+          fileName: file.originalname,
+        });
+      } catch (normErr: any) {
+        // Fallback safely if normalization catches an unhandled edge case
+      }
+    }
+
     try {
       if (makeDefault) {
         await this.resumeRepository.clearDefaultFlag(userId);
@@ -125,6 +143,7 @@ export class ResumeService {
         status,
         version: 1,
         extractedData,
+        resumeDocument,
         rawText,
         parsingError,
         uploadedAt: new Date(),
@@ -155,6 +174,25 @@ export class ResumeService {
         ERROR_CODES.RESUME_NOT_FOUND
       );
     }
+
+    // Ensure canonical ResumeDocument is present (legacy migration fallback)
+    if (!resume.resumeDocument && (resume.extractedData || resume.rawText)) {
+      try {
+        resume.resumeDocument = resumeDocumentNormalizer.normalize(
+          resume.extractedData,
+          resume.rawText,
+          {
+            userId,
+            resumeId: resume._id.toString(),
+            title: resume.title,
+            fileName: resume.originalFileName,
+          }
+        );
+      } catch (e) {
+        // Safe fallback
+      }
+    }
+
     return resume;
   }
 

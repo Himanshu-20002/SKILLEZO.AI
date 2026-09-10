@@ -2,9 +2,9 @@
 
 | Phase | Title | Milestone | Status |
 | :--- | :--- | :---: | :---: |
-| **Phase 0** | **Architecture Freeze & Canonical Foundation** | **M1** | 🟢 **CURRENT / COMPLETE** |
-| **Phase 1** | **Resume Ingestion to ResumeDocument** | **M1** | ⚪ Next |
-| **Phase 2** | **Resume Section Engine (7 Cards)** | **M1** | ⚪ Planned |
+| **Phase 0** | **Architecture Freeze & Canonical Foundation** | **M1** | 🟢 **COMPLETE** ([00-architecture.md](file:///./00-architecture.md)) |
+| **Phase 1** | **Resume Ingestion to ResumeDocument** | **M1** | 🟢 **COMPLETE** ([01-ingestion.md](file:///./01-ingestion.md)) |
+| **Phase 2** | **Resume Section Engine (7 Cards)** | **M1** | ⚪ Next |
 | **Phase 3** | **Section Scoring Engine** | **M1** | ⚪ Planned |
 | **Phase 4** | **Resume Studio UI** | **M1** | ⚪ Planned |
 | **Phase 5** | **Section AI Editor with Evidence Lock** | **M2** | ⚪ Planned |
