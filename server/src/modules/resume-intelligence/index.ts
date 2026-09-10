@@ -18,3 +18,6 @@ export * from "./recommendations";
 
 // Optimization & Versioning Domain
 export * from "./optimization";
+
+// Canonical ResumeDocument Domain (Phase 0)
+export * from "./document";
