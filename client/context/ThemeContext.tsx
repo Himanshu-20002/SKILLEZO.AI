@@ -17,12 +17,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const pathname = usePathname();
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('skillezo-theme') as ThemeMode) || 'dark';
+      const stored = localStorage.getItem('skillezo-theme') as ThemeMode;
+      if (stored) return stored;
     }
-    return 'dark';
+    return 'light';
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('dark');
+  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('light');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -31,7 +32,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('skillezo-theme', theme);
 
     const updateDOM = () => {
-      let actualTheme: 'dark' | 'light' = 'dark';
+      let actualTheme: 'dark' | 'light' = 'light';
       
       // Landing page (`/`) is strictly single-theme (Dark mode only)
       if (pathname === '/') {
