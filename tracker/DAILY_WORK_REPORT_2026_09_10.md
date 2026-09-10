@@ -63,6 +63,8 @@
 | **Client TypeScript Check** | `tsc --noEmit` (Client) | 🟢 **0 Errors** |
 | **Server Health API** (`/api/health`) | Direct HTTP Fetch (`node`) | 🟢 **200 OK** |
 | **Server Jobs API** (`/api/jobs`) | Live Database Query (`node`) | 🟢 **200 OK (Instant)** |
+| **Frontend Cloud Deployment** | **Vercel** | 🟢 **Live Production** |
+| **Backend Cloud Deployment** | **Railway** | 🟢 **Live Production** |
 | **Server Production Build** | `tsup` | 🟢 **Build Success (`dist/server.js`)** |
 
 ---

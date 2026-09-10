@@ -62,6 +62,15 @@ All deliverables passed automated test suites with **24 Vitest test suites (146 
 
 ---
 
+### 6. Cloud Production Deployments (Vercel & Railway)
+* **Frontend Client Deployment (Vercel)**:
+  * Successfully deployed Next.js client to **Vercel** production environment.
+  * Verified server-side rendering, dual-theme support (clean white default & cosmic dark), route prefetching, and API route proxies.
+* **Backend API Deployment (Railway)**:
+  * Backend deployed and running on **Railway** with direct replica-set MongoDB connection fallbacks, live health endpoints, and storage pipelines.
+
+---
+
 ## 📈 Quality & Verification Scorecard
 
 | Area | Verification Tool | Result | Details |
@@ -71,6 +80,8 @@ All deliverables passed automated test suites with **24 Vitest test suites (146 
 | **Client TypeScript Check** | `tsc --noEmit` | 🟢 **0 Errors** | Next.js compilation clean |
 | **Server Health API** | `/api/health` | 🟢 **200 OK** | Instant (<50ms response) |
 | **Server Jobs API** | `/api/jobs` | 🟢 **200 OK** | Instant pagination & query |
+| **Frontend Cloud Deployment**| **Vercel** | 🟢 **Live Production** | Clean builds & route handlers active |
+| **Backend Cloud Deployment** | **Railway** | 🟢 **Live Production** | Sub-50ms API response & DB connected |
 | **Production Build** | `tsup` | 🟢 **Success** | `dist/server.js` compiled |
 | **Git Repositories** | `git push` | 🟢 **Synchronized** | Pushed to both `origin/main` and `client/main` |
 
