@@ -70,14 +70,47 @@ export class ResumeController {
   getAtsScore = async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const resumeId = req.params.resumeId as string;
-    const analysis = await this.resumeService.getResumeAtsScore(userId, resumeId);
+    const targetRole = (req.query.targetRole as string) || "Full-Stack Engineer";
+    const jobDescription = req.query.jobDescription as string | undefined;
+    const analysis = await this.resumeService.getResumeAtsScore(userId, resumeId, targetRole, jobDescription);
     res.status(HTTP_STATUS.OK).json(successResponse(analysis));
   };
 
   getMyAtsScore = async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
-    const analysis = await this.resumeService.getResumeAtsScore(userId);
+    const targetRole = (req.query.targetRole as string) || "Full-Stack Engineer";
+    const jobDescription = req.query.jobDescription as string | undefined;
+    const analysis = await this.resumeService.getResumeAtsScore(userId, undefined, targetRole, jobDescription);
     res.status(HTTP_STATUS.OK).json(successResponse(analysis));
+  };
+
+  proposeOptimization = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const resumeId = req.params.resumeId as string;
+    const { recommendationId, targetRole, jobDescription, targetBulletId } = req.body;
+    const draft = await this.resumeService.proposeOptimization(
+      userId,
+      resumeId,
+      recommendationId,
+      targetRole,
+      jobDescription,
+      targetBulletId
+    );
+    res.status(HTTP_STATUS.OK).json(successResponse(draft));
+  };
+
+  acceptOptimization = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const resumeId = req.params.resumeId as string;
+    const { draft } = req.body;
+    const result = await this.resumeService.acceptOptimization(userId, resumeId, draft);
+    res.status(HTTP_STATUS.OK).json(successResponse(result));
+  };
+
+  rejectOptimization = async (req: Request, res: Response): Promise<void> => {
+    const { draft } = req.body;
+    const result = await this.resumeService.rejectOptimization(draft);
+    res.status(HTTP_STATUS.OK).json(successResponse(result));
   };
 }
 

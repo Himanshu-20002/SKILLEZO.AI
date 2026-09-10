@@ -8,6 +8,9 @@ import { ResumeStatus } from "@/core/constants/enums";
 import { IResumeStorageService, resumeStorageService } from "@/core/storage/storage.service";
 import { ResumeParserService, resumeParserService } from "./resume.parser";
 import { resumeAtsEngine, ResumeAtsEngine } from "./resume.ats";
+import { AIContextBuilder } from "@/core/ai/ai.context";
+import { optimizationIntelligenceService, jobIntelligenceService } from "@/modules/resume-intelligence";
+import { GeminiProvider } from "@/core/ai/providers/gemini.provider";
 import path from "path";
 import fs from "fs";
 import { Readable } from "stream";
@@ -226,7 +229,12 @@ export class ResumeService {
     }
   }
 
-  async getResumeAtsScore(userId: string, resumeId?: string): Promise<ResumeAtsResponseDTO> {
+  async getResumeAtsScore(
+    userId: string,
+    resumeId?: string,
+    targetRole = "Full-Stack Engineer",
+    jobDescription?: string
+  ): Promise<ResumeAtsResponseDTO> {
     let resume: IResume | null = null;
     if (resumeId) {
       resume = await this.resumeRepository.findById(resumeId);
@@ -279,7 +287,7 @@ export class ResumeService {
               rawText = freshRawText;
               extractedData = freshExtractedData;
               // Silently persist upgraded extraction in database
-              this.resumeRepository.update(resume._id.toString(), {
+              this.resumeRepository.updateById(resume._id.toString(), {
                 rawText: freshRawText,
                 extractedData: freshExtractedData,
                 status: ResumeStatus.PARSED,
@@ -292,23 +300,38 @@ export class ResumeService {
       }
     }
 
+    if (
+      resume.rawText &&
+      (!extractedData?.experience ||
+        extractedData.experience.length === 0 ||
+        extractedData.experience[0]?.description?.toLowerCase()?.startsWith("summary") ||
+        extractedData.experience[0]?.jobTitle?.toLowerCase()?.includes("summary"))
+    ) {
+      try {
+        extractedData = resumeParserService.parseResumeText(resume.rawText);
+        await this.resumeRepository.updateById(resume._id.toString(), { extractedData });
+      } catch {
+        // Fallback
+      }
+    }
+
     const effectiveText =
       (rawText && rawText.length > 50)
         ? rawText
         : [
             extractedData.summary,
-            ...(extractedData.skills || []).map((s) => s.name),
+            ...(extractedData.skills || []).map((s: any) => (typeof s === "string" ? s : s.name)),
             ...(extractedData.experience || []).map(
-              (e) => `${e.jobTitle} ${e.companyName} ${e.description || ""}`
+              (e: any) => `${e.jobTitle || ""} ${e.companyName || ""} ${e.description || ""}`
             ),
             ...(extractedData.projects || []).map(
-              (p) => `${p.title} ${(p.technologies || []).join(" ")} ${p.description || ""}`
+              (p: any) => `${p.title || ""} ${(p.technologies || []).join(" ")} ${p.description || ""}`
             ),
             ...(extractedData.certifications || []).map(
-              (c) => `${c.name} ${c.issuer || ""}`
+              (c: any) => `${c.name || ""} ${c.issuer || ""}`
             ),
             ...(extractedData.education || []).map(
-              (ed) => `${ed.degree || ""} ${ed.institution || ""}`
+              (ed: any) => `${ed.degree || ""} ${ed.institution || ""}`
             ),
           ]
             .filter(Boolean)
@@ -316,12 +339,25 @@ export class ResumeService {
 
     const analysis = resumeAtsEngine.analyze(extractedData, effectiveText);
 
+    // Build comprehensive AI context (Phases 1-6)
+    const context = AIContextBuilder.buildContext(
+      extractedData,
+      effectiveText,
+      analysis,
+      targetRole,
+      jobDescription,
+      resume._id.toString(),
+      resume.version || 1
+    );
+
     return {
       resumeId: resume._id.toString(),
       resumeVersion: resume.version || 1,
       fileName: resume.originalFileName || resume.fileName || "resume.pdf",
       overallScore: analysis.overallScore,
       atsScore: analysis.atsScore,
+      matchScore: context.matchResult?.overallMatchScore ?? 75,
+      contentScore: context.contentResult?.contentScore ?? 70,
       impactScore: analysis.impactScore,
       brevityScore: analysis.brevityScore,
       level: analysis.level,
@@ -331,8 +367,118 @@ export class ResumeService {
       atsCompatibility: analysis.atsCompatibility,
       keywords: analysis.keywords,
       missingKeywords: analysis.missingKeywords,
-      recommendations: analysis.recommendations,
+      missingSkills:
+        context.skillsProfile?.notDetectedTargetSkills?.map((s) => ({
+          skill: s,
+          category: "Required",
+          impactLevel: "High" as const,
+          recommendation: `Add verifiable project experience with ${s}`,
+        })) || analysis.missingKeywords,
+      recommendations: context.recommendationResult?.recommendations || analysis.recommendations,
+      topAction: context.recommendationResult?.topAction,
+      recommendationSummary: context.recommendationResult?.summary,
+      contentResult: context.contentResult,
+      skillsProfile: context.skillsProfile,
+      roleProfile: context.roleProfile,
     };
+  }
+
+  async proposeOptimization(
+    userId: string,
+    resumeId: string,
+    recommendationId: string,
+    targetRole = "Full-Stack Engineer",
+    jobDescription?: string,
+    targetBulletId?: string
+  ) {
+    const resume = await this.getResumeById(userId, resumeId);
+    const intelligence = await this.getResumeAtsScore(userId, resumeId, targetRole, jobDescription);
+    const rec = (intelligence.recommendations || []).find((r: any) => r.id === recommendationId) || {
+      id: recommendationId,
+      category: "IMPACT",
+      title: "Improve bullet impact",
+      actionability: "FIX_NOW",
+    };
+
+    let effectiveExtractedData = resume.extractedData;
+    if (
+      resume.rawText &&
+      (!effectiveExtractedData?.experience ||
+        effectiveExtractedData.experience.length === 0 ||
+        effectiveExtractedData.experience[0]?.description?.toLowerCase()?.startsWith("summary") ||
+        effectiveExtractedData.experience[0]?.jobTitle?.toLowerCase()?.includes("summary"))
+    ) {
+      try {
+        effectiveExtractedData = resumeParserService.parseResumeText(resume.rawText);
+      } catch {
+        // Fallback
+      }
+    }
+
+    const draft = await optimizationIntelligenceService.proposeOptimization({
+      resumeId: resume._id.toString(),
+      baseResumeVersionId: `v${resume.version || 1}`,
+      recommendation: rec,
+      targetBulletId,
+      extractedData: effectiveExtractedData,
+      rawText: resume.rawText || undefined,
+      beforeScores: {
+        atsScore: intelligence.atsScore,
+        matchScore: intelligence.matchScore,
+        contentScore: intelligence.contentScore,
+        timestamp: new Date().toISOString(),
+      },
+      targetRole,
+      roleBenchmark: intelligence.roleProfile,
+      jobProfile: jobDescription ? jobIntelligenceService.parseJobDescription(jobDescription) : undefined,
+      contentResult: intelligence.contentResult,
+      aiProvider: {
+        generateCompletion: async (systemPrompt: string, userPrompt: string) => {
+          const gemini = new GeminiProvider();
+          if (gemini.isAvailable()) {
+            const prompt = `${systemPrompt}\n\n${userPrompt}`;
+            const res = await gemini.generateStructured<any>(prompt, "Optimization Proposal");
+            if (res) return res;
+          }
+          throw new Error("Gemini AI provider unavailable or key missing");
+        },
+      },
+    });
+
+    return draft;
+  }
+
+  async acceptOptimization(
+    userId: string,
+    resumeId: string,
+    draft: any
+  ) {
+    const resume = await this.getResumeById(userId, resumeId);
+    const { newVersionId, updatedExtractedData, historyEntry } = optimizationIntelligenceService.acceptDraft(
+      draft,
+      resume.extractedData
+    );
+
+    const newVersion = (resume.version || 1) + 1;
+    const updated = await this.resumeRepository.updateById(resume._id.toString(), {
+      extractedData: updatedExtractedData,
+      version: newVersion,
+    });
+
+    const freshIntelligence = await this.getResumeAtsScore(userId, resumeId);
+
+    return {
+      success: true,
+      newVersionId,
+      version: newVersion,
+      resume: updated,
+      historyEntry,
+      freshIntelligence,
+    };
+  }
+
+  async rejectOptimization(draft: any) {
+    return optimizationIntelligenceService.rejectDraft(draft);
   }
 }
 

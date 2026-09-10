@@ -11,14 +11,14 @@ export class VerificationController {
   }
 
   public static async getQuiz(req: Request, res: Response): Promise<void> {
-    const { topicId } = req.params;
+    const topicId = String(req.params.topicId);
     const quiz = await VerificationService.getAssessmentQuiz(topicId);
     res.status(HTTP_STATUS.OK).json(successResponse(quiz));
   }
 
   public static async submitQuiz(req: Request, res: Response): Promise<void> {
     const userId = req.user?.id || (req.headers["x-user-id"] as string) || "candidate_demo";
-    const { topicId } = req.params;
+    const topicId = String(req.params.topicId);
     const { answers } = req.body;
 
     if (!answers || typeof answers !== "object") {
@@ -40,7 +40,7 @@ export class VerificationController {
   }
 
   public static async verifyCredential(req: Request, res: Response): Promise<void> {
-    const { credentialHash } = req.params;
+    const credentialHash = String(req.params.credentialHash);
     const credential = await VerificationService.getCredentialByHash(credentialHash);
 
     if (!credential) {

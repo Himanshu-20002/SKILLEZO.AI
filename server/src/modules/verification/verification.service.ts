@@ -229,9 +229,9 @@ export class VerificationService {
 
     let candidateName = "Verified Candidate";
     try {
-      const user = await UserModel.findById(record.userId).lean();
-      if (user && user.name) {
-        candidateName = user.name;
+      const user = (await UserModel.findById(record.userId).lean()) as any;
+      if (user && (user.name || user.email)) {
+        candidateName = user.name || user.email;
       }
     } catch {
       // Fallback

@@ -9,6 +9,11 @@ import { connectDatabase } from "@/database/connection/db";
 
 let _auth: any = null;
 
+// Browsers reject Secure cookies on http://localhost. Keep the production
+// cross-site cookie policy, but use a local-development cookie that can be sent
+// between the Next.js app (localhost:3000) and API (localhost:5000).
+const isProduction = env.NODE_ENV === "production";
+
 export function getAuth() {
   if (!_auth) {
     if (!mongoose.connection.db) {
@@ -27,14 +32,14 @@ export function getAuth() {
       ].filter(Boolean),
       advanced: {
         disableCSRFCheck: true,
-        useSecureCookies: true,
+        useSecureCookies: isProduction,
         defaultCookieAttributes: {
-          sameSite: "none",
-          secure: true,
+          sameSite: isProduction ? "none" : "lax",
+          secure: isProduction,
         },
         ipAddress: {
           ipAddressHeaders: ["x-forwarded-for", "cf-connecting-ip", "x-real-ip"],
-          trustedProxies: ["*"],
+          trustedProxies: ["127.0.0.1", "::1", "0.0.0.0/0", "::/0"],
         },
       },
       plugins: [bearer()],

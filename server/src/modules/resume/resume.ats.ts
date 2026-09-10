@@ -1,4 +1,5 @@
 import { IResumeExtractedData } from "@/database/models/Resume.model";
+import { SkillNormalizer } from "@/modules/resume-intelligence";
 
 export interface ATSWeights {
   keywordMatch: number;
@@ -52,6 +53,7 @@ export interface ATSRecommendation {
   category: "Formatting" | "Keywords" | "Impact Statements" | "Brevity";
   description: string;
   impactScoreBoost: number;
+  potentialImpact?: "High" | "Medium" | "Low";
   actionText: string;
 }
 
@@ -132,6 +134,10 @@ export const KEYWORD_TAXONOMY: Record<string, { required: string[]; preferred: s
 };
 
 export function normalizeSkill(name: string): string {
+  const canonical = SkillNormalizer.normalize(name);
+  if (canonical) {
+    return canonical.canonicalName.toLowerCase();
+  }
   const clean = name.trim().toLowerCase();
   if (clean === "js" || clean === "javascript" || clean === "es6") return "javascript";
   if (clean === "ts" || clean === "typescript") return "typescript";
@@ -373,12 +379,12 @@ export class ResumeAtsEngine {
       words >= 250 && words <= 850
         ? "Optimal (1 Page)"
         : words > 850 && words <= 1300
-        ? "2 Pages (Good)"
-        : words > 1300
-        ? "Too Long"
-        : words >= 120
-        ? "Good (Compact)"
-        : "Needs Content";
+          ? "2 Pages (Good)"
+          : words > 1300
+            ? "Too Long"
+            : words >= 120
+              ? "Good (Compact)"
+              : "Needs Content";
 
     const auditPillars: ResumeAuditPillars = {
       formatting: {
@@ -395,7 +401,7 @@ export class ResumeAtsEngine {
         totalTargetCount: totalTargetKeywords,
         status: keywordMatchScore >= 75 ? "High Alignment" : keywordMatchScore >= 50 ? "Moderate Alignment" : "Low Alignment",
         topMatched: keywordsList.filter((k) => k.matched).slice(0, 4).map((k) => k.keyword),
-        missingCritical: missingKeywords.filter((m) => m.priority === "High").slice(0, 3).map((m) => m.keyword),
+        missingCritical: missingKeywords.filter((m) => m.priority === "High").slice(0, 6).map((m) => m.keyword),
       },
       measurableImpact: {
         score: impactScore,
@@ -404,8 +410,8 @@ export class ResumeAtsEngine {
         summary: impactCount >= 3
           ? `${impactCount}+ quantifiable metrics detected across experience bullets`
           : impactCount > 0
-          ? `${impactCount} metric detected. Recruiters look for %, $, or scale numbers`
-          : "No quantifiable outcomes found (e.g. %, $, numbers, latency gains)",
+            ? `${impactCount} metric detected. Recruiters look for %, $, or scale numbers`
+            : "No quantifiable outcomes found (e.g. %, $, numbers, latency gains)",
         tip: impactCount >= 3
           ? "Great job using action verbs and measurable performance metrics."
           : "Add metrics like 'reduced latency by 30%', 'served 10k+ users', or 'improved throughput by 25%'.",
@@ -429,6 +435,7 @@ export class ResumeAtsEngine {
         category: "Impact Statements",
         description: "Add measurable percentages, performance gains, or scale numbers (e.g. 'reduced latency by 35%') under your work experience.",
         impactScoreBoost: 6,
+        potentialImpact: "High",
         actionText: "Add Metrics",
       });
     }
@@ -441,6 +448,7 @@ export class ResumeAtsEngine {
         category: "Keywords",
         description: `Your resume is missing key industry terms (${topMissing}) frequently screened by ATS filters for technical roles.`,
         impactScoreBoost: 5,
+        potentialImpact: "High",
         actionText: "Add Keywords",
       });
     }
@@ -452,6 +460,7 @@ export class ResumeAtsEngine {
         category: "Formatting",
         description: "Ensure distinct headings for Skills, Experience, Education, and Contact Information are clearly identifiable.",
         impactScoreBoost: 4,
+        potentialImpact: "Medium",
         actionText: "Fix Sections",
       });
     }
@@ -465,6 +474,7 @@ export class ResumeAtsEngine {
           ? "Your resume text exceeds 1,100 words. Compressing bullet points to 1-2 lines will improve recruiter scanning."
           : "Your resume text is concise. Expanding on key technical contributions will improve ATS match depth.",
         impactScoreBoost: 3,
+        potentialImpact: "Medium",
         actionText: "Refine Length",
       });
     }

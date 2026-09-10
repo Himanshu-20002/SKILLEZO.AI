@@ -1,6 +1,7 @@
 import { JobRepository } from "@/database/repositories/job/JobRepository";
 import { JobSearchQueryDTO, PaginatedJobsResponseDTO } from "./jobs.dto";
 import { IJob } from "@/database/models/Job.model";
+import { JobStatus, JobSourceType } from "@/core/constants/enums";
 import { AppError } from "@/core/utils/AppError";
 import { ERROR_CODES } from "@/core/constants/error-codes";
 import { HTTP_STATUS } from "@/core/constants/http-status";
@@ -126,7 +127,7 @@ export class JobsService {
       minExperienceYears: data.minExperienceYears || 2,
       salary: data.salary || { min: 90000, max: 140000, currency: "USD" },
       status: data.status || JobStatus.ACTIVE,
-      sourceType: JobSourceType.INTERNAL,
+      sourceType: JobSourceType.PLATFORM,
       createdBy: userId,
       publishedAt: new Date(),
     } as any);
@@ -138,7 +139,7 @@ export class JobsService {
     const jobs = await this.jobRepository.findMany({
       $or: [
         { createdBy: userId },
-        { sourceType: JobSourceType.INTERNAL },
+        { sourceType: JobSourceType.PLATFORM },
         { status: JobStatus.ACTIVE },
       ],
     });

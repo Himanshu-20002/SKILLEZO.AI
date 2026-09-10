@@ -1,0 +1,26 @@
+import { RECOMMENDATION_ENGINE_VERSION } from "./recommendation.types";
+export { RECOMMENDATION_ENGINE_VERSION };
+
+export const PRIORITY_WEIGHTS = {
+  IMPACT: 0.30,
+  RELEVANCE: 0.25,
+  ACTIONABILITY: 0.20,
+  CONFIDENCE: 0.15,
+  EVIDENCE: 0.10,
+};
+
+export const IMPACT_FACTORS: Record<string, number> = {
+  VERY_HIGH: 1.00,
+  HIGH: 0.80,
+  MEDIUM: 0.55,
+  LOW: 0.30,
+};
+
+export const ACTIONABILITY_FACTORS: Record<string, number> = {
+  FIX_NOW: 1.00,
+  STRENGTHEN_EVIDENCE: 0.85,
+  REQUIRES_NEW_EVIDENCE: 0.65,
+  INFORMATIONAL: 0.30,
+};
+
+export const DEFAULT_RECOMMENDATION_LIMIT = 5;

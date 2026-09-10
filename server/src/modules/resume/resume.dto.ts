@@ -32,6 +32,8 @@ export interface ResumeAtsResponseDTO {
   fileName: string;
   overallScore: number;
   atsScore: number;
+  matchScore?: number;
+  contentScore?: number;
   impactScore: number;
   brevityScore: number;
   level: string;
@@ -47,5 +49,11 @@ export interface ResumeAtsResponseDTO {
   atsCompatibility: any[];
   keywords: any[];
   missingKeywords: any[];
+  missingSkills?: any[];
   recommendations: any[];
+  topAction?: any;
+  recommendationSummary?: any;
+  contentResult?: any;
+  skillsProfile?: any;
+  roleProfile?: any;
 }

@@ -274,13 +274,21 @@ export class ResumeParserService {
    */
   extractExperience(text: string): IResumeExperience[] {
     const experienceList: IResumeExperience[] = [];
-    const lines = text.split("\n");
+    
+    // Check if there is an explicit Experience section
+    const expSectionMatch = text.match(
+      /(?:work\s+experience|professional\s+experience|experience|employment\s+history)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:projects?|key\s+projects?|personal\s+projects?|technical\s+projects?|education|skills?|technical\s+skills|certifications?|achievements?|\b[A-Z\s]{4,}\b\n|$))/i
+    );
+
+    const targetText = expSectionMatch && expSectionMatch[1] ? expSectionMatch[1] : text;
+    const lines = targetText.split("\n");
 
     const titleKeywords = [
       "Software Engineer",
       "Frontend Developer",
       "Backend Developer",
       "Full Stack Developer",
+      "Full-Stack Developer",
       "DevOps Engineer",
       "Cloud Architect",
       "Data Scientist",
@@ -288,6 +296,8 @@ export class ResumeParserService {
       "Product Manager",
       "Tech Lead",
       "Engineering Manager",
+      "Software Developer",
+      "Web Developer",
       "Intern",
     ];
 
@@ -296,6 +306,11 @@ export class ResumeParserService {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
+      // Skip if this line is in summary header
+      if (/^(?:summary|professional\s+summary|profile|about\s+me|career\s+objective|objective)\b/i.test(line)) {
+        continue;
+      }
+
       for (const title of titleKeywords) {
         if (new RegExp(`\\b${title}\\b`, "i").test(line)) {
           const contextBlock = lines.slice(Math.max(0, i - 1), Math.min(lines.length, i + 4)).join(" ");

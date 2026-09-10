@@ -30,6 +30,16 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     defaultHeaders["Content-Type"] = "application/json";
   }
 
+  // Better Auth may return a bearer token after sign-in. Normal application API
+  // calls use this shared fetcher, so forward that token when cookies are not
+  // available (for example, during local cross-port development).
+  if (typeof window !== "undefined") {
+    const token = window.localStorage.getItem("skillezo_token");
+    if (token) {
+      defaultHeaders.Authorization = `Bearer ${token}`;
+    }
+  }
+
   const response = await fetch(url, {
     ...options,
     credentials: options.credentials || "include",

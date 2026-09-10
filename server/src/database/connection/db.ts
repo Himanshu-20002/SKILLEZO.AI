@@ -1,18 +1,31 @@
 import mongoose from "mongoose";
-import dns from "dns";
 import { env } from "@/core/config/env";
 
-// Configure reliable DNS servers for SRV record resolution (prevents ISP/Local DNS querySrv ECONNREFUSED)
-try {
-  dns.setServers(["8.8.8.8", "1.1.1.1"]);
-  if (dns.setDefaultResultOrder) {
-    dns.setDefaultResultOrder("ipv4first");
-  }
-} catch (dnsErr) {
-  console.warn("[DB] Could not set custom DNS servers, using default OS DNS settings");
-}
+// Use the operating system DNS resolver. It can resolve the Atlas SRV records
+// on this machine, while the previously hard-coded public DNS servers time out.
 
 let isEventListenersRegistered = false;
+
+function getDatabaseUri(): string {
+  const { MONGODB_URI, MONGODB_DIRECT_HOSTS, MONGODB_REPLICA_SET } = env;
+
+  if (!MONGODB_DIRECT_HOSTS || !MONGODB_REPLICA_SET || !MONGODB_URI.startsWith("mongodb+srv://")) {
+    return MONGODB_URI;
+  }
+
+  // Local networks may block Node's DNS SRV lookups even when direct Atlas
+  // hosts are reachable. The credentials and database name remain in the
+  // existing MONGODB_URI; only the SRV hostname is replaced.
+  const hostMatch = MONGODB_URI.match(/^mongodb\+srv:\/\/(?:.*@)?([^/?]+)/);
+  if (!hostMatch) return MONGODB_URI;
+
+  const directUri = MONGODB_URI
+    .replace(/^mongodb\+srv:\/\//, "mongodb://")
+    .replace(hostMatch[1], MONGODB_DIRECT_HOSTS);
+
+  const separator = directUri.includes("?") ? "&" : "?";
+  return `${directUri}${separator}tls=true&replicaSet=${encodeURIComponent(MONGODB_REPLICA_SET)}&authSource=admin`;
+}
 
 function registerEventListeners(): void {
   if (isEventListenersRegistered) return;
@@ -52,7 +65,7 @@ export async function connectDatabase(): Promise<typeof mongoose> {
 
   try {
     console.log("[DB] Connecting to MongoDB...");
-    await mongoose.connect(env.MONGODB_URI);
+    await mongoose.connect(getDatabaseUri());
     return mongoose;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown database connection error";

@@ -69,5 +69,27 @@ router.delete(
   validate({ params: resumeIdParamValidator }),
   asyncHandler(controller.deleteResume)
 );
+router.post(
+  "/:resumeId/optimizations/propose",
+  validate({ params: resumeIdParamValidator }),
+  asyncHandler(controller.proposeOptimization)
+);
+
+router.post(
+  "/:resumeId/optimizations/accept",
+  validate({ params: resumeIdParamValidator }),
+  asyncHandler(controller.acceptOptimization)
+);
+
+router.post(
+  "/:resumeId/optimizations/reject",
+  validate({ params: resumeIdParamValidator }),
+  asyncHandler(controller.rejectOptimization)
+);
+
+router.post(
+  "/optimizations/reject",
+  asyncHandler(controller.rejectOptimization)
+);
 
 export default router;

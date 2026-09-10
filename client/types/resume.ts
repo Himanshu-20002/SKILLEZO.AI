@@ -86,10 +86,99 @@ export interface MissingSkillItem {
 export interface AIResumeRecommendation {
   id: string;
   title: string;
-  category: 'Formatting' | 'Keywords' | 'Impact Statements' | 'Brevity';
-  description: string;
-  impactScoreBoost: number;
-  actionText: string;
+  category?: 'Formatting' | 'Keywords' | 'Impact Statements' | 'Brevity' | 'ATS' | 'SKILLS' | 'EXPERIENCE' | 'IMPACT' | 'SUMMARY' | 'STRUCTURE' | 'MATCH' | 'EVIDENCE' | string;
+  summary?: string;
+  problem?: string;
+  whyItMatters?: string;
+  description?: string;
+  impactScoreBoost?: number;
+  actionText?: string;
+  suggestedAction?: string;
+  priority?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  priorityScore?: number;
+  actionability?: 'FIX_NOW' | 'STRENGTHEN_EVIDENCE' | 'REQUIRES_NEW_EVIDENCE' | 'INFORMATIONAL';
+  targetSection?: string;
+  bulletId?: string;
+  skillIds?: string[];
+  requirementIds?: string[];
+  evidenceIds?: string[];
+}
+
+export interface WordDiff {
+  value: string;
+  type: 'UNCHANGED' | 'ADDED' | 'REMOVED';
+}
+
+export interface OptimizationValidationError {
+  code: string;
+  message: string;
+  unsupportedValue?: string;
+}
+
+export interface OptimizationValidationResult {
+  valid: boolean;
+  safetyLevel: 'SAFE' | 'REVIEW' | 'BLOCKED';
+  safetyScore: number;
+  errors: OptimizationValidationError[];
+  warnings: Array<{ code: string; message: string }>;
+  unsupportedClaims: string[];
+  changedMetrics: string[];
+  addedSkills: string[];
+  changedOwnershipClaims: string[];
+  meaningPreserved: boolean;
+}
+
+export interface ResumeScoreSnapshot {
+  atsScore: number;
+  matchScore?: number;
+  contentScore?: number;
+  timestamp: string;
+}
+
+export interface OptimizationScoreComparison {
+  before: ResumeScoreSnapshot;
+  after: ResumeScoreSnapshot;
+  delta: {
+    ats: number;
+    match?: number;
+    content?: number;
+  };
+  improved: boolean;
+  regressed: boolean;
+}
+
+export interface TargetOption {
+  bulletId: string;
+  section: string;
+  roleOrProject?: string;
+  sourceText: string;
+}
+
+export interface ResumeOptimizationDraft {
+  draftId: string;
+  resumeId: string;
+  baseResumeVersionId: string;
+  recommendationId: string;
+  target: {
+    recommendationId: string;
+    type: string;
+    section: string;
+    bulletId?: string;
+    sourceText: string;
+    sourceEvidenceIds: string[];
+    isRewritable: boolean;
+    nonRewritableReason?: string;
+  };
+  availableTargets?: TargetOption[];
+  originalText: string;
+  proposedText: string;
+  validation: OptimizationValidationResult;
+  beforeScores: ResumeScoreSnapshot;
+  afterScores?: ResumeScoreSnapshot;
+  scoreComparison?: OptimizationScoreComparison;
+  decision?: 'IMPROVED' | 'ACCEPTABLE' | 'REGRESSED' | 'REJECTED';
+  status: 'PROPOSED' | 'VALIDATED' | 'REJECTED' | 'ACCEPTED' | 'DISCARDED';
+  createdAt: string;
 }
 
 export interface ResumeAuditPillars {
@@ -129,6 +218,8 @@ export interface ResumeAtsAnalysis {
   fileName?: string;
   overallScore: number;
   atsScore: number;
+  matchScore?: number;
+  contentScore?: number;
   impactScore: number;
   brevityScore: number;
   level?: "EXCELLENT" | "GOOD" | "AVERAGE" | "NEEDS_IMPROVEMENT" | string;
@@ -151,6 +242,16 @@ export interface ResumeAtsAnalysis {
   missingKeywords?: MissingSkillItem[];
   missingSkills?: MissingSkillItem[];
   recommendations: AIResumeRecommendation[];
+  topAction?: AIResumeRecommendation;
+  recommendationSummary?: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  contentResult?: any;
+  skillsProfile?: any;
+  roleProfile?: any;
   extractedData?: ResumeExtractedData;
 }
 
@@ -168,6 +269,7 @@ export interface ResumeRecord {
   storageKey: string;
   fileUrl?: string;
   isDefault: boolean;
+  version?: number;
   status: "pending" | "processing" | "completed" | "failed" | "uploaded";
   extractedData?: ResumeExtractedData;
   errorMessage?: string;

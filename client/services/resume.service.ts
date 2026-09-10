@@ -79,11 +79,74 @@ export const resumeService = {
   },
 
   /**
-   * Fetch live ATS score, keyword breakdown, and AI recommendations for a resume.
+   * Fetch live ATS score, keyword breakdown, Match Score, Content Score, and Phase 6 recommendations.
    */
-  async getResumeAtsScore(resumeId?: string) {
-    const endpoint = resumeId ? `/api/resumes/${resumeId}/ats-score` : `/api/resumes/me/ats-score`;
+  async getResumeAtsScore(resumeId?: string, targetRole?: string, jobDescription?: string) {
+    const params = new URLSearchParams();
+    if (targetRole) params.append("targetRole", targetRole);
+    if (jobDescription) params.append("jobDescription", jobDescription);
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+
+    const endpoint = resumeId
+      ? `/api/resumes/${resumeId}/ats-score${queryString}`
+      : `/api/resumes/me/ats-score${queryString}`;
     const res = await apiFetch<{ success: boolean; data: import("@/types/resume").ResumeAtsAnalysis }>(endpoint);
+    return res.data;
+  },
+
+  /**
+   * Propose a safe, constrained Phase 7 resume bullet optimization.
+   */
+  async proposeOptimization(
+    resumeId: string,
+    recommendationId: string,
+    targetRole?: string,
+    jobDescription?: string,
+    targetBulletId?: string
+  ): Promise<import("@/types/resume").ResumeOptimizationDraft> {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume").ResumeOptimizationDraft }>(
+      `/api/resumes/${resumeId}/optimizations/propose`,
+      {
+        method: "POST",
+        body: JSON.stringify({ recommendationId, targetRole, jobDescription, targetBulletId }),
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * Accept an optimization draft, generating a new resume version and re-scoring deterministically.
+   */
+  async acceptOptimization(
+    resumeId: string,
+    draft: import("@/types/resume").ResumeOptimizationDraft
+  ) {
+    const res = await apiFetch<{
+      success: boolean;
+      data: {
+        newVersionId: string;
+        version: number;
+        resume: ResumeRecord;
+        freshIntelligence: import("@/types/resume").ResumeAtsAnalysis;
+      };
+    }>(`/api/resumes/${resumeId}/optimizations/accept`, {
+      method: "POST",
+      body: JSON.stringify({ draft }),
+    });
+    return res.data;
+  },
+
+  /**
+   * Reject an optimization draft, keeping original resume content pristine.
+   */
+  async rejectOptimization(draft: import("@/types/resume").ResumeOptimizationDraft) {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume").ResumeOptimizationDraft }>(
+      `/api/resumes/optimizations/reject`,
+      {
+        method: "POST",
+        body: JSON.stringify({ draft }),
+      }
+    );
     return res.data;
   },
 };
