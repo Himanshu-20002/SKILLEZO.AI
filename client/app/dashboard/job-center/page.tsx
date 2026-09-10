@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/dashboard/common/PageHeader';
 import { MetricCard } from '@/components/dashboard/career/MetricCard';
@@ -25,6 +25,7 @@ import { Job, JobFilterState, SortOption, JobApplication } from '@/types/job-cen
 import { jobService, mapBackendJobToUiJob, BackendJob } from '@/services/job.service';
 import { profileService } from '@/services/profile.service';
 import { applicationService } from '@/services/application.service';
+import { useSession } from '@/lib/auth-client';
 import {
   JobSearch,
   JobFilters,
@@ -40,7 +41,15 @@ import { toast } from 'sonner';
 
 type ActiveTab = 'all' | 'platform' | 'external' | 'recommended' | 'saved' | 'applied';
 
+type JobsPagination = {
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
 export default function SmartJobCenterPage() {
+  const { data: session, isPending: isSessionPending } = useSession();
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -59,6 +68,14 @@ export default function SmartJobCenterPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalJobsCount, setTotalJobsCount] = useState(0);
   const jobsPerPage = 6;
+  const [jobsPagination, setJobsPagination] = useState<JobsPagination>({
+    total: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
+  const activeJobsRequestRef = useRef<AbortController | null>(null);
+  const jobsRequestIdRef = useRef(0);
 
   const [filters, setFilters] = useState<JobFilterState>({
     searchQuery: '',
@@ -95,15 +112,24 @@ export default function SmartJobCenterPage() {
 
   // Fetch live jobs from backend API
   const fetchLiveJobs = useCallback(async () => {
+    activeJobsRequestRef.current?.abort();
+    const controller = new AbortController();
+    activeJobsRequestRef.current = controller;
+    const requestId = ++jobsRequestIdRef.current;
+
     setIsLoadingJobs(true);
     setJobsError(null);
 
     try {
       // Map UI filters to backend query params
       const queryParams: Record<string, any> = {
-        page: 1,
-        limit: 100, // Fetch broader dataset to allow fast client-side tab switching & sorting
+        page: currentPage,
+        limit: jobsPerPage,
       };
+
+      if (activeTab === 'platform' || activeTab === 'external') {
+        queryParams.sourceType = activeTab;
+      }
 
       if (filters.searchQuery.trim()) {
         queryParams.keyword = filters.searchQuery.trim();
@@ -128,29 +154,46 @@ export default function SmartJobCenterPage() {
         else if (et === 'internship') queryParams.employmentType = 'internship';
       }
 
-      const res = await jobService.searchJobs(queryParams);
+      const res = await jobService.searchJobs(queryParams, { signal: controller.signal });
+      if (requestId !== jobsRequestIdRef.current) return;
+
       const mapped = (res.items || []).map((backendJob: BackendJob) =>
         mapBackendJobToUiJob(backendJob, userSkills)
       );
 
       setLiveJobs(mapped);
       setTotalJobsCount(res.pagination?.total || mapped.length);
+      setJobsPagination({
+        total: res.pagination?.total || mapped.length,
+        totalPages: res.pagination?.totalPages || 1,
+        hasNextPage: Boolean(res.pagination?.hasNextPage),
+        hasPreviousPage: Boolean(res.pagination?.hasPreviousPage),
+      });
     } catch (err: any) {
+      if (err?.name === 'AbortError' || requestId !== jobsRequestIdRef.current) return;
       console.error('[JobCenter] Failed to fetch live jobs:', err);
       setJobsError(err?.message || 'Unable to connect to live Jobs API. Please make sure the backend is running.');
       toast.error('Failed to load live jobs from server');
     } finally {
-      setIsLoadingJobs(false);
+      if (requestId === jobsRequestIdRef.current) {
+        setIsLoadingJobs(false);
+      }
     }
-  }, [filters.searchQuery, filters.location, filters.workMode, filters.employmentType, userSkills]);
+  }, [activeTab, currentPage, filters.searchQuery, filters.location, filters.workMode, filters.employmentType, userSkills]);
 
   // Debounced search trigger
   useEffect(() => {
+    if (activeTab === 'saved' || activeTab === 'applied') return;
+
     const timer = setTimeout(() => {
       fetchLiveJobs();
     }, 250);
     return () => clearTimeout(timer);
-  }, [fetchLiveJobs]);
+  }, [activeTab, fetchLiveJobs]);
+
+  useEffect(() => {
+    return () => activeJobsRequestRef.current?.abort();
+  }, []);
 
   // Lightweight cache of applied job IDs (set for O(1) lookup)
   const [appliedJobIdSet, setAppliedJobIdSet] = useState<Set<string>>(new Set());
@@ -167,8 +210,12 @@ export default function SmartJobCenterPage() {
 
   // Load applied IDs on mount
   useEffect(() => {
+    if (isSessionPending || !session?.user) {
+      setAppliedJobIdSet(new Set());
+      return;
+    }
     fetchAppliedJobIds();
-  }, []);
+  }, [isSessionPending, session?.user?.id, fetchAppliedJobIds]);
 
   // Helper to check if a job is applied
   const isJobApplied = (jobId: string) => appliedJobIdSet.has(jobId);
@@ -262,8 +309,12 @@ export default function SmartJobCenterPage() {
   }, []);
 
   useEffect(() => {
+    if (isSessionPending || !session?.user) {
+      setApplications([]);
+      return;
+    }
     fetchMyApplications();
-  }, [fetchMyApplications]);
+  }, [isSessionPending, session?.user?.id, fetchMyApplications]);
 
   const handleConfirmApply = async (job: Job, resumeId?: string, coverLetter?: string) => {
     const isExternal = (job.sourceType || '').toUpperCase() === 'EXTERNAL';
@@ -476,12 +527,10 @@ export default function SmartJobCenterPage() {
     return liveJobs.filter((j) => (j.sourceType || '').toUpperCase() === 'EXTERNAL').length;
   }, [liveJobs]);
 
-  // Dynamic pagination calculation
-  const calculatedTotalPages = Math.ceil(filteredJobs.length / jobsPerPage) || 1;
-  const paginatedJobs = useMemo(() => {
-    const start = (currentPage - 1) * jobsPerPage;
-    return filteredJobs.slice(start, start + jobsPerPage);
-  }, [filteredJobs, currentPage]);
+  // The server returns one page at a time. Client-only refinements still apply
+  // to that page without downloading the full job catalogue.
+  const calculatedTotalPages = jobsPagination.totalPages;
+  const paginatedJobs = filteredJobs;
 
   const highMatchJobsCount = useMemo(() => {
     return liveJobs.filter((j) => j.matchScore >= 80).length;
@@ -759,7 +808,7 @@ export default function SmartJobCenterPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
               <span>
-                Showing {filteredJobs.length} {activeTab === 'platform' ? 'Platform' : activeTab === 'external' ? 'Jooble' : 'live'} opportunities
+                Showing {filteredJobs.length} jobs on this page ({jobsPagination.total} {activeTab === 'platform' ? 'Platform' : activeTab === 'external' ? 'Jooble' : 'live'} opportunities total)
               </span>
               <span>Page {currentPage} of {calculatedTotalPages}</span>
             </div>
@@ -793,7 +842,7 @@ export default function SmartJobCenterPage() {
               <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  disabled={currentPage === 1}
+                  disabled={!jobsPagination.hasPreviousPage}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-semibold disabled:opacity-40 cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -817,7 +866,7 @@ export default function SmartJobCenterPage() {
 
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(p + 1, calculatedTotalPages))}
-                  disabled={currentPage === calculatedTotalPages}
+                  disabled={!jobsPagination.hasNextPage}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-semibold disabled:opacity-40 cursor-pointer"
                 >
                   <span>Next</span>

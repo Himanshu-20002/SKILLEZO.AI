@@ -53,7 +53,7 @@ export interface BackendJob {
 export interface JobSearchQueryParams {
   keyword?: string;
   location?: string;
-  sourceType?: "PLATFORM" | "EXTERNAL";
+  sourceType?: "platform" | "external";
   sourceProvider?: string;
   employmentType?: string;
   workplaceType?: string;
@@ -284,7 +284,10 @@ export const jobService = {
   /**
    * Search jobs from the backend API with filters, keywords, and pagination.
    */
-  async searchJobs(params: JobSearchQueryParams = {}): Promise<PaginatedJobsResponse> {
+  async searchJobs(
+    params: JobSearchQueryParams = {},
+    options: RequestInit = {}
+  ): Promise<PaginatedJobsResponse> {
     const query = new URLSearchParams();
 
     if (params.keyword) query.set("keyword", params.keyword.trim());
@@ -302,7 +305,7 @@ export const jobService = {
     const queryString = query.toString();
     const endpoint = `/api/jobs${queryString ? `?${queryString}` : ""}`;
 
-    const res = await apiFetch<{ success: boolean; data: PaginatedJobsResponse }>(endpoint);
+    const res = await apiFetch<{ success: boolean; data: PaginatedJobsResponse }>(endpoint, options);
     return res.data;
   },
 
