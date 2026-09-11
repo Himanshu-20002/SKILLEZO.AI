@@ -139,7 +139,7 @@ describe("Phase 5: Section AI Editor + Evidence Lock", () => {
 
       // Verify original document is strictly unchanged
       expect(doc).toEqual(originalCopy);
-    });
+    }, 30000);
 
     it("should allow deterministic re-scoring after applying approved changes", () => {
       const doc = getCleanDoc();

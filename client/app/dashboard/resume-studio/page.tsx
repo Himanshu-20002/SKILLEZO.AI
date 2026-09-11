@@ -24,7 +24,10 @@ import {
   ShieldCheck,
   Wand2,
   XCircle,
-  Clock
+  Clock,
+  Eye,
+  Columns2,
+  Sliders
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SAMPLE_RESUME_DOCUMENT_FIXTURE } from '@/types/resume-document.fixture';
@@ -33,6 +36,7 @@ import { ResumeScoreResult, SectionScore, ScoreRatingTier } from '@/types/resume
 import { SectionImprovementSuggestion } from '@/types/resume-editor.types';
 import { resumeService } from '@/services/resume.service';
 import { ResumeRecord } from '@/types/resume';
+import { ResumeRenderer } from '@/components/resume-studio/renderer';
 
 interface SectionConfigItem {
   id: keyof ResumeScoreResult['sections'];
@@ -64,6 +68,10 @@ export default function ResumeStudioPage() {
   const [activeView, setActiveView] = useState<'overview' | 'detail'>('overview');
   const [activeSectionKey, setActiveSectionKey] = useState<keyof ResumeScoreResult['sections']>('experience');
   const [showScoringDetails, setShowScoringDetails] = useState(false);
+
+  // Phase 6: Visual Renderer & View Modes
+  const [viewMode, setViewMode] = useState<'analysis' | 'visual' | 'split'>('analysis');
+  const [previewHighlightSection, setPreviewHighlightSection] = useState<string | null>(null);
 
   // Phase 5: Section AI Editor State
   const [userInstruction, setUserInstruction] = useState('');
@@ -413,6 +421,14 @@ export default function ResumeStudioPage() {
           setScoreResult(updatedScore);
         }
 
+        if (resumeDoc) {
+          const updatedDoc: ResumeDocument = {
+            ...resumeDoc,
+            [activeSectionKey]: currentSuggestion.proposed,
+          };
+          setResumeDoc(updatedDoc);
+        }
+
         setScoreDeltaNotice({
           section: SECTION_CONFIGS.find((s) => s.id === activeSectionKey)?.title || activeSectionKey,
           from: prev,
@@ -607,78 +623,9 @@ export default function ResumeStudioPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1130] text-slate-900 dark:text-slate-100 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto font-sans space-y-6 pb-20">
-      
-      {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Resume Studio
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Improve your resume section by section.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          {isSampleMode && (
-            <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-              Sample Preview
-            </span>
-          )}
-
-          {resumes.length > 0 && (
-            <div className="relative">
-              <select
-                value={selectedResumeId || ''}
-                onChange={(e) => handleSelectResume(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-              >
-                {resumes.map((r) => (
-                  <option key={r._id} value={r._id}>
-                    {r.title || r.originalFileName || 'Resume'} {r.isDefault ? '(Default)' : ''}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          )}
-
-          {selectedResumeId && !isSampleMode && (
-            <button
-              onClick={() => fetchScore(selectedResumeId)}
-              disabled={refreshing}
-              title="Refresh analysis"
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-900 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-colors cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Score Delta Notification Banner (After Approval) */}
-      {scoreDeltaNotice && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-200 flex items-center justify-between animate-fadeIn">
-          <div className="flex items-center gap-2.5 text-xs">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div>
-              <span className="font-bold">{scoreDeltaNotice.section} score updated: </span>
-              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{scoreDeltaNotice.from} → </span>
-              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{scoreDeltaNotice.to} / 100</span>
-              <span className="text-slate-500 dark:text-slate-400 ml-2">Re-analyzed from updated resume.</span>
-            </div>
-          </div>
-          <button
-            onClick={() => setScoreDeltaNotice(null)}
-            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold cursor-pointer"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
+  // Render Left Analysis Column (Overview or Detail)
+  const renderAnalysisContent = () => (
+    <div className="space-y-6">
       {/* VIEW 1: OVERVIEW */}
       {activeView === 'overview' && (
         <div className="space-y-6">
@@ -769,10 +716,11 @@ export default function ResumeStudioPage() {
                 </ul>
               )}
 
-              <div className="pt-2">
+              <div className="pt-2 flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => {
                     setActiveSectionKey(prioritySection.id);
+                    setPreviewHighlightSection(prioritySection.id);
                     setActiveView('detail');
                     setShowScoringDetails(false);
                     setCurrentSuggestion(null);
@@ -781,6 +729,16 @@ export default function ResumeStudioPage() {
                 >
                   <span>Review {prioritySection.title}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => {
+                    setPreviewHighlightSection(prioritySection.id);
+                    setViewMode('visual');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Preview on Resume</span>
                 </button>
               </div>
             </div>
@@ -806,6 +764,7 @@ export default function ResumeStudioPage() {
                     key={sec.id}
                     onClick={() => {
                       setActiveSectionKey(sec.id);
+                      setPreviewHighlightSection(sec.id);
                       setActiveView('detail');
                       setShowScoringDetails(false);
                       setCurrentSuggestion(null);
@@ -847,17 +806,30 @@ export default function ResumeStudioPage() {
       {activeView === 'detail' && selectedSectionData && selectedConfig && (
         <div className="space-y-6">
           
-          {/* Back Action */}
-          <button
-            onClick={() => {
-              setActiveView('overview');
-              setCurrentSuggestion(null);
-            }}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Resume</span>
-          </button>
+          {/* Back Action & Navigation */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => {
+                setActiveView('overview');
+                setCurrentSuggestion(null);
+              }}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Resume Overview</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setPreviewHighlightSection(activeSectionKey);
+                setViewMode('visual');
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Preview on Resume</span>
+            </button>
+          </div>
 
           {/* Section Summary Card */}
           <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
@@ -1124,6 +1096,229 @@ export default function ResumeStudioPage() {
             )}
           </div>
 
+        </div>
+      )}
+    </div>
+  );
+
+  // Render Visual Resume Preview with section jump navigation
+  const renderVisualResumeContent = () => (
+    <div className="space-y-6">
+      {/* Section Jump Quick Bar */}
+      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
+          <span className="text-slate-400 font-medium px-1">Jump to section:</span>
+          {SECTION_CONFIGS.map((s) => {
+            const isSelected = previewHighlightSection === s.id;
+            return (
+              <button
+                key={s.id}
+                onClick={() => {
+                  setPreviewHighlightSection(s.id);
+                  setActiveSectionKey(s.id);
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                {s.title.split(' ')[0]}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={() => {
+            setActiveSectionKey((previewHighlightSection as any) || 'experience');
+            setActiveView('detail');
+            setViewMode('analysis');
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors cursor-pointer"
+        >
+          <Wand2 className="w-3.5 h-3.5" />
+          <span>Improve Section in AI</span>
+        </button>
+      </div>
+
+      {/* Render Canonical Resume Document */}
+      <div className="py-2">
+        <ResumeRenderer
+          document={resumeDoc || SAMPLE_RESUME_DOCUMENT_FIXTURE}
+          highlightSectionId={previewHighlightSection || (activeView === 'detail' ? activeSectionKey : null)}
+          onSectionClick={(sectionId) => {
+            setPreviewHighlightSection(sectionId);
+            setActiveSectionKey(sectionId as any);
+          }}
+          interactive={true}
+        />
+      </div>
+    </div>
+  );
+
+  const containerMaxWidth = 
+    viewMode === 'split' ? 'max-w-7xl' : viewMode === 'visual' ? 'max-w-4xl' : 'max-w-4xl';
+
+  return (
+    <div className={`min-h-screen bg-slate-50/50 dark:bg-[#0B1130] text-slate-900 dark:text-slate-100 p-4 sm:p-6 lg:p-8 ${containerMaxWidth} mx-auto font-sans space-y-6 pb-20 transition-all duration-200`}>
+      
+      {/* 1. Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            Resume Studio
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Turn resume intelligence into a real visual resume.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          {isSampleMode && (
+            <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              Sample Preview
+            </span>
+          )}
+
+          {resumes.length > 0 && (
+            <div className="relative">
+              <select
+                value={selectedResumeId || ''}
+                onChange={(e) => handleSelectResume(e.target.value)}
+                className="appearance-none pl-3 pr-8 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                {resumes.map((r) => (
+                  <option key={r._id} value={r._id}>
+                    {r.title || r.originalFileName || 'Resume'} {r.isDefault ? '(Default)' : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          )}
+
+          {selectedResumeId && !isSampleMode && (
+            <button
+              onClick={() => fetchScore(selectedResumeId)}
+              disabled={refreshing}
+              title="Refresh analysis"
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-900 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-colors cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* View Mode Switcher Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+          <button
+            onClick={() => setViewMode('analysis')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'analysis'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Analysis & AI</span>
+          </button>
+          <button
+            onClick={() => {
+              setViewMode('visual');
+              setPreviewHighlightSection(activeSectionKey);
+            }}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'visual'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Visual Resume</span>
+          </button>
+          <button
+            onClick={() => {
+              setViewMode('split');
+              setPreviewHighlightSection(activeSectionKey);
+            }}
+            className={`hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'split'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+          >
+            <Columns2 className="w-3.5 h-3.5" />
+            <span>Split View</span>
+          </button>
+        </div>
+
+        {viewMode !== 'visual' && (
+          <button
+            onClick={() => {
+              setViewMode('visual');
+              setPreviewHighlightSection(activeSectionKey);
+            }}
+            className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer self-start sm:self-auto font-medium"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Switch to Live Resume Preview</span>
+          </button>
+        )}
+      </div>
+
+      {/* Score Delta Notification Banner (After Approval) */}
+      {scoreDeltaNotice && (
+        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-200 flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2.5 text-xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div>
+              <span className="font-bold">{scoreDeltaNotice.section} score updated: </span>
+              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{scoreDeltaNotice.from} → </span>
+              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{scoreDeltaNotice.to} / 100</span>
+              <span className="text-slate-500 dark:text-slate-400 ml-2">Re-analyzed from updated resume.</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setScoreDeltaNotice(null)}
+            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Main Content Area based on View Mode */}
+      {viewMode === 'analysis' && renderAnalysisContent()}
+
+      {viewMode === 'visual' && renderVisualResumeContent()}
+
+      {viewMode === 'split' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-6 space-y-6">
+            {renderAnalysisContent()}
+          </div>
+          <div className="lg:col-span-6 lg:sticky lg:top-6 space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Live Resume Preview
+              </span>
+              <span className="text-[11px] text-slate-400">Updates live on approval</span>
+            </div>
+            <div className="max-h-[85vh] overflow-y-auto p-1 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-100/50 dark:bg-slate-900/40">
+              <ResumeRenderer
+                document={resumeDoc || SAMPLE_RESUME_DOCUMENT_FIXTURE}
+                highlightSectionId={activeView === 'detail' ? activeSectionKey : previewHighlightSection}
+                onSectionClick={(secId) => {
+                  setActiveSectionKey(secId as any);
+                  setActiveView('detail');
+                }}
+                interactive={true}
+              />
+            </div>
+          </div>
         </div>
       )}
 

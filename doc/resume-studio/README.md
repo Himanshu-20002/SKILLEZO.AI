@@ -8,8 +8,8 @@
 | **Phase 3** | **Section Scoring Engine** | **M1** | 🟢 **COMPLETE** ([03-scoring.md](file:///./03-scoring.md)) |
 | **Phase 4** | **Resume Studio UI** | **M1** | 🟢 **COMPLETE** ([04-studio-ux.md](file:///./04-studio-ux.md)) |
 | **Phase 5** | **Section AI Editor with Evidence Lock** | **M2** | 🟢 **COMPLETE** ([05-ai-editor.md](file:///./05-ai-editor.md)) |
-| **Phase 6** | **AI Rewrite + Re-score** | **M2** | ⚪ Next |
-| **Phase 7** | **Visual Resume Builder** | **M3** | ⚪ Planned |
+| **Phase 6** | **Visual Resume Renderer + Section Preview** | **M2** | 🟢 **COMPLETE** ([06-visual-renderer.md](file:///./06-visual-renderer.md)) |
+| **Phase 7** | **Visual Resume Builder** | **M3** | ⚪ Next |
 | **Phase 8** | **Resume Templates** | **M3** | ⚪ Planned |
 | **Phase 9** | **React-PDF Rendering (@react-pdf/renderer 4.x)** | **M3** | ⚪ Planned |
 | **Phase 10**| **Browser PDF Testing** | **M3** | ⚪ Planned |
