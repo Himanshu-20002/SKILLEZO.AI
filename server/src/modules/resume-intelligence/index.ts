@@ -27,3 +27,6 @@ export * from "./sections";
 
 // Deterministic Resume Scoring Domain (Phase 3)
 export * from "./scoring";
+
+// Section AI Editor Domain (Phase 5)
+export * from "./editor";

@@ -169,6 +169,42 @@ export const resumeService = {
     );
     return res.data;
   },
+
+  /**
+   * Request evidence-locked AI section improvement suggestion (Phase 5).
+   */
+  async suggestSectionImprovement(
+    resumeId: string,
+    sectionId: string,
+    userInstruction?: string
+  ): Promise<import("@/types/resume-editor.types").SectionImprovementSuggestion> {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume-editor.types").SectionImprovementSuggestion }>(
+      `/api/resumes/${resumeId}/sections/${sectionId}/suggest-improvement`,
+      {
+        method: "POST",
+        body: JSON.stringify({ userInstruction }),
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * Apply candidate-approved section improvement, mutating ResumeDocument and recalculating score (Phase 5).
+   */
+  async applySectionImprovement(
+    resumeId: string,
+    sectionId: string,
+    payload: import("@/types/resume-editor.types").ApplyImprovementPayload
+  ): Promise<import("@/types/resume-editor.types").ApplyImprovementResult> {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume-editor.types").ApplyImprovementResult }>(
+      `/api/resumes/${resumeId}/sections/${sectionId}/apply-improvement`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    );
+    return res.data;
+  },
 };
 
 

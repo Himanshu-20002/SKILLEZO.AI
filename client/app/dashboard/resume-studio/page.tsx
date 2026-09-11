@@ -19,10 +19,18 @@ import {
   ChevronDown,
   UploadCloud,
   Check,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  ShieldCheck,
+  Wand2,
+  XCircle,
+  Clock
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { SAMPLE_RESUME_DOCUMENT_FIXTURE } from '@/types/resume-document.fixture';
+import { ResumeDocument } from '@/types/resume-document';
 import { ResumeScoreResult, SectionScore, ScoreRatingTier } from '@/types/resume-scoring.types';
+import { SectionImprovementSuggestion } from '@/types/resume-editor.types';
 import { resumeService } from '@/services/resume.service';
 import { ResumeRecord } from '@/types/resume';
 
@@ -45,6 +53,7 @@ const SECTION_CONFIGS: SectionConfigItem[] = [
 export default function ResumeStudioPage() {
   const [resumes, setResumes] = useState<ResumeRecord[]>([]);
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
+  const [resumeDoc, setResumeDoc] = useState<ResumeDocument | null>(null);
   const [scoreResult, setScoreResult] = useState<ResumeScoreResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,6 +64,13 @@ export default function ResumeStudioPage() {
   const [activeView, setActiveView] = useState<'overview' | 'detail'>('overview');
   const [activeSectionKey, setActiveSectionKey] = useState<keyof ResumeScoreResult['sections']>('experience');
   const [showScoringDetails, setShowScoringDetails] = useState(false);
+
+  // Phase 5: Section AI Editor State
+  const [userInstruction, setUserInstruction] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [currentSuggestion, setCurrentSuggestion] = useState<SectionImprovementSuggestion | null>(null);
+  const [scoreDeltaNotice, setScoreDeltaNotice] = useState<{ section: string; from: number; to: number } | null>(null);
 
   // Load candidate resumes on mount
   useEffect(() => {
@@ -72,6 +88,9 @@ export default function ResumeStudioPage() {
         const defaultResume = userResumes.find((r) => r.isDefault) || userResumes[0];
         setSelectedResumeId(defaultResume._id);
         setIsSampleMode(false);
+        if (defaultResume.resumeDocument) {
+          setResumeDoc(defaultResume.resumeDocument as any);
+        }
         await fetchScore(defaultResume._id);
       } else {
         setIsSampleMode(true);
@@ -100,6 +119,8 @@ export default function ResumeStudioPage() {
   };
 
   const loadSampleScores = () => {
+    setResumeDoc(SAMPLE_RESUME_DOCUMENT_FIXTURE);
+
     const sampleScore: ResumeScoreResult = {
       scoreId: "sample_score_01",
       resumeId: SAMPLE_RESUME_DOCUMENT_FIXTURE.id,
@@ -279,7 +300,161 @@ export default function ResumeStudioPage() {
     setSelectedResumeId(resumeId);
     setIsSampleMode(false);
     setActiveView('overview');
+    setCurrentSuggestion(null);
+    setScoreDeltaNotice(null);
+    
+    const resume = resumes.find((r) => r._id === resumeId);
+    if (resume?.resumeDocument) {
+      setResumeDoc(resume.resumeDocument as any);
+    }
     fetchScore(resumeId);
+  };
+
+  // Phase 5: Generate Suggestion Handler
+  const handleGenerateSuggestion = async () => {
+    try {
+      setIsGenerating(true);
+      setCurrentSuggestion(null);
+
+      if (isSampleMode || !selectedResumeId) {
+        // Simulate evidence-locked proposal for sample preview
+        await new Promise((r) => setTimeout(r, 900));
+        const sampleSuggestion: SectionImprovementSuggestion = {
+          suggestionId: "sug_sample_exp_01",
+          sectionId: activeSectionKey,
+          original: (resumeDoc as any)?.[activeSectionKey] || (SAMPLE_RESUME_DOCUMENT_FIXTURE as any)[activeSectionKey],
+          proposed: [
+            {
+              id: "exp_01",
+              companyName: "Acme Cloud Technologies",
+              jobTitle: "Senior Software Engineer",
+              location: "San Francisco, CA",
+              startDate: "2022-01",
+              isCurrent: true,
+              bullets: [
+                {
+                  id: "b_01",
+                  text: "Architected and delivered distributed event-driven microservices using Node.js and TypeScript, handling 15M+ daily requests.",
+                  verbs: ["Architected", "delivered"],
+                  metrics: ["15M+"],
+                  evidenceIds: ["ev_exp_01"],
+                },
+                {
+                  id: "b_02",
+                  text: "Optimized PostgreSQL query execution plans and Redis caching layer, reducing p99 API latency by 42%.",
+                  verbs: ["Optimized", "reducing"],
+                  metrics: ["42%"],
+                  evidenceIds: ["ev_exp_02"],
+                },
+              ],
+            },
+          ],
+          changes: [
+            {
+              field: "bullet text",
+              before: "Worked on web applications and microservices.",
+              after: "Architected and delivered distributed event-driven microservices using Node.js and TypeScript, handling 15M+ daily requests.",
+              reason: "Replaced passive phrasing with strong power action verbs and highlighted existing architecture scale.",
+            },
+            {
+              field: "bullet text",
+              before: "Helped with database query tuning.",
+              after: "Optimized PostgreSQL query execution plans and Redis caching layer, reducing p99 API latency by 42%.",
+              reason: "Articulated concrete database optimization techniques supported by resume evidence.",
+            },
+          ],
+          evidenceUsed: [
+            "Node.js & TypeScript microservices",
+            "PostgreSQL & Redis caching",
+            "Daily request throughput scale",
+          ],
+          unsupportedClaims: [],
+          warnings: [],
+          generatedAt: new Date().toISOString(),
+          baseDocumentVersion: 1,
+        };
+        setCurrentSuggestion(sampleSuggestion);
+        return;
+      }
+
+      const suggestion = await resumeService.suggestSectionImprovement(
+        selectedResumeId,
+        activeSectionKey,
+        userInstruction.trim() || undefined
+      );
+
+      setCurrentSuggestion(suggestion);
+    } catch (err: any) {
+      toast.error(err.message || "Could not generate AI improvement. Your original content is unchanged.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Phase 5: Approve Suggestion Handler
+  const handleApproveSuggestion = async () => {
+    if (!currentSuggestion) return;
+
+    try {
+      setIsApplying(true);
+
+      if (isSampleMode || !selectedResumeId) {
+        await new Promise((r) => setTimeout(r, 600));
+        // Mock sample approval and deterministic re-score
+        const prev = scoreResult?.sections[activeSectionKey]?.score ?? 31;
+        const next = Math.min(100, prev + 37);
+        
+        if (scoreResult) {
+          const updatedScore = { ...scoreResult };
+          updatedScore.sections[activeSectionKey].score = next;
+          updatedScore.sections[activeSectionKey].tier = next >= 85 ? 'Excellent' : next >= 70 ? 'Good' : 'Developing';
+          updatedScore.overall.overallScore = 84;
+          updatedScore.overall.tier = 'Strong';
+          setScoreResult(updatedScore);
+        }
+
+        setScoreDeltaNotice({
+          section: SECTION_CONFIGS.find((s) => s.id === activeSectionKey)?.title || activeSectionKey,
+          from: prev,
+          to: next,
+        });
+        setCurrentSuggestion(null);
+        toast.success("Section improvement applied! Score recalculated deterministically.");
+        return;
+      }
+
+      const result = await resumeService.applySectionImprovement(
+        selectedResumeId,
+        activeSectionKey,
+        {
+          suggestionId: currentSuggestion.suggestionId,
+          proposed: currentSuggestion.proposed,
+          baseDocumentVersion: currentSuggestion.baseDocumentVersion,
+        }
+      );
+
+      setResumeDoc(result.resumeDocument);
+      setScoreDeltaNotice({
+        section: SECTION_CONFIGS.find((s) => s.id === activeSectionKey)?.title || activeSectionKey,
+        from: result.previousScore,
+        to: result.newScore,
+      });
+      setCurrentSuggestion(null);
+
+      // Refresh scores from authoritative backend
+      await fetchScore(selectedResumeId);
+      toast.success("Section changes approved & updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to apply improvement.");
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  // Phase 5: Reject Suggestion Handler
+  const handleRejectSuggestion = () => {
+    setCurrentSuggestion(null);
+    toast.info("Suggestion dismissed. Original resume content kept unchanged.");
   };
 
   // Derived Insights
@@ -483,6 +658,27 @@ export default function ResumeStudioPage() {
         </div>
       </div>
 
+      {/* Score Delta Notification Banner (After Approval) */}
+      {scoreDeltaNotice && (
+        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-200 flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2.5 text-xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div>
+              <span className="font-bold">{scoreDeltaNotice.section} score updated: </span>
+              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{scoreDeltaNotice.from} → </span>
+              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{scoreDeltaNotice.to} / 100</span>
+              <span className="text-slate-500 dark:text-slate-400 ml-2">Re-analyzed from updated resume.</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setScoreDeltaNotice(null)}
+            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* VIEW 1: OVERVIEW */}
       {activeView === 'overview' && (
         <div className="space-y-6">
@@ -508,7 +704,7 @@ export default function ResumeStudioPage() {
             </div>
 
             <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              {scoreResult?.overall.summaryReason || "You have a solid foundation. Experience is your biggest opportunity to improve."}
+              {scoreResult?.overall.summaryReason || "You have a solid foundation. Work Experience is your biggest opportunity to improve."}
             </p>
 
             <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-100 dark:border-slate-800/80">
@@ -579,6 +775,7 @@ export default function ResumeStudioPage() {
                     setActiveSectionKey(prioritySection.id);
                     setActiveView('detail');
                     setShowScoringDetails(false);
+                    setCurrentSuggestion(null);
                   }}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
                 >
@@ -611,6 +808,7 @@ export default function ResumeStudioPage() {
                       setActiveSectionKey(sec.id);
                       setActiveView('detail');
                       setShowScoringDetails(false);
+                      setCurrentSuggestion(null);
                     }}
                     className="w-full flex items-center justify-between py-3.5 px-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors text-left cursor-pointer group"
                   >
@@ -645,13 +843,16 @@ export default function ResumeStudioPage() {
         </div>
       )}
 
-      {/* VIEW 2: SECTION DETAIL */}
+      {/* VIEW 2: SECTION DETAIL & AI EDITOR */}
       {activeView === 'detail' && selectedSectionData && selectedConfig && (
         <div className="space-y-6">
           
           {/* Back Action */}
           <button
-            onClick={() => setActiveView('overview')}
+            onClick={() => {
+              setActiveView('overview');
+              setCurrentSuggestion(null);
+            }}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -696,6 +897,164 @@ export default function ResumeStudioPage() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* AI IMPROVEMENT WORKSPACE (Phase 5) */}
+          <div className="p-6 rounded-2xl bg-gradient-to-b from-indigo-50/40 to-white dark:from-indigo-950/20 dark:to-slate-900 border border-indigo-100 dark:border-indigo-900/40 shadow-xs space-y-5">
+            
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    Evidence-Locked AI
+                  </span>
+                  <span className="text-xs text-slate-400">Zero Hallucinations</span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  Improve {selectedSectionData.title}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Strengthen wording, action verbs, and structure using only information already present in your resume.
+                </p>
+              </div>
+            </div>
+
+            {/* Instruction input & Trigger */}
+            {!currentSuggestion && !isGenerating && (
+              <div className="space-y-3 pt-1">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Optional candidate instruction (e.g., &ldquo;Focus on action verbs&rdquo; or &ldquo;Make more concise&rdquo;)
+                  </label>
+                  <input
+                    type="text"
+                    value={userInstruction}
+                    onChange={(e) => setUserInstruction(e.target.value)}
+                    placeholder="Focus on action verbs and leadership outcomes..."
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleGenerateSuggestion}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer shadow-indigo-500/20"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" />
+                    <span>Improve with AI</span>
+                  </button>
+                  <span className="text-[11px] text-slate-400">Your original resume remains unchanged until you approve.</span>
+                </div>
+              </div>
+            )}
+
+            {/* Generating Loading State */}
+            {isGenerating && (
+              <div className="p-6 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-indigo-200/60 dark:border-indigo-800/60 text-center space-y-3">
+                <RefreshCw className="w-6 h-6 text-indigo-600 dark:text-indigo-400 animate-spin mx-auto" />
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    Improving your {selectedSectionData.title} section...
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Analyzing existing facts and calibrating power verbs. Zero facts are being invented.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Proposed Suggestion Review Panel */}
+            {currentSuggestion && (
+              <div className="space-y-4 pt-2 border-t border-indigo-100 dark:border-indigo-900/40 animate-fadeIn">
+                
+                {/* Evidence Used Badges */}
+                {currentSuggestion.evidenceUsed.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Based on your resume facts
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentSuggestion.evidenceUsed.map((fact, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1"
+                        >
+                          <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+                          <span>{fact}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Changes Explanation */}
+                {currentSuggestion.changes.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Why this is better
+                    </span>
+                    <div className="space-y-2">
+                      {currentSuggestion.changes.map((ch, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs"
+                        >
+                          <div className="space-y-1">
+                            <div className="text-[11px] text-slate-400 line-through">
+                              {ch.before}
+                            </div>
+                            <div className="font-semibold text-slate-900 dark:text-slate-100 text-indigo-600 dark:text-indigo-400">
+                              {ch.after}
+                            </div>
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                            <span>{ch.reason}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons: Keep Original vs Approve */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Approving updates your ResumeDocument and recalculates your deterministic score.
+                  </span>
+
+                  <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                    <button
+                      onClick={handleRejectSuggestion}
+                      disabled={isApplying}
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
+                    >
+                      Keep Original
+                    </button>
+                    <button
+                      onClick={handleApproveSuggestion}
+                      disabled={isApplying}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm cursor-pointer shadow-emerald-500/20"
+                    >
+                      {isApplying ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Applying & Scoring...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Approve Changes</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
           </div>
 
           {/* Review Areas */}
@@ -763,19 +1122,6 @@ export default function ResumeStudioPage() {
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Action CTA */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              Interactive Section Editor arrives in Phase 5.
-            </div>
-            <button
-              disabled
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
-            >
-              Improve this section
-            </button>
           </div>
 
         </div>

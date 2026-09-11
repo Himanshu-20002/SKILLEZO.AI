@@ -52,6 +52,16 @@ router.get(
   asyncHandler(controller.getScore)
 );
 
+router.post(
+  "/:resumeId/sections/:sectionId/suggest-improvement",
+  asyncHandler(controller.suggestSectionImprovement)
+);
+
+router.post(
+  "/:resumeId/sections/:sectionId/apply-improvement",
+  asyncHandler(controller.applySectionImprovement)
+);
+
 router.get(
   "/:resumeId",
   validate({ params: resumeIdParamValidator }),

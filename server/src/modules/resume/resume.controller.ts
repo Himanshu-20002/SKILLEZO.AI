@@ -126,5 +126,33 @@ export class ResumeController {
     const scoreResult = await this.resumeService.getResumeScore(userId, resumeId);
     res.status(HTTP_STATUS.OK).json(successResponse(scoreResult));
   };
+
+  suggestSectionImprovement = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const resumeId = req.params.resumeId as string;
+    const sectionId = req.params.sectionId as any;
+    const { userInstruction } = req.body;
+    const suggestion = await this.resumeService.suggestSectionImprovement(
+      userId,
+      resumeId,
+      sectionId,
+      userInstruction
+    );
+    res.status(HTTP_STATUS.OK).json(successResponse(suggestion));
+  };
+
+  applySectionImprovement = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const resumeId = req.params.resumeId as string;
+    const sectionId = req.params.sectionId as any;
+    const payload = req.body;
+    const result = await this.resumeService.applySectionImprovement(
+      userId,
+      resumeId,
+      sectionId,
+      payload
+    );
+    res.status(HTTP_STATUS.OK).json(successResponse(result));
+  };
 }
 

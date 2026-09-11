@@ -17,6 +17,12 @@ import {
   ResumeSectionAnalysisResult,
   resumeScoringEngine,
   ResumeScoreResult,
+  sectionAiEditorService,
+  SectionMutator,
+  SectionId,
+  SectionImprovementSuggestion,
+  ApplyImprovementPayload,
+  ApplyImprovementResult,
 } from "@/modules/resume-intelligence";
 import { GeminiProvider } from "@/core/ai/providers/gemini.provider";
 import path from "path";
@@ -233,6 +239,91 @@ export class ResumeService {
     }
     const sectionAnalysis = resumeSectionEngine.analyze(resume.resumeDocument);
     return resumeScoringEngine.scoreDocument(sectionAnalysis, resume.resumeDocument);
+  }
+
+  async suggestSectionImprovement(
+    userId: string,
+    resumeId: string,
+    sectionId: SectionId,
+    userInstruction?: string
+  ): Promise<SectionImprovementSuggestion> {
+    const resume = await this.getResumeById(userId, resumeId);
+    if (!resume.resumeDocument) {
+      resume.resumeDocument = resumeDocumentNormalizer.normalize(
+        resume.extractedData,
+        resume.rawText,
+        {
+          userId,
+          resumeId: resume._id.toString(),
+          title: resume.title,
+          fileName: resume.originalFileName,
+        }
+      );
+    }
+    const sectionAnalysis = resumeSectionEngine.analyzeSection(resume.resumeDocument, sectionId);
+    return sectionAiEditorService.generateSuggestion(
+      resume.resumeDocument,
+      sectionId,
+      sectionAnalysis,
+      userInstruction
+    );
+  }
+
+  async applySectionImprovement(
+    userId: string,
+    resumeId: string,
+    sectionId: SectionId,
+    payload: ApplyImprovementPayload
+  ): Promise<ApplyImprovementResult> {
+    const resume = await this.getResumeById(userId, resumeId);
+    if (!resume.resumeDocument) {
+      resume.resumeDocument = resumeDocumentNormalizer.normalize(
+        resume.extractedData,
+        resume.rawText,
+        {
+          userId,
+          resumeId: resume._id.toString(),
+          title: resume.title,
+          fileName: resume.originalFileName,
+        }
+      );
+    }
+
+    // 1. Calculate previous deterministic score
+    const prevSectionAnalysis = resumeSectionEngine.analyze(resume.resumeDocument);
+    const prevScoreResult = resumeScoringEngine.scoreDocument(prevSectionAnalysis, resume.resumeDocument);
+    const previousScore = prevScoreResult.sections[sectionId]?.score ?? 0;
+
+    // 2. Safely mutate document (with optimistic locking check & schema validation)
+    const updatedDocument = SectionMutator.applyChange(
+      resume.resumeDocument,
+      sectionId,
+      payload.proposed,
+      payload.baseDocumentVersion
+    );
+
+    // 3. Persist updated ResumeDocument to MongoDB
+    resume.resumeDocument = updatedDocument;
+    resume.version = (resume.version || 1) + 1;
+    await this.resumeRepository.updateById(resumeId, {
+      resumeDocument: updatedDocument,
+      version: resume.version,
+    });
+
+    // 4. Calculate new deterministic score
+    const newSectionAnalysis = resumeSectionEngine.analyze(updatedDocument);
+    const newScoreResult = resumeScoringEngine.scoreDocument(newSectionAnalysis, updatedDocument);
+    const newScore = newScoreResult.sections[sectionId]?.score ?? 0;
+
+    return {
+      resumeDocument: updatedDocument,
+      sectionId,
+      previousScore,
+      newScore,
+      scoreDelta: newScore - previousScore,
+      newDocumentVersion: resume.version,
+      updatedAt: new Date().toISOString(),
+    };
   }
 
   async getResumeStream(userId: string, resumeId: string): Promise<{ stream: Readable; fileName: string; mimeType: string; fileSize: number }> {

@@ -48,8 +48,8 @@ Cloud Deployments & Health     : [███████████████�
 | **Phase 2** | **M1** | **Resume Section Engine (7 Cards)** | Pure deterministic 7-section evaluators (Contact, Summary, Skills, Experience, Projects, Education, Achievements) | 🟢 **COMPLETE** |
 | **Phase 3** | **M1** | **Deterministic Section Scoring Engine** | Mathematical 0–100 scoring formulas for each section & general resume score ($\sum = 100\%$) | 🟢 **COMPLETE** |
 | **Phase 4** | **M1** | **Resume Studio UI** | 7 interactive cards, health banner, component breakdown, deterministic improvement guidance | 🟢 **COMPLETE** |
-| **Phase 5** | **M2** | **Section AI Editor with Evidence Lock** | Gemini bullet re-writer with candidate fact validation (Zero synthetic claims) | ⚪ Next |
-| **Phase 6** | **M2** | **Instant Re-Score & Impact Delta** | Before/after score comparisons (`61 → 84 (+23 pts)`) on accepted drafts | ⚪ Planned |
+| **Phase 5** | **M2** | **Section AI Editor with Evidence Lock** | Gemini bullet re-writer with candidate fact validation (Zero synthetic claims) | 🟢 **COMPLETE** |
+| **Phase 6** | **M2** | **Instant Re-Score & Impact Delta** | Before/after score comparisons (`61 → 84 (+23 pts)`) on accepted drafts | ⚪ Next |
 | **Phase 7** | **M3** | **Visual Resume Builder** | Two-pane live editing (Left: Form editor; Right: Live DOM preview) | ⚪ Planned |
 | **Phase 8** | **M3** | **5 Curated ATS Templates** | Classic, Modern, Minimal, Engineering, Executive | ⚪ Planned |
 | **Phase 9** | **M3** | **React-PDF Vector Export** | Client-side on-demand `@react-pdf/renderer` compilation | ⚪ Planned |
