@@ -4,30 +4,24 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   FileText, 
-  Sparkles, 
   CheckCircle2, 
-  AlertTriangle, 
-  XCircle, 
+  AlertCircle, 
   ChevronRight, 
-  Layers, 
   Award, 
   Briefcase, 
   GraduationCap, 
   FolderGit2, 
   Code2, 
   UserCheck, 
-  ArrowUpRight,
-  ShieldCheck,
+  ArrowLeft,
   RefreshCw,
-  Info,
-  ArrowRight,
   Target,
-  Flame,
-  Lightbulb,
-  AlertCircle
+  ChevronDown,
+  UploadCloud,
+  Check,
+  ArrowRight
 } from 'lucide-react';
 import { SAMPLE_RESUME_DOCUMENT_FIXTURE } from '@/types/resume-document.fixture';
-import { ResumeDocument } from '@/types/resume-document';
 import { ResumeScoreResult, SectionScore, ScoreRatingTier } from '@/types/resume-scoring.types';
 import { resumeService } from '@/services/resume.service';
 import { ResumeRecord } from '@/types/resume';
@@ -36,18 +30,16 @@ interface SectionConfigItem {
   id: keyof ResumeScoreResult['sections'];
   title: string;
   icon: React.ComponentType<{ className?: string }>;
-  weight: string;
-  weightRatio: number;
 }
 
 const SECTION_CONFIGS: SectionConfigItem[] = [
-  { id: 'experience', title: 'Work Experience', icon: Briefcase, weight: '30%', weightRatio: 0.30 },
-  { id: 'skills', title: 'Technical Skills', icon: Code2, weight: '20%', weightRatio: 0.20 },
-  { id: 'projects', title: 'Featured Projects', icon: FolderGit2, weight: '15%', weightRatio: 0.15 },
-  { id: 'education', title: 'Education & Academics', icon: GraduationCap, weight: '15%', weightRatio: 0.15 },
-  { id: 'summary', title: 'Professional Summary', icon: FileText, weight: '10%', weightRatio: 0.10 },
-  { id: 'contact', title: 'Contact Information', icon: UserCheck, weight: '5%', weightRatio: 0.05 },
-  { id: 'achievements', title: 'Achievements & Certifications', icon: Award, weight: '5%', weightRatio: 0.05 },
+  { id: 'contact', title: 'Contact Information', icon: UserCheck },
+  { id: 'summary', title: 'Professional Summary', icon: FileText },
+  { id: 'skills', title: 'Technical Skills', icon: Code2 },
+  { id: 'experience', title: 'Work Experience', icon: Briefcase },
+  { id: 'projects', title: 'Projects', icon: FolderGit2 },
+  { id: 'education', title: 'Education', icon: GraduationCap },
+  { id: 'achievements', title: 'Achievements & Certifications', icon: Award },
 ];
 
 export default function ResumeStudioPage() {
@@ -58,7 +50,11 @@ export default function ResumeStudioPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSampleMode, setIsSampleMode] = useState(false);
-  const [selectedSectionKey, setSelectedSectionKey] = useState<keyof ResumeScoreResult['sections']>('experience');
+  
+  // Navigation: overview vs section-detail
+  const [activeView, setActiveView] = useState<'overview' | 'detail'>('overview');
+  const [activeSectionKey, setActiveSectionKey] = useState<keyof ResumeScoreResult['sections']>('experience');
+  const [showScoringDetails, setShowScoringDetails] = useState(false);
 
   // Load candidate resumes on mount
   useEffect(() => {
@@ -97,28 +93,26 @@ export default function ResumeStudioPage() {
       const score = await resumeService.getResumeScore(resumeId);
       setScoreResult(score);
     } catch (err: any) {
-      setError("Failed to fetch live resume score. Please try again.");
-      loadSampleScores();
+      setError("We couldn't load your resume analysis. Please try again.");
     } finally {
       setRefreshing(false);
     }
   };
 
   const loadSampleScores = () => {
-    // Generate derived score structure from sample fixture
     const sampleScore: ResumeScoreResult = {
       scoreId: "sample_score_01",
       resumeId: SAMPLE_RESUME_DOCUMENT_FIXTURE.id,
       engineVersion: "resume-score-v1",
       calculatedAt: new Date().toISOString(),
       overall: {
-        overallScore: 94,
+        overallScore: 63,
         maxScore: 100,
-        tier: "Excellent",
-        summaryReason: "Exceptional resume quality with strong structural completeness, verified evidence, and power verb calibration.",
-        totalStrengthsCount: 14,
-        totalWeaknessesCount: 2,
-        totalDeductionsCount: 1,
+        tier: "Good",
+        summaryReason: "You have a solid foundation. Work Experience is your biggest opportunity to improve.",
+        totalStrengthsCount: 10,
+        totalWeaknessesCount: 4,
+        totalDeductionsCount: 2,
         sectionWeights: {
           experience: 0.30,
           skills: 0.20,
@@ -130,143 +124,150 @@ export default function ResumeStudioPage() {
         },
       },
       sections: {
-        experience: {
-          sectionId: "experience",
-          title: "Work Experience",
-          score: 95,
+        contact: {
+          sectionId: "contact",
+          title: "Contact Information",
+          score: 75,
           maxScore: 100,
-          weight: 0.30,
-          weightedScore: 28.5,
+          weight: 0.05,
+          weightedScore: 3.75,
           status: "COMPLETE",
-          tier: "Excellent",
+          tier: "Good",
           components: [
-            { id: "experience.completeness", label: "Role Completeness & Structure", score: 25, maxScore: 25, weight: 0.25, rule: "Verified company, title, and dates", reason: "2 work positions structured with verified dates and titles.", evidenceIds: ["ev_exp_01_1"] },
-            { id: "experience.bullet_density", label: "Bullet Density & Elaboration", score: 25, maxScore: 25, weight: 0.25, rule: "Avg 2-6 bullets per role", reason: "5 total bullets across 2 roles (avg 2.5/role).", evidenceIds: ["ev_exp_01_2"] },
-            { id: "experience.action_verbs", label: "Power Action Verbs", score: 25, maxScore: 25, weight: 0.25, rule: "Power verbs in >=75% bullets", reason: "5 power action verbs identified across bullets.", evidenceIds: ["ev_exp_01_3"] },
-            { id: "experience.quantitative_metrics", label: "Measurable Impact & Metrics", score: 20, maxScore: 25, weight: 0.25, rule: "Quantifiable metrics in >=50% roles", reason: "Metrics present in 1 of 2 positions.", evidenceIds: ["ev_exp_02_2"] },
+            { id: "contact.identity", label: "Full Name & Headline", score: 30, maxScore: 30, weight: 0.30, rule: "Candidate name present", reason: "Candidate name verified.", evidenceIds: ["ev_contact_01"] },
+            { id: "contact.reachability", label: "Email & Phone", score: 30, maxScore: 30, weight: 0.30, rule: "Email & phone present", reason: "Email and phone verified.", evidenceIds: ["ev_contact_02"] },
+            { id: "contact.presence", label: "LinkedIn / GitHub Presence", score: 15, maxScore: 25, weight: 0.25, rule: "Professional links present", reason: "LinkedIn link present, GitHub missing.", evidenceIds: ["ev_contact_03"] },
+            { id: "contact.cleanliness", label: "Clean URLs", score: 0, maxScore: 15, weight: 0.15, rule: "No tracking parameters", reason: "Social links contain query parameters.", evidenceIds: ["ev_contact_04"] },
           ],
-          strengths: ["Strong action-oriented phrasing across experience bullets.", "Clear employment timeline with verifiable companies."],
-          weaknesses: ["Second position would benefit from an additional measurable outcome."],
-          deductions: ["Metrics missing in one experience entry (-5 pts)"],
-          evidenceIds: ["ev_exp_01_1", "ev_exp_02_1"],
-        },
-        skills: {
-          sectionId: "skills",
-          title: "Technical Skills",
-          score: 95,
-          maxScore: 100,
-          weight: 0.20,
-          weightedScore: 19.0,
-          status: "COMPLETE",
-          tier: "Excellent",
-          components: [
-            { id: "skills.presence_volume", label: "Skill Volume & Breadth", score: 30, maxScore: 30, weight: 0.30, rule: ">=8 skills", reason: "14 skills listed across domains.", evidenceIds: [] },
-            { id: "skills.domain_diversity", label: "Technical Domain Diversity", score: 30, maxScore: 30, weight: 0.30, rule: ">=3 canonical domains", reason: "Skills span 5 distinct technical domains.", evidenceIds: [] },
-            { id: "skills.categorization_depth", label: "Taxonomy & Categorization Depth", score: 25, maxScore: 25, weight: 0.25, rule: "Categorized ratio >=80%", reason: "100% of skills classified into canonical categories.", evidenceIds: [] },
-            { id: "skills.cleanliness", label: "Skill Cleanliness & Deduplication", score: 10, maxScore: 15, weight: 0.15, rule: "Zero duplicates", reason: "Unique skills maintained.", evidenceIds: [] },
-          ],
-          strengths: ["Broad coverage across Frontend, Backend, Database, Cloud, and Languages."],
-          weaknesses: [],
-          deductions: [],
-          evidenceIds: [],
-        },
-        projects: {
-          sectionId: "projects",
-          title: "Featured Projects",
-          score: 100,
-          maxScore: 100,
-          weight: 0.15,
-          weightedScore: 15.0,
-          status: "COMPLETE",
-          tier: "Excellent",
-          components: [
-            { id: "projects.presence_structure", label: "Project Volume & Structure", score: 30, maxScore: 30, weight: 0.30, rule: ">=2 projects", reason: "2 technical projects documented.", evidenceIds: [] },
-            { id: "projects.tech_stack_clarity", label: "Technology Stack Clarity", score: 30, maxScore: 30, weight: 0.30, rule: "Tech stack defined for >=75%", reason: "8 distinct technologies specified.", evidenceIds: [] },
-            { id: "projects.live_repo_links", label: "Repository & Live Links", score: 25, maxScore: 25, weight: 0.25, rule: "Repo and live demo links present", reason: "GitHub repository and live deployment URLs present.", evidenceIds: [] },
-            { id: "projects.bullet_depth", label: "Project Description & Bullet Depth", score: 15, maxScore: 15, weight: 0.15, rule: "Detailed bullet descriptions", reason: "3 bullet points across 2 projects.", evidenceIds: [] },
-          ],
-          strengths: ["Live deployment and GitHub links confirmed for both projects."],
-          weaknesses: [],
-          deductions: [],
-          evidenceIds: [],
-        },
-        education: {
-          sectionId: "education",
-          title: "Education & Academics",
-          score: 100,
-          maxScore: 100,
-          weight: 0.15,
-          weightedScore: 15.0,
-          status: "COMPLETE",
-          tier: "Excellent",
-          components: [
-            { id: "education.degree_institution", label: "Degree & Institution", score: 40, maxScore: 40, weight: 0.40, rule: "Degree and Institution present", reason: "B.Tech from DTU documented.", evidenceIds: [] },
-            { id: "education.timeline_clarity", label: "Graduation Timeline", score: 30, maxScore: 30, weight: 0.30, rule: "Graduation dates verified", reason: "Graduation year verified (2021).", evidenceIds: [] },
-            { id: "education.academic_detail", label: "Field of Study & GPA/Honors", score: 30, maxScore: 30, weight: 0.30, rule: "Field of study and honors", reason: "Computer Science with 8.8 CGPA.", evidenceIds: [] },
-          ],
-          strengths: ["Degree, institution, CGPA, and honors all verified."],
-          weaknesses: [],
-          deductions: [],
-          evidenceIds: [],
+          strengths: ["Clear candidate name and reachability details."],
+          weaknesses: ["Add a clean portfolio or GitHub link."],
+          deductions: ["Clean URL hygiene (-15 pts)"],
+          evidenceIds: ["ev_contact_01", "ev_contact_02"],
         },
         summary: {
           sectionId: "summary",
           title: "Professional Summary",
-          score: 90,
+          score: 80,
           maxScore: 100,
           weight: 0.10,
+          weightedScore: 8.0,
+          status: "COMPLETE",
+          tier: "Strong",
+          components: [
+            { id: "summary.presence", label: "Summary Content", score: 30, maxScore: 30, weight: 0.30, rule: "Summary present", reason: "Professional summary structured.", evidenceIds: ["ev_sum_01"] },
+            { id: "summary.length", label: "Calibrated Word Count", score: 30, maxScore: 30, weight: 0.30, rule: "30-100 words", reason: "Summary has optimal word length (54 words).", evidenceIds: ["ev_sum_02"] },
+            { id: "summary.tone", label: "Executive Tone", score: 20, maxScore: 20, weight: 0.20, rule: "First-person avoided", reason: "Neutral professional tone.", evidenceIds: ["ev_sum_03"] },
+            { id: "summary.focus", label: "Target Role Focus", score: 0, maxScore: 20, weight: 0.20, rule: "Explicit role keyword", reason: "Specific job title keyword could be sharper.", evidenceIds: ["ev_sum_04"] },
+          ],
+          strengths: ["Concise, professional summary length."],
+          weaknesses: ["Highlight target specializations more directly."],
+          deductions: ["Target role keyword alignment (-20 pts)"],
+          evidenceIds: ["ev_sum_01", "ev_sum_02"],
+        },
+        skills: {
+          sectionId: "skills",
+          title: "Technical Skills",
+          score: 90,
+          maxScore: 100,
+          weight: 0.20,
+          weightedScore: 18.0,
+          status: "COMPLETE",
+          tier: "Excellent",
+          components: [
+            { id: "skills.volume", label: "Skill Breadth", score: 30, maxScore: 30, weight: 0.30, rule: ">= 8 technical skills", reason: "14 verified skills present.", evidenceIds: ["ev_sk_01"] },
+            { id: "skills.diversity", label: "Domain Diversity", score: 30, maxScore: 30, weight: 0.30, rule: ">= 3 skill categories", reason: "Frontend, Backend, and Database domains present.", evidenceIds: ["ev_sk_02"] },
+            { id: "skills.categorization", label: "Structured Categorization", score: 20, maxScore: 25, weight: 0.25, rule: "Skills grouped logically", reason: "Skills grouped into distinct stacks.", evidenceIds: ["ev_sk_03"] },
+            { id: "skills.cleanliness", label: "Clean Standardization", score: 10, maxScore: 15, weight: 0.15, rule: "No redundant duplicates", reason: "Clean skill naming standards.", evidenceIds: ["ev_sk_04"] },
+          ],
+          strengths: ["Rich coverage across frontend and backend technologies.", "Well-structured skill categorization."],
+          weaknesses: ["Add proficiency levels where applicable."],
+          deductions: [],
+          evidenceIds: ["ev_sk_01", "ev_sk_02"],
+        },
+        experience: {
+          sectionId: "experience",
+          title: "Work Experience",
+          score: 31,
+          maxScore: 100,
+          weight: 0.30,
+          weightedScore: 9.3,
+          status: "PARTIAL",
+          tier: "Needs Work",
+          components: [
+            { id: "experience.completeness", label: "Role Structure & Dates", score: 20, maxScore: 25, weight: 0.25, rule: "Company, title, and dates", reason: "Basic role structure is present.", evidenceIds: ["ev_exp_01"] },
+            { id: "experience.bullet_density", label: "Bullet Detail", score: 11, maxScore: 25, weight: 0.25, rule: "2-6 bullets per role", reason: "Only 1 bullet provided for latest role.", evidenceIds: ["ev_exp_02"] },
+            { id: "experience.action_verbs", label: "Action-Oriented Writing", score: 0, maxScore: 25, weight: 0.25, rule: "Power verbs in >=75% bullets", reason: "Limited action-oriented language; uses passive responsibility phrasing.", evidenceIds: ["ev_exp_03"] },
+            { id: "experience.quantitative_metrics", label: "Measurable Impact", score: 0, maxScore: 25, weight: 0.25, rule: "Quantifiable metrics in >=50% roles", reason: "No measurable metrics or quantifiable outcomes found.", evidenceIds: ["ev_exp_04"] },
+          ],
+          strengths: ["Your experience entry has basic role and company structure."],
+          weaknesses: [
+            "Bullets focus on routine duties rather than measurable achievements.",
+            "Limited use of power action verbs."
+          ],
+          deductions: [
+            "Missing action power verbs (-25 pts)",
+            "Missing measurable metrics (-25 pts)",
+            "Sparse bullet elaboration (-14 pts)"
+          ],
+          evidenceIds: ["ev_exp_01", "ev_exp_02"],
+        },
+        projects: {
+          sectionId: "projects",
+          title: "Projects",
+          score: 75,
+          maxScore: 100,
+          weight: 0.15,
+          weightedScore: 11.25,
+          status: "COMPLETE",
+          tier: "Good",
+          components: [
+            { id: "projects.structure", label: "Project Details", score: 30, maxScore: 30, weight: 0.30, rule: "Title, role, description", reason: "2 featured projects structured.", evidenceIds: ["ev_proj_01"] },
+            { id: "projects.tech_stack", label: "Tech Stack Highlights", score: 30, maxScore: 30, weight: 0.30, rule: "Identified technologies", reason: "Clear tech stack list per project.", evidenceIds: ["ev_proj_02"] },
+            { id: "projects.links", label: "Live / Repository Links", score: 15, maxScore: 25, weight: 0.25, rule: "Demo or GitHub links", reason: "GitHub repo provided, live demo link missing.", evidenceIds: ["ev_proj_03"] },
+            { id: "projects.bullet_depth", label: "Impact Description", score: 0, maxScore: 15, weight: 0.15, rule: "Bullet depth per project", reason: "Project bullets could explain architecture in more detail.", evidenceIds: ["ev_proj_04"] },
+          ],
+          strengths: ["Clear technical stack listed for each project."],
+          weaknesses: ["Add live preview or deployment URLs."],
+          deductions: ["Missing live deployment link (-10 pts)"],
+          evidenceIds: ["ev_proj_01", "ev_proj_02"],
+        },
+        education: {
+          sectionId: "education",
+          title: "Education",
+          score: 60,
+          maxScore: 100,
+          weight: 0.15,
           weightedScore: 9.0,
           status: "COMPLETE",
-          tier: "Excellent",
+          tier: "Developing",
           components: [
-            { id: "summary.presence", label: "Summary Presence", score: 30, maxScore: 30, weight: 0.30, rule: "Summary text present", reason: "Summary statement is present.", evidenceIds: [] },
-            { id: "summary.length_calibration", label: "Length Calibration", score: 30, maxScore: 30, weight: 0.30, rule: "18-100 words", reason: "Summary contains 22 words.", evidenceIds: [] },
-            { id: "summary.tone_executive", label: "Executive Tone & Voice", score: 20, maxScore: 20, weight: 0.20, rule: "Zero first-person pronouns", reason: "Executive tone maintained without first-person language.", evidenceIds: [] },
-            { id: "summary.role_focus", label: "Target Role & Experience Focus", score: 10, maxScore: 20, weight: 0.20, rule: "Target role and years stated", reason: "Target role specified, experience years implicit.", evidenceIds: [] },
+            { id: "education.degree_institution", label: "Degree & Institution", score: 40, maxScore: 40, weight: 0.40, rule: "Institution and degree", reason: "University and B.S. degree listed.", evidenceIds: ["ev_edu_01"] },
+            { id: "education.timeline", label: "Graduation Date", score: 20, maxScore: 30, weight: 0.30, rule: "Graduation year or range", reason: "Graduation year listed.", evidenceIds: ["ev_edu_02"] },
+            { id: "education.specialization", label: "Field & Academic Honors", score: 0, maxScore: 30, weight: 0.30, rule: "Field of study & GPA", reason: "Field of study or honors not specified.", evidenceIds: ["ev_edu_03"] },
           ],
-          strengths: ["Concise executive phrasing without first-person pronouns."],
-          weaknesses: ["Consider explicitly mentioning total years of experience in summary."],
-          deductions: ["Years of experience omitted (-10 pts)"],
-          evidenceIds: [],
-        },
-        contact: {
-          sectionId: "contact",
-          title: "Contact Information",
-          score: 100,
-          maxScore: 100,
-          weight: 0.05,
-          weightedScore: 5.0,
-          status: "COMPLETE",
-          tier: "Excellent",
-          components: [
-            { id: "contact.identity", label: "Candidate Identity", score: 30, maxScore: 30, weight: 0.30, rule: "Full Name & Valid Email", reason: "Full name and valid RFC email confirmed.", evidenceIds: [] },
-            { id: "contact.reachability", label: "Reachability & Location", score: 30, maxScore: 30, weight: 0.30, rule: "Phone & Location present", reason: "Phone and location specified.", evidenceIds: [] },
-            { id: "contact.professional_presence", label: "Professional Presence", score: 25, maxScore: 25, weight: 0.25, rule: "LinkedIn/GitHub/Portfolio >=2 links", reason: "LinkedIn, GitHub, and Portfolio present.", evidenceIds: [] },
-            { id: "contact.link_cleanliness", label: "Link Cleanliness", score: 15, maxScore: 15, weight: 0.15, rule: "Zero duplicate links", reason: "All links clean and unique.", evidenceIds: [] },
-          ],
-          strengths: ["Complete contact info with verified professional links."],
-          weaknesses: [],
-          deductions: [],
-          evidenceIds: [],
+          strengths: ["Recognized degree and university listed."],
+          weaknesses: ["Specify exact major/field of study and relevant coursework."],
+          deductions: ["Academic specialization missing (-30 pts)"],
+          evidenceIds: ["ev_edu_01", "ev_edu_02"],
         },
         achievements: {
           sectionId: "achievements",
           title: "Achievements & Certifications",
-          score: 85,
+          score: 70,
           maxScore: 100,
           weight: 0.05,
-          weightedScore: 4.25,
+          weightedScore: 3.5,
           status: "COMPLETE",
-          tier: "Strong",
+          tier: "Good",
           components: [
-            { id: "achievements.presence", label: "Achievement Volume", score: 35, maxScore: 35, weight: 0.35, rule: ">=2 items", reason: "2 honors/certifications listed.", evidenceIds: [] },
-            { id: "achievements.issuer_clarity", label: "Issuing Authority", score: 35, maxScore: 35, weight: 0.35, rule: "Issuing authority specified", reason: "Issuing bodies specified.", evidenceIds: [] },
-            { id: "achievements.dates_credentials", label: "Dates & Credentials", score: 15, maxScore: 30, weight: 0.30, rule: "Dates (+15) and URL (+15)", reason: "Issue dates present, verification URL missing.", evidenceIds: [] },
+            { id: "achievements.volume", label: "Certifications Count", score: 35, maxScore: 35, weight: 0.35, rule: ">= 1 credential", reason: "AWS Certified Solutions Architect listed.", evidenceIds: ["ev_ach_01"] },
+            { id: "achievements.issuer", label: "Issuing Organization", score: 35, maxScore: 35, weight: 0.35, rule: "Issuer name", reason: "Issuer identified.", evidenceIds: ["ev_ach_02"] },
+            { id: "achievements.credentials", label: "Verification URLs", score: 0, maxScore: 30, weight: 0.30, rule: "Verification link/ID", reason: "Credential URL or verification ID missing.", evidenceIds: ["ev_ach_03"] },
           ],
-          strengths: ["National Hackathon and AWS certification included."],
-          weaknesses: ["Adding verification credential links will maximize verification score."],
-          deductions: ["Credential verification link missing (-15 pts)"],
-          evidenceIds: [],
+          strengths: ["Industry recognized certification present."],
+          weaknesses: ["Add credential ID or verification URL."],
+          deductions: ["Missing verification URL (-30 pts)"],
+          evidenceIds: ["ev_ach_01", "ev_ach_02"],
         },
       },
     };
@@ -274,33 +275,31 @@ export default function ResumeStudioPage() {
     setScoreResult(sampleScore);
   };
 
-  const handleSelectResume = async (resumeId: string) => {
+  const handleSelectResume = (resumeId: string) => {
     setSelectedResumeId(resumeId);
     setIsSampleMode(false);
-    await fetchScore(resumeId);
+    setActiveView('overview');
+    fetchScore(resumeId);
   };
 
-  // Deterministic Analysis Derivations
-  const overallScore = scoreResult?.overall.overallScore ?? 100;
-  const overallTier: ScoreRatingTier = scoreResult?.overall.tier ?? "Excellent";
-  const summaryReason = scoreResult?.overall.summaryReason ?? 
-    "Exceptional resume quality with strong structural completeness, verified evidence, and power verb calibration.";
+  // Derived Insights
+  const overallScore = scoreResult?.overall.overallScore ?? 0;
+  const overallTier: ScoreRatingTier = scoreResult?.overall.tier ?? 'Good';
 
-  // Derive Strongest and Highest Priority Sections deterministically
   const { strongestSection, prioritySection } = useMemo(() => {
-    if (!scoreResult) {
-      return { strongestSection: null, prioritySection: null };
-    }
+    if (!scoreResult) return { strongestSection: null, prioritySection: null };
 
-    const sectionEntries = SECTION_CONFIGS.map((cfg) => ({
-      ...cfg,
-      score: scoreResult.sections[cfg.id]?.score ?? 0,
-      tier: scoreResult.sections[cfg.id]?.tier ?? 'Needs Work',
+    const sectionEntries = Object.entries(scoreResult.sections).map(([key, sec]) => ({
+      id: key as keyof ResumeScoreResult['sections'],
+      title: sec.title,
+      score: sec.score,
+      tier: sec.tier,
+      weaknesses: sec.weaknesses,
+      strengths: sec.strengths,
+      components: sec.components,
     }));
 
-    // Sort descending by score for strongest
     const sortedDesc = [...sectionEntries].sort((a, b) => b.score - a.score);
-    // Sort ascending by score for priority (lowest score = highest review priority)
     const sortedAsc = [...sectionEntries].sort((a, b) => a.score - b.score);
 
     return {
@@ -309,461 +308,479 @@ export default function ResumeStudioPage() {
     };
   }, [scoreResult]);
 
-  const getTierBadgeClass = (tier: ScoreRatingTier) => {
-    switch (tier) {
-      case "Excellent":
-        return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-      case "Strong":
-        return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
-      case "Good":
-        return "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20";
-      case "Developing":
-        return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
-      case "Needs Work":
-      default:
-        return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
-    }
-  };
+  // Selected Section for Detail View
+  const selectedSectionData: SectionScore | undefined = scoreResult?.sections[activeSectionKey];
+  const selectedConfig = SECTION_CONFIGS.find((s) => s.id === activeSectionKey);
 
-  const selectedScoreData: SectionScore | undefined = scoreResult?.sections[selectedSectionKey];
-  const selectedConfig = SECTION_CONFIGS.find((s) => s.id === selectedSectionKey);
+  // Review areas derived deterministically
+  const reviewAreas = useMemo(() => {
+    if (!selectedSectionData) return [];
 
-  // Deterministic "What to Improve" Guidance Generator based on actual missing/deduction signals
-  const actionableGuidance = useMemo(() => {
-    if (!selectedScoreData) return [];
+    const areas: { label: string; status: 'Needs attention' | 'Good' | 'Strong'; reason: string }[] = [];
 
-    const guidance: { title: string; detail: string; icon: React.ComponentType<{ className?: string }> }[] = [];
-
-    // Check lowest scoring components
-    const lowComponents = selectedScoreData.components
-      .filter((c) => c.score < c.maxScore)
-      .sort((a, b) => (a.score / a.maxScore) - (b.score / b.maxScore));
-
-    for (const comp of lowComponents) {
-      if (comp.id.includes("metrics") || comp.id.includes("quantitative")) {
-        guidance.push({
-          title: "Quantify Measurable Outcomes",
-          detail: "Strengthen experience bullets with clear metrics (e.g. percentages, scale numbers, latency reductions) where supported by factual evidence.",
-          icon: Target,
-        });
-      } else if (comp.id.includes("action_verbs") || comp.id.includes("verbs")) {
-        guidance.push({
-          title: "Employ Active Power Verbs",
-          detail: "Lead bullet points with high-impact action verbs (e.g., Architected, Spearheaded, Optimized) rather than passive responsibility phrasing.",
-          icon: Flame,
-        });
-      } else if (comp.id.includes("links") || comp.id.includes("credentials")) {
-        guidance.push({
-          title: "Add Verification & Portfolio Links",
-          detail: "Include active GitHub repositories, live demo URLs, or credential verification links to establish provenance.",
-          icon: Lightbulb,
-        });
-      } else if (comp.id.includes("length") || comp.id.includes("density")) {
-        guidance.push({
-          title: "Calibrate Section Depth & Brevity",
-          detail: comp.reason || "Ensure descriptions maintain optimal length without being excessively brief or rambling.",
-          icon: Info,
-        });
-      } else {
-        guidance.push({
-          title: `Enhance ${comp.label}`,
-          detail: comp.reason || `Review and complete all required fields for ${comp.label}.`,
-          icon: AlertCircle,
-        });
+    for (const comp of selectedSectionData.components) {
+      const ratio = comp.score / comp.maxScore;
+      let status: 'Needs attention' | 'Good' | 'Strong' = 'Good';
+      if (ratio < 0.6) {
+        status = 'Needs attention';
+      } else if (ratio >= 0.9) {
+        status = 'Strong';
       }
-    }
 
-    if (guidance.length === 0) {
-      guidance.push({
-        title: "Section Fully Optimized",
-        detail: "This section meets all canonical completeness, structure, and evidence standards.",
-        icon: CheckCircle2,
+      areas.push({
+        label: comp.label,
+        status,
+        reason: comp.reason,
       });
     }
 
-    return guidance;
-  }, [selectedScoreData]);
+    return areas;
+  }, [selectedSectionData]);
 
+  const getTierPill = (tier: ScoreRatingTier | 'Needs attention' | 'Good' | 'Strong') => {
+    switch (tier) {
+      case 'Excellent':
+      case 'Strong':
+        return 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/40';
+      case 'Good':
+        return 'text-blue-700 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/40';
+      case 'Developing':
+      case 'Needs Work':
+      case 'Needs attention':
+      default:
+        return 'text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/40';
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 85) return 'text-emerald-600 dark:text-emerald-400';
+    if (score >= 70) return 'text-blue-600 dark:text-blue-400';
+    if (score >= 50) return 'text-amber-600 dark:text-amber-400';
+    return 'text-rose-600 dark:text-rose-400';
+  };
+
+  // Loading Skeleton
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1130] p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto animate-pulse font-sans">
-        <div className="h-28 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800" />
+      <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1130] p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6 animate-pulse font-sans">
+        <div className="h-14 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800" />
+        <div className="h-44 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800" />
         <div className="h-40 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-5 space-y-3">
-            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="h-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800" />
-            ))}
+        <div className="h-64 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800" />
+      </div>
+    );
+  }
+
+  // Error State
+  if (error && !scoreResult) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <div className="max-w-md w-full p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-6 h-6" />
           </div>
-          <div className="lg:col-span-7 h-96 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800" />
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Resume analysis unavailable</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
+          </div>
+          <button
+            onClick={() => selectedResumeId && fetchScore(selectedResumeId)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Try Again</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty State: No Resumes
+  if (!loading && resumes.length === 0 && !isSampleMode) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <div className="max-w-md w-full p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-5">
+          <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto">
+            <UploadCloud className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Build your resume analysis</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+              Upload a resume to see your real section scores, strengths, and improvement areas.
+            </p>
+          </div>
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/dashboard/resume-intelligence"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm"
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span>Upload Resume</span>
+            </Link>
+            <button
+              onClick={() => {
+                setIsSampleMode(true);
+                loadSampleScores();
+              }}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <span>View Sample Preview</span>
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1130] text-slate-900 dark:text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1130] text-slate-900 dark:text-slate-100 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto font-sans space-y-6 pb-20">
       
-      {/* 1. Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-              Resume Studio
-            </span>
-            {isSampleMode ? (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                Sample Preview Mode
-              </span>
-            ) : (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" />
-                Live Candidate Analysis
-              </span>
-            )}
-          </div>
+      {/* 1. Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Actionable Section Analysis
+            Resume Studio
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Deterministic diagnostic evaluation based on verified resume evidence.
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Improve your resume section by section.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {resumes.length > 1 && (
-            <select
-              value={selectedResumeId || ''}
-              onChange={(e) => handleSelectResume(e.target.value)}
-              className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-            >
-              {resumes.map((r) => (
-                <option key={r._id} value={r._id}>
-                  {r.title || r.originalFileName} {r.isDefault ? '(Default)' : ''}
-                </option>
-              ))}
-            </select>
+        <div className="flex items-center gap-2.5">
+          {isSampleMode && (
+            <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              Sample Preview
+            </span>
+          )}
+
+          {resumes.length > 0 && (
+            <div className="relative">
+              <select
+                value={selectedResumeId || ''}
+                onChange={(e) => handleSelectResume(e.target.value)}
+                className="appearance-none pl-3 pr-8 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                {resumes.map((r) => (
+                  <option key={r._id} value={r._id}>
+                    {r.title || r.originalFileName || 'Resume'} {r.isDefault ? '(Default)' : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           )}
 
           {selectedResumeId && !isSampleMode && (
             <button
               onClick={() => fetchScore(selectedResumeId)}
               disabled={refreshing}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+              title="Refresh analysis"
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-900 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-colors cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-              <span>{refreshing ? 'Re-scoring...' : 'Re-score'}</span>
             </button>
           )}
-
-          <Link
-            href="/dashboard/resume-studio/dev"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Developer View</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
         </div>
       </div>
 
-      {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-between">
-          <span>{error}</span>
-          <button
-            onClick={() => selectedResumeId && fetchScore(selectedResumeId)}
-            className="font-bold underline cursor-pointer ml-3"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      {/* 2. Resume Health Banner */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-              Resume Health Rating
-            </span>
-            <div className="flex items-center gap-3">
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">
-                {overallScore} <span className="text-sm font-semibold text-slate-400">/ 100</span>
+      {/* VIEW 1: OVERVIEW */}
+      {activeView === 'overview' && (
+        <div className="space-y-6">
+          
+          {/* Section A: Resume Health */}
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Your Resume
               </span>
-              <span className={`px-2.5 py-0.5 rounded-lg text-xs font-extrabold border ${getTierBadgeClass(overallTier)}`}>
+              <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${getTierPill(overallTier)}`}>
                 {overallTier}
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl pt-1">
-              {summaryReason}
+
+            <div className="flex items-baseline gap-2">
+              <span className={`text-4xl font-extrabold tracking-tight ${getScoreColor(overallScore)}`}>
+                {overallScore}
+              </span>
+              <span className="text-base font-semibold text-slate-400">
+                / 100
+              </span>
+            </div>
+
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              {scoreResult?.overall.summaryReason || "You have a solid foundation. Experience is your biggest opportunity to improve."}
             </p>
-          </div>
 
-          {/* Quick Insights Pills */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {strongestSection && (
-              <div className="p-3 rounded-xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2.5">
-                <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-400 block">
-                    Strongest Section
+            <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-100 dark:border-slate-800/80">
+              {strongestSection && (
+                <div className="space-y-0.5">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    Strongest
                   </span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    {strongestSection.title} ({strongestSection.score}/100)
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {prioritySection && prioritySection.score < 100 && (
-              <div className="p-3 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 flex items-center gap-2.5">
-                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400">
-                  <Target className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-amber-600 dark:text-amber-400 block">
-                    Highest Priority
-                  </span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    {prioritySection.title} ({prioritySection.score}/100)
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Master-Detail Interactive Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left Column: 7 Section Overview */}
-        <div className="lg:col-span-5 space-y-3">
-          <div className="flex items-center justify-between pb-1">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-              <span>Canonical 7 Sections</span>
-            </h2>
-            <span className="text-[11px] text-slate-400 font-medium">Click to inspect</span>
-          </div>
-
-          <div className="space-y-2.5">
-            {SECTION_CONFIGS.map((sec) => {
-              const Icon = sec.icon;
-              const isSelected = selectedSectionKey === sec.id;
-              const secScoreData = scoreResult?.sections[sec.id];
-              const score = secScoreData?.score ?? 100;
-              const tier: ScoreRatingTier = secScoreData?.tier ?? 'Excellent';
-              const isPriority = prioritySection?.id === sec.id && score < 90;
-
-              return (
-                <button
-                  key={sec.id}
-                  onClick={() => setSelectedSectionKey(sec.id)}
-                  className={`w-full text-left p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 border ${
-                    isSelected
-                      ? 'bg-white dark:bg-slate-900 border-[#3D5AFE] ring-2 ring-[#3D5AFE]/20 shadow-sm'
-                      : 'bg-white/70 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl ${
-                      isSelected 
-                        ? 'bg-[#3D5AFE] text-white' 
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                          {sec.title}
-                        </h3>
-                        {isPriority && (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                            Priority
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        Weight: {sec.weight} of general score
-                      </p>
-                    </div>
+                  <div className="flex items-center justify-between text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    <span>{strongestSection.title}</span>
+                    <span className="font-mono text-xs text-emerald-600 dark:text-emerald-400 font-bold">{strongestSection.score} / 100</span>
                   </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100 block">
-                        {score} / 100
-                      </span>
-                      <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border ${getTierBadgeClass(tier)}`}>
-                        {tier}
-                      </span>
-                    </div>
-                    <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${isSelected ? 'translate-x-0.5 text-[#3D5AFE]' : ''}`} />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right Column: Selected Section Detailed Breakdown & Actionable Guidance */}
-        <div className="lg:col-span-7 space-y-4">
-          {selectedScoreData && selectedConfig ? (
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-6">
-              
-              {/* Selected Section Header */}
-              <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-[#3D5AFE]/10 text-[#3D5AFE]">
-                      {React.createElement(selectedConfig.icon, { className: 'w-4 h-4' })}
-                    </div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                      Section Deep-Dive
-                    </span>
-                  </div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                    {selectedScoreData.title}
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Weighted Contribution: <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedScoreData.weightedScore.toFixed(1)} / {(100 * selectedConfig.weightRatio).toFixed(1)} pts</span> to overall score.
-                  </p>
                 </div>
+              )}
 
-                <div className="text-right">
-                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100">
-                    {selectedScoreData.score} <span className="text-xs font-semibold text-slate-400">/ 100</span>
+              {prioritySection && (
+                <div className="space-y-0.5">
+                  <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                    Needs attention
                   </span>
-                  <span className={`block mt-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${getTierBadgeClass(selectedScoreData.tier)}`}>
-                    {selectedScoreData.tier}
-                  </span>
-                </div>
-              </div>
-
-              {/* 1. Component Rules Breakdown */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                  <span>Scoring Rules Breakdown</span>
-                  <span className="text-[10px] font-normal lowercase">{selectedScoreData.components.length} rules evaluated</span>
-                </h3>
-
-                <div className="space-y-2">
-                  {selectedScoreData.components.map((comp) => {
-                    const isPerfect = comp.score === comp.maxScore;
-                    const percent = Math.round((comp.score / comp.maxScore) * 100);
-
-                    return (
-                      <div
-                        key={comp.id}
-                        className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 space-y-2"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            {isPerfect ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                            ) : (
-                              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                            )}
-                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                              {comp.label}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2 font-mono text-xs">
-                            <span className="font-bold text-slate-900 dark:text-slate-100">
-                              {comp.score} / {comp.maxScore} pts
-                            </span>
-                            <span className="text-[10px] text-slate-400">({percent}%)</span>
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-slate-600 dark:text-slate-400">
-                          {comp.reason}
-                        </p>
-
-                        <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono bg-white dark:bg-slate-900/60 p-1.5 rounded-lg border border-slate-200/60 dark:border-slate-800/60">
-                          Rule: {comp.rule}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 2. Actionable Guidance: "What to Improve" */}
-              <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Actionable Guidance (Deterministic)</span>
-                </h3>
-
-                <div className="space-y-2">
-                  {actionableGuidance.map((item, idx) => {
-                    const Icon = item.icon;
-                    return (
-                      <div
-                        key={idx}
-                        className="p-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 flex items-start gap-3"
-                      >
-                        <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="space-y-0.5">
-                          <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                            {item.title}
-                          </h4>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                            {item.detail}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 3. Strengths & Deductions summary */}
-              {(selectedScoreData.strengths.length > 0 || selectedScoreData.deductions.length > 0) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  {selectedScoreData.strengths.length > 0 && (
-                    <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 space-y-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">
-                        Verified Strengths
-                      </span>
-                      <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
-                        {selectedScoreData.strengths.map((s, idx) => (
-                          <li key={idx}>{s}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {selectedScoreData.deductions.length > 0 && (
-                    <div className="p-3.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 space-y-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
-                        Deduction Factors
-                      </span>
-                      <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-1 list-disc list-inside">
-                        {selectedScoreData.deductions.map((d, idx) => (
-                          <li key={idx}>{d}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    <span>{prioritySection.title}</span>
+                    <span className="font-mono text-xs text-amber-600 dark:text-amber-400 font-bold">{prioritySection.score} / 100</span>
+                  </div>
                 </div>
               )}
             </div>
-          ) : (
-            <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-2">
-              <Info className="w-8 h-8 text-slate-400 mx-auto" />
-              <p className="text-xs text-slate-500">Select a section from the left pane to view its detailed breakdown.</p>
+          </div>
+
+          {/* Section B: Needs Attention (Main Actionable Priority) */}
+          {prioritySection && prioritySection.score < 85 && (
+            <div className="p-6 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                    Needs Attention
+                  </span>
+                </div>
+                <span className="text-sm font-bold font-mono text-amber-600 dark:text-amber-400">
+                  {prioritySection.score} / 100
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {prioritySection.title}
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                  Your {prioritySection.title.toLowerCase()} section has the biggest opportunity for improvement.
+                </p>
+              </div>
+
+              {prioritySection.weaknesses && prioritySection.weaknesses.length > 0 && (
+                <ul className="space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
+                  {prioritySection.weaknesses.slice(0, 2).map((w, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-amber-500 shrink-0 mt-0.5">•</span>
+                      <span>{w}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    setActiveSectionKey(prioritySection.id);
+                    setActiveView('detail');
+                    setShowScoringDetails(false);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                >
+                  <span>Review {prioritySection.title}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           )}
+
+          {/* Section C: Resume Sections (Compact List) */}
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Resume Sections
+              </h2>
+              <span className="text-xs text-slate-400">Select to review</span>
+            </div>
+
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              {SECTION_CONFIGS.map((sec) => {
+                const Icon = sec.icon;
+                const secScore = scoreResult?.sections[sec.id]?.score ?? 100;
+                const isWeakest = prioritySection?.id === sec.id && secScore < 85;
+
+                return (
+                  <button
+                    key={sec.id}
+                    onClick={() => {
+                      setActiveSectionKey(sec.id);
+                      setActiveView('detail');
+                      setShowScoringDetails(false);
+                    }}
+                    className="w-full flex items-center justify-between py-3.5 px-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors text-left cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          {sec.title}
+                        </span>
+                        {isWeakest && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                            Attention
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm font-mono font-bold ${getScoreColor(secScore)}`}>
+                        {secScore}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-400 group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
-      </div>
+      )}
+
+      {/* VIEW 2: SECTION DETAIL */}
+      {activeView === 'detail' && selectedSectionData && selectedConfig && (
+        <div className="space-y-6">
+          
+          {/* Back Action */}
+          <button
+            onClick={() => setActiveView('overview')}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Resume</span>
+          </button>
+
+          {/* Section Summary Card */}
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  {React.createElement(selectedConfig.icon, { className: 'w-5 h-5' })}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                    {selectedSectionData.title}
+                  </h2>
+                  <span className="text-xs text-slate-400 font-medium">
+                    Section Analysis
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className={`text-2xl font-extrabold ${getScoreColor(selectedSectionData.score)}`}>
+                  {selectedSectionData.score} <span className="text-sm font-semibold text-slate-400">/ 100</span>
+                </span>
+                <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${getTierPill(selectedSectionData.tier)}`}>
+                  {selectedSectionData.tier}
+                </span>
+              </div>
+            </div>
+
+            {/* What needs attention */}
+            {selectedSectionData.weaknesses && selectedSectionData.weaknesses.length > 0 && (
+              <div className="pt-2 space-y-1.5 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
+                  What needs attention
+                </span>
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  {selectedSectionData.weaknesses.join(' ')}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Review Areas */}
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Review Areas
+            </h3>
+
+            <div className="space-y-3">
+              {reviewAreas.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                >
+                  <div className="space-y-0.5">
+                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                      {item.label}
+                    </span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {item.reason}
+                    </p>
+                  </div>
+                  <span className={`self-start sm:self-center px-2 py-0.5 rounded text-[11px] font-bold border shrink-0 ${getTierPill(item.status)}`}>
+                    {item.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* What is working */}
+          {selectedSectionData.strengths && selectedSectionData.strengths.length > 0 && (
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                What is working
+              </h3>
+              <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                {selectedSectionData.strengths.map((s, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Transparent Scoring Details (Optional Disclosure) */}
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800 text-xs">
+            <button
+              onClick={() => setShowScoringDetails(!showScoringDetails)}
+              className="w-full flex items-center justify-between text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold cursor-pointer"
+            >
+              <span>{showScoringDetails ? 'Hide scoring details' : 'View scoring details'}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showScoringDetails ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showScoringDetails && (
+              <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5 font-mono">
+                {selectedSectionData.components.map((comp) => (
+                  <div key={comp.id} className="flex items-center justify-between text-slate-600 dark:text-slate-400 text-[11px]">
+                    <span>{comp.label}</span>
+                    <span className="font-bold">{comp.score} / {comp.maxScore} pts ({comp.rule})</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Action CTA */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Interactive Section Editor arrives in Phase 5.
+            </div>
+            <button
+              disabled
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+            >
+              Improve this section
+            </button>
+          </div>
+
+        </div>
+      )}
+
     </div>
   );
 }
