@@ -61,6 +61,12 @@ export const sidebarSections: NavSection[] = [
         icon: UserCircle,
       },
       {
+        label: 'Resume Studio',
+        href: '/dashboard/resume-studio',
+        icon: Sparkles,
+        badge: 'NEW',
+      },
+      {
         label: 'Resume Intelligence',
         href: '/dashboard/resume-intelligence',
         icon: FileText,

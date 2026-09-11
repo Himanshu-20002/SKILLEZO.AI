@@ -14,6 +14,8 @@ import { mockCareerIntelligence } from '@/mock/career-intelligence';
 import { ResumeAnalysisData, ResumeRecord, ResumeOptimizationDraft, AIResumeRecommendation } from '@/types/resume';
 import { resumeService } from '@/services/resume.service';
 import { toast } from 'sonner';
+import Link from 'next/link';
+import { Sparkles } from 'lucide-react';
 
 function formatFileSize(bytes?: number): string {
   if (!bytes || bytes === 0) return '1.2 MB';
@@ -393,6 +395,14 @@ export default function ResumeIntelligencePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/dashboard/resume-studio"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-semibold shadow-sm transition-all shadow-indigo-500/20"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Open Resume Studio</span>
+            </Link>
+
             <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 shadow-sm text-xs">
               <span className="font-semibold text-slate-500">Target Role:</span>
               <select
