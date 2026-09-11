@@ -6,8 +6,8 @@
 | **Phase 1** | **Resume Ingestion to ResumeDocument** | **M1** | 🟢 **COMPLETE** ([01-ingestion.md](file:///./01-ingestion.md)) |
 | **Phase 2** | **Resume Section Engine (7 Cards)** | **M1** | 🟢 **COMPLETE** ([02-section-engine.md](file:///./02-section-engine.md)) |
 | **Phase 3** | **Section Scoring Engine** | **M1** | 🟢 **COMPLETE** ([03-scoring.md](file:///./03-scoring.md)) |
-| **Phase 4** | **Resume Studio UI** | **M1** | ⚪ Next |
-| **Phase 5** | **Section AI Editor with Evidence Lock** | **M2** | ⚪ Planned |
+| **Phase 4** | **Resume Studio UI** | **M1** | 🟢 **COMPLETE** ([04-studio-ux.md](file:///./04-studio-ux.md)) |
+| **Phase 5** | **Section AI Editor with Evidence Lock** | **M2** | ⚪ Next |
 | **Phase 6** | **AI Rewrite + Re-score** | **M2** | ⚪ Planned |
 | **Phase 7** | **Visual Resume Builder** | **M3** | ⚪ Planned |
 | **Phase 8** | **Resume Templates** | **M3** | ⚪ Planned |

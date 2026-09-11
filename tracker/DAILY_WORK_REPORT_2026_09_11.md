@@ -2,8 +2,8 @@
 
 **Engineer:** Full-Stack AI Engineer  
 **Project:** SKILLEZO AI  
-**Sprint / Scope:** Sprint 8 — Resume Studio: Phase 2 (Section Engine) & Phase 3 (Deterministic Scoring Engine)  
-**Status:** 🟢 **ALL PHASE 2 & PHASE 3 DELIVERABLES IMPLEMENTED, VERIFIED, TESTED & DOCUMENTED**  
+**Sprint / Scope:** Sprint 8 — Resume Studio: Phase 2 (Section Engine), Phase 3 (Deterministic Scoring Engine), & Phase 4 (Resume Studio Actionable UX)  
+**Status:** 🟢 **ALL PHASE 2, PHASE 3 & PHASE 4 DELIVERABLES IMPLEMENTED, VERIFIED, TESTED & DOCUMENTED**  
 
 ---
 
@@ -17,31 +17,25 @@
 
 ### B. Phase 3: Deterministic Resume Scoring Engine
 * **Mathematical Weighting Core**: Engineered a deterministic, explainable, evidence-aware scoring engine that transforms Phase 2 analysis signals into 0–100 section scores and a general resume score.
-* **Documented Section Weights ($\sum = 100\%$)**:
-  - `experience`: **30%** (0.30)
-  - `skills`: **20%** (0.20)
-  - `projects`: **15%** (0.15)
-  - `education`: **15%** (0.15)
-  - `summary`: **10%** (0.10)
-  - `contact`: **5%** (0.05)
-  - `achievements`: **5%** (0.05)
-* **7 Dedicated Section Scorers (`server/src/modules/resume-intelligence/scoring/scorers/`)**:
-  - `contact.scorer.ts`: Identity (30), Reachability (30), Professional presence (25), Link cleanliness (15).
-  - `summary.scorer.ts`: Presence (30), Length calibration (30), Executive tone (20), Role/experience focus (20).
-  - `skills.scorer.ts`: Presence volume (30), Domain diversity (30), Categorization depth (25), Cleanliness (15).
-  - `experience.scorer.ts`: Role completeness (25), Bullet density (25), Power action verbs (25), Measurable impact (25).
-  - `projects.scorer.ts`: Project structure (30), Tech stack clarity (30), Live/repo links (25), Bullet depth (15).
-  - `education.scorer.ts`: Degree & institution (40), Timeline clarity (30), Field of study & honors/GPA (30).
-  - `achievements.scorer.ts`: Achievement volume (35), Issuer clarity (35), Dates & credential links (30).
-* **Master Engine Orchestrator (`resume-scoring.engine.ts`)**:
-  - Aggregates all 7 section scores and computes the weighted general resume score.
-  - Generates plain-language candidate explanations, deduction notices, and assigns rating tiers (`Excellent`, `Strong`, `Good`, `Developing`, `Needs Work`).
-  - Supports on-demand single section scoring (`scoreSection()`) for live UI typing.
-  - Enforces engine version: `resume-score-v1`.
-* **Zod Runtime Schema (`scoring.schema.ts`)**: Validates `ResumeScoreResult` contract.
-* **REST API Integration**: Added `GET /api/resumes/:resumeId/score` wired into `ResumeController.getScore` and `ResumeService.getResumeScore`.
-* **Client TypeScript Mirroring**: Created `client/types/resume-scoring.types.ts`.
-* **Documentation**: Authored comprehensive 20-section specification in [`doc/resume-studio/03-scoring.md`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/doc/resume-studio/03-scoring.md) and updated [`doc/resume-studio/README.md`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/doc/resume-studio/README.md).
+* **Documented Section Weights ($\sum = 100\%$)**: Experience (30%), Skills (20%), Projects (15%), Education (15%), Summary (10%), Contact (5%), Achievements (5%).
+* **7 Dedicated Section Scorers**: Complete rule sets, earned points, max points, and plain-language candidate explanations.
+* **Master Engine Orchestrator & REST Endpoint**: `GET /api/resumes/:resumeId/score` returning validated `ResumeScoreResult`.
+
+### C. Phase 4: Resume Studio Actionable UX Foundation
+* **Actionable Master-Detail Experience**: Redesigned `/dashboard/resume-studio` into a clean diagnostic dashboard consuming Phase 3 scoring and Phase 2 section signals.
+* **Resume Health Banner**:
+  - Radial score display (0–100) with color calibration (emerald/blue/amber/rose).
+  - Rating tier badge (`Excellent`, `Strong`, `Good`, `Developing`, `Needs Work`).
+  - Score summary explanation and derived badges for **Strongest Section** and **Highest Priority Section**.
+* **7 Section Overview Cards**:
+  - Interactive grid with icons, section name, weight percentage (`30%`, `20%`, etc.), earned score, tier badge, and priority marker.
+  - Active section focus with keyboard navigation (`Enter`/`Space`) and ARIA labels.
+* **Selected Section Deep-Dive Pane**:
+  - Component-by-component breakdown (`ScoreComponent[]`) with score/maxScore progress bars and transparent deduction rules.
+  - Deterministic "What to Improve" guidance cards without synthetic AI text.
+  - Transparent strengths list and evidence deduction ledger.
+* **Zero AI / Zero Mutation Compliance**: Strictly read-only diagnostic UI with 0 LLM calls, 0 document mutations, and 0 client-side score recalculations.
+* **Documentation**: Authored [`doc/resume-studio/04-studio-ux.md`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/doc/resume-studio/04-studio-ux.md) and updated [`doc/resume-studio/README.md`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/doc/resume-studio/README.md).
 
 ---
 
@@ -62,5 +56,5 @@
 
 ## 3. Recommended Next Steps
 
-1. **Phase 4: Resume Studio UI (M1)**: Build the 7 interactive Section Cards in `/dashboard/resume-studio` with real-time score rings, tier badges, component breakdown drawers, and `[ Improve Section ]` triggers.
-2. **Phase 5: Section AI Editor with Evidence Lock (M2)**: Build evidence-constrained bullet rewriters with Gemini structured outputs.
+1. **Phase 5: Section AI Editor with Evidence Lock (M2)**: Build evidence-constrained bullet rewriters with candidate fact validation.
+2. **Phase 6: AI Rewrite + Re-score (M2)**: Before/after score delta comparisons on accepted drafts.

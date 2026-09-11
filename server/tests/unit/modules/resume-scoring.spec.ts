@@ -285,20 +285,23 @@ describe("Phase 3: Deterministic Resume Scoring Engine", () => {
 
     it("should handle partial resumes with missing sections safely without NaN/Infinity", () => {
       const partialDoc: ResumeDocument = {
+        ...SAMPLE_RESUME_DOCUMENT_FIXTURE,
         id: "partial-doc-001",
-        version: 1,
-        schemaVersion: "1.0.0",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        title: "Partial Resume",
         contact: {
           fullName: "John Doe",
           email: "john@example.com",
           links: [],
         },
+        summary: { text: "" },
         skills: [
           { id: "sk_01", name: "TypeScript", category: "LANGUAGE", evidenceIds: [] },
           { id: "sk_02", name: "React", category: "FRONTEND", evidenceIds: [] },
         ],
+        experience: [],
+        projects: [],
+        education: [],
+        achievements: [],
         evidence: [],
       };
 
