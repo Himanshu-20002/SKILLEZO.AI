@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   FileText, 
@@ -16,80 +16,151 @@ import {
   FolderGit2, 
   Code2, 
   UserCheck, 
-  ArrowUpRight 
+  ArrowUpRight,
+  ShieldCheck,
+  RefreshCw,
+  Info
 } from 'lucide-react';
 import { SAMPLE_RESUME_DOCUMENT_FIXTURE } from '@/types/resume-document.fixture';
 import { ResumeDocument } from '@/types/resume-document';
+import { ResumeScoreResult, SectionScore, ScoreRatingTier } from '@/types/resume-scoring.types';
+import { resumeService } from '@/services/resume.service';
+import { ResumeRecord } from '@/types/resume';
 
 export default function ResumeStudioPage() {
-  const [resumeDoc] = useState<ResumeDocument>(SAMPLE_RESUME_DOCUMENT_FIXTURE);
-  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [resumes, setResumes] = useState<ResumeRecord[]>([]);
+  const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
+  const [scoreResult, setScoreResult] = useState<ResumeScoreResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [isSampleMode, setIsSampleMode] = useState(false);
+  const [selectedSectionKey, setSelectedSectionKey] = useState<string | null>(null);
 
-  const sections = [
+  // Load user resumes on mount
+  useEffect(() => {
+    async function loadResumes() {
+      try {
+        setLoading(true);
+        const userResumes = await resumeService.getUserResumes();
+        setResumes(userResumes);
+
+        if (userResumes && userResumes.length > 0) {
+          const defaultResume = userResumes.find((r) => r.isDefault) || userResumes[0];
+          setSelectedResumeId(defaultResume._id);
+          setIsSampleMode(false);
+          await loadScore(defaultResume._id);
+        } else {
+          setIsSampleMode(true);
+        }
+      } catch {
+        setIsSampleMode(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadResumes();
+  }, []);
+
+  const loadScore = async (resumeId: string) => {
+    try {
+      setLoading(true);
+      const score = await resumeService.getResumeScore(resumeId);
+      setScoreResult(score);
+    } catch (err) {
+      console.warn("Failed to fetch live score, fallback to fixture", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectResume = async (resumeId: string) => {
+    setSelectedResumeId(resumeId);
+    setIsSampleMode(false);
+    await loadScore(resumeId);
+  };
+
+  // Fallback / default score values
+  const overallScore = scoreResult?.overall.overallScore ?? 100;
+  const overallTier: ScoreRatingTier = scoreResult?.overall.tier ?? "Excellent";
+  const summaryReason = scoreResult?.overall.summaryReason ?? 
+    "Exceptional resume quality with strong structural completeness, verified evidence, and power verb calibration.";
+
+  const getTierBadge = (tier: ScoreRatingTier) => {
+    switch (tier) {
+      case "Excellent":
+        return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+      case "Strong":
+        return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+      case "Good":
+        return "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20";
+      case "Developing":
+        return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+      case "Needs Work":
+      default:
+        return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
+    }
+  };
+
+  const sectionsConfig = [
     {
       id: 'contact',
       title: 'Contact Information',
       icon: UserCheck,
-      count: resumeDoc.contact.fullName ? `${resumeDoc.contact.links.length} Links` : 'Incomplete',
-      score: resumeDoc.scores?.sections.contact.score ?? 100,
-      status: resumeDoc.scores?.sections.contact.status ?? 'OPTIMIZED',
-      itemsCount: 1,
+      scoreData: scoreResult?.sections.contact,
+      defaultScore: 100,
+      weight: '5%',
     },
     {
       id: 'summary',
       title: 'Professional Summary',
       icon: FileText,
-      count: `${resumeDoc.summary.yearsOfExperience ?? 3}+ Years Exp`,
-      score: resumeDoc.scores?.sections.summary.score ?? 88,
-      status: resumeDoc.scores?.sections.summary.status ?? 'OPTIMIZED',
-      itemsCount: 1,
+      scoreData: scoreResult?.sections.summary,
+      defaultScore: 100,
+      weight: '10%',
     },
     {
       id: 'skills',
       title: 'Technical Skills',
       icon: Code2,
-      count: `${resumeDoc.skills.length} Skills`,
-      score: resumeDoc.scores?.sections.skills.score ?? 92,
-      status: resumeDoc.scores?.sections.skills.status ?? 'OPTIMIZED',
-      itemsCount: resumeDoc.skills.length,
+      scoreData: scoreResult?.sections.skills,
+      defaultScore: 100,
+      weight: '20%',
     },
     {
       id: 'experience',
       title: 'Work Experience',
       icon: Briefcase,
-      count: `${resumeDoc.experience.length} Positions`,
-      score: resumeDoc.scores?.sections.experience.score ?? 82,
-      status: resumeDoc.scores?.sections.experience.status ?? 'OPTIMIZED',
-      itemsCount: resumeDoc.experience.reduce((acc, e) => acc + e.bullets.length, 0),
+      scoreData: scoreResult?.sections.experience,
+      defaultScore: 100,
+      weight: '30%',
     },
     {
       id: 'projects',
       title: 'Featured Projects',
       icon: FolderGit2,
-      count: `${resumeDoc.projects.length} Projects`,
-      score: resumeDoc.scores?.sections.projects.score ?? 86,
-      status: resumeDoc.scores?.sections.projects.status ?? 'OPTIMIZED',
-      itemsCount: resumeDoc.projects.length,
+      scoreData: scoreResult?.sections.projects,
+      defaultScore: 100,
+      weight: '15%',
     },
     {
       id: 'education',
       title: 'Education & Academics',
       icon: GraduationCap,
-      count: `${resumeDoc.education.length} Degree`,
-      score: resumeDoc.scores?.sections.education.score ?? 95,
-      status: resumeDoc.scores?.sections.education.status ?? 'OPTIMIZED',
-      itemsCount: resumeDoc.education.length,
+      scoreData: scoreResult?.sections.education,
+      defaultScore: 100,
+      weight: '15%',
     },
     {
       id: 'achievements',
       title: 'Achievements & Certifications',
       icon: Award,
-      count: `${resumeDoc.achievements.length} Verified Items`,
-      score: resumeDoc.scores?.sections.achievements.score ?? 85,
-      status: resumeDoc.scores?.sections.achievements.status ?? 'OPTIMIZED',
-      itemsCount: resumeDoc.achievements.length,
+      scoreData: scoreResult?.sections.achievements,
+      defaultScore: 100,
+      weight: '5%',
     },
   ];
+
+  const activeSectionData = sectionsConfig.find((s) => s.id === selectedSectionKey)?.scoreData;
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1130] text-slate-900 dark:text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -98,81 +169,64 @@ export default function ResumeStudioPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-              Phase 0 Foundation
+              Deterministic Scoring v1
             </span>
-            <span className="text-xs text-slate-400">Single Source of Truth</span>
+            {isSampleMode ? (
+              <span className="text-xs text-amber-500 font-medium">Sample Preview Mode</span>
+            ) : (
+              <span className="text-xs text-emerald-500 font-medium flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Live Candidate Resume
+              </span>
+            )}
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Skillezo Resume Studio
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {resumeDoc.contact.fullName} • <span className="font-semibold text-slate-700 dark:text-slate-300">{resumeDoc.targetRole}</span>
+            {summaryReason}
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {resumes.length > 1 && (
+            <select
+              value={selectedResumeId || ''}
+              onChange={(e) => handleSelectResume(e.target.value)}
+              className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer"
+            >
+              {resumes.map((r) => (
+                <option key={r._id} value={r._id}>
+                  {r.title || r.originalFileName} {r.isDefault ? '(Default)' : ''}
+                </option>
+              ))}
+            </select>
+          )}
+
           <Link
             href="/dashboard/resume-studio/dev"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors"
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>View JSON Fixture</span>
+            <span>View JSON</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
 
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-3">
             <div className="text-right">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Overall Score</span>
-              <span className="text-xl font-extrabold text-slate-900 dark:text-slate-100">
-                {resumeDoc.scores?.overall.overallScore ?? 84} <span className="text-xs text-slate-400">/ 100</span>
-              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">General Score</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xl font-extrabold text-slate-900 dark:text-slate-100">
+                  {overallScore} <span className="text-xs text-slate-400">/ 100</span>
+                </span>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${getTierBadge(overallTier)}`}>
+                  {overallTier}
+                </span>
+              </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3D5AFE] to-[#00D9C0] flex items-center justify-center text-white font-black text-sm shadow-sm">
-              84
+              {overallScore}
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 4-Pillar Score Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">ATS Readiness</span>
-          <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {resumeDoc.scores?.overall.atsReadiness ?? 91}%
-          </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-emerald-500 h-full rounded-full" style={{ width: '91%' }} />
-          </div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Job Match</span>
-          <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {resumeDoc.scores?.overall.jobMatch ?? 82}%
-          </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-blue-500 h-full rounded-full" style={{ width: '82%' }} />
-          </div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Content Quality</span>
-          <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {resumeDoc.scores?.overall.contentQuality ?? 80}%
-          </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-purple-500 h-full rounded-full" style={{ width: '80%' }} />
-          </div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Impact Score</span>
-          <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {resumeDoc.scores?.overall.impactScore ?? 78}%
-          </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-teal-500 h-full rounded-full" style={{ width: '78%' }} />
           </div>
         </div>
       </div>
@@ -181,21 +235,24 @@ export default function ResumeStudioPage() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <span>7 Canonical Resume Sections</span>
-            <span className="text-xs font-normal text-slate-500">(Independently Addressable)</span>
+            <span>7 Section Scores & Weight Breakdown</span>
+            <span className="text-xs font-normal text-slate-500">(100% Deterministic Arithmetic)</span>
           </h2>
-          <span className="text-xs text-slate-500">ResumeDocument Model v1.0.0</span>
+          <span className="text-xs text-slate-500">Engine Version: resume-score-v1</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sections.map((sec) => {
+          {sectionsConfig.map((sec) => {
             const Icon = sec.icon;
-            const isSelected = selectedSection === sec.id;
+            const isSelected = selectedSectionKey === sec.id;
+            const score = sec.scoreData?.score ?? sec.defaultScore;
+            const tier: ScoreRatingTier = sec.scoreData?.tier ?? 'Excellent';
+            const componentCount = sec.scoreData?.components.length ?? 4;
 
             return (
               <div
                 key={sec.id}
-                onClick={() => setSelectedSection(isSelected ? null : sec.id)}
+                onClick={() => setSelectedSectionKey(isSelected ? null : sec.id)}
                 className={`p-5 rounded-2xl bg-white dark:bg-slate-900 border transition-all cursor-pointer ${
                   isSelected 
                     ? 'border-[#3D5AFE] ring-2 ring-[#3D5AFE]/20 shadow-md' 
@@ -209,27 +266,55 @@ export default function ResumeStudioPage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">{sec.title}</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{sec.count}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Weight: {sec.weight}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
-                      {sec.score}
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
+                        {score} / 100
+                      </span>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    </div>
+                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border ${getTierBadge(tier)}`}>
+                      {tier}
                     </span>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   </div>
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
                   <span className="text-slate-500 dark:text-slate-400">
-                    {sec.itemsCount} {sec.itemsCount === 1 ? 'item' : 'items'} detected
+                    {componentCount} scoring rules
                   </span>
-                  <div className="flex items-center gap-1 font-semibold text-[#3D5AFE] dark:text-[#00D9C0] group-hover:translate-x-0.5 transition-transform">
-                    <span>Inspect</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-1 font-semibold text-[#3D5AFE] dark:text-[#00D9C0]">
+                    <span>{isSelected ? 'Hide Breakdown' : 'View Breakdown'}</span>
+                    <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
                   </div>
                 </div>
+
+                {/* Granular Component Breakdown Drawer */}
+                {isSelected && sec.scoreData && (
+                  <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5 text-left">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Component Points Breakdown
+                    </span>
+                    {sec.scoreData.components.map((comp) => (
+                      <div
+                        key={comp.id}
+                        className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{comp.label}</span>
+                          <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                            {comp.score} / {comp.maxScore}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">{comp.reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}

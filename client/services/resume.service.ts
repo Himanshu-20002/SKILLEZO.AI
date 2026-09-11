@@ -149,6 +149,26 @@ export const resumeService = {
     );
     return res.data;
   },
+
+  /**
+   * Fetch deterministic 7-section analysis for Resume Studio (Phase 2).
+   */
+  async getResumeSectionAnalysis(resumeId: string): Promise<import("@/types/resume-section.types").ResumeSectionAnalysisResult> {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume-section.types").ResumeSectionAnalysisResult }>(
+      `/api/resumes/${resumeId}/section-analysis`
+    );
+    return res.data;
+  },
+
+  /**
+   * Fetch deterministic general resume scores across 7 sections (Phase 3).
+   */
+  async getResumeScore(resumeId: string): Promise<import("@/types/resume-scoring.types").ResumeScoreResult> {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume-scoring.types").ResumeScoreResult }>(
+      `/api/resumes/${resumeId}/score`
+    );
+    return res.data;
+  },
 };
 
 
