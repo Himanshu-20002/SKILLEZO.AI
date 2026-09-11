@@ -112,5 +112,12 @@ export class ResumeController {
     const result = await this.resumeService.rejectOptimization(draft);
     res.status(HTTP_STATUS.OK).json(successResponse(result));
   };
+
+  getSectionAnalysis = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const resumeId = req.params.resumeId as string;
+    const analysis = await this.resumeService.getResumeSectionAnalysis(userId, resumeId);
+    res.status(HTTP_STATUS.OK).json(successResponse(analysis));
+  };
 }
 

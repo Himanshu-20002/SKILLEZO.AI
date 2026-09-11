@@ -13,6 +13,8 @@ import {
   optimizationIntelligenceService,
   jobIntelligenceService,
   resumeDocumentNormalizer,
+  resumeSectionEngine,
+  ResumeSectionAnalysisResult,
 } from "@/modules/resume-intelligence";
 import { GeminiProvider } from "@/core/ai/providers/gemini.provider";
 import path from "path";
@@ -194,6 +196,23 @@ export class ResumeService {
     }
 
     return resume;
+  }
+
+  async getResumeSectionAnalysis(userId: string, resumeId: string): Promise<ResumeSectionAnalysisResult> {
+    const resume = await this.getResumeById(userId, resumeId);
+    if (!resume.resumeDocument) {
+      resume.resumeDocument = resumeDocumentNormalizer.normalize(
+        resume.extractedData,
+        resume.rawText,
+        {
+          userId,
+          resumeId: resume._id.toString(),
+          title: resume.title,
+          fileName: resume.originalFileName,
+        }
+      );
+    }
+    return resumeSectionEngine.analyze(resume.resumeDocument);
   }
 
   async getResumeStream(userId: string, resumeId: string): Promise<{ stream: Readable; fileName: string; mimeType: string; fileSize: number }> {

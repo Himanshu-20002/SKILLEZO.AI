@@ -41,6 +41,12 @@ router.get(
 );
 
 router.get(
+  "/:resumeId/section-analysis",
+  validate({ params: resumeIdParamValidator }),
+  asyncHandler(controller.getSectionAnalysis)
+);
+
+router.get(
   "/:resumeId",
   validate({ params: resumeIdParamValidator }),
   asyncHandler(controller.getResumeById)

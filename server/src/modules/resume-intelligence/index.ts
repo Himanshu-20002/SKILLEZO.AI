@@ -21,3 +21,6 @@ export * from "./optimization";
 
 // Canonical ResumeDocument Domain (Phase 0)
 export * from "./document";
+
+// Resume Section Engine Domain (Phase 2)
+export * from "./sections";
