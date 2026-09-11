@@ -15,6 +15,8 @@ import {
   resumeDocumentNormalizer,
   resumeSectionEngine,
   ResumeSectionAnalysisResult,
+  resumeScoringEngine,
+  ResumeScoreResult,
 } from "@/modules/resume-intelligence";
 import { GeminiProvider } from "@/core/ai/providers/gemini.provider";
 import path from "path";
@@ -213,6 +215,24 @@ export class ResumeService {
       );
     }
     return resumeSectionEngine.analyze(resume.resumeDocument);
+  }
+
+  async getResumeScore(userId: string, resumeId: string): Promise<ResumeScoreResult> {
+    const resume = await this.getResumeById(userId, resumeId);
+    if (!resume.resumeDocument) {
+      resume.resumeDocument = resumeDocumentNormalizer.normalize(
+        resume.extractedData,
+        resume.rawText,
+        {
+          userId,
+          resumeId: resume._id.toString(),
+          title: resume.title,
+          fileName: resume.originalFileName,
+        }
+      );
+    }
+    const sectionAnalysis = resumeSectionEngine.analyze(resume.resumeDocument);
+    return resumeScoringEngine.scoreDocument(sectionAnalysis, resume.resumeDocument);
   }
 
   async getResumeStream(userId: string, resumeId: string): Promise<{ stream: Readable; fileName: string; mimeType: string; fileSize: number }> {

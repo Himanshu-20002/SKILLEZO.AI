@@ -24,3 +24,6 @@ export * from "./document";
 
 // Resume Section Engine Domain (Phase 2)
 export * from "./sections";
+
+// Deterministic Resume Scoring Domain (Phase 3)
+export * from "./scoring";
