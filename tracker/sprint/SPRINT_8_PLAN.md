@@ -108,24 +108,24 @@
 
 | Task ID | Component | Description | Est. Hours | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| **`BE-801`** | Data Models | Define canonical `ResumeDocument` JSON Schema & Mongoose schemas | 4h | ⚪ Planned |
-| **`BE-802`** | Parser Adapter | Map parser output to canonical `ResumeDocument` structure | 4h | ⚪ Planned |
-| **`BE-803`** | Section Scorer | Implement deterministic scoring algorithms for all 7 sections | 6h | ⚪ Planned |
-| **`BE-804`** | Evidence Lock | Enforce metric & claim validation in AI rewrite endpoints | 5h | ⚪ Planned |
-| **`BE-805`** | Live Re-Score API | Endpoint calculating before/after score delta upon edits | 4h | ⚪ Planned |
-| **`BE-806`** | Unit Tests | Add Vitest test suites for all 7 section scoring rules & evidence lock | 5h | ⚪ Planned |
+| **`BE-801`** | Data Models | Define canonical `ResumeDocument` JSON Schema & Mongoose schemas | 4h | 🟢 **Complete** |
+| **`BE-802`** | Parser Adapter | Map parser output to canonical `ResumeDocument` structure | 4h | 🟢 **Complete** |
+| **`BE-803`** | Section Scorer | Implement deterministic scoring algorithms for all 7 sections | 6h | 🟢 **Complete** |
+| **`BE-804`** | Evidence Lock | Enforce metric & claim validation in AI rewrite endpoints | 5h | 🟢 **Complete** |
+| **`BE-805`** | Live Re-Score API | Endpoint calculating before/after score delta upon edits | 4h | 🟢 **Complete** |
+| **`BE-806`** | Unit Tests | Add Vitest test suites for all 7 section scoring rules & evidence lock | 5h | 🟢 **Complete** |
 
 ### 🎨 Developer 2 (Frontend & UI Engineering)
 
 | Task ID | Component | Description | Est. Hours | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| **`FE-801`** | Dev Route | Scaffold `/dashboard/resume-studio/dev` with mock `ResumeDocument` | 2h | ⚪ Planned |
-| **`FE-802`** | Studio Dashboard | Build unified Resume Studio page with 7 interactive section cards | 6h | ⚪ Planned |
-| **`FE-803`** | AI Section Editor | Modal/Drawer with Evidence Lock input and Accept/Reject workflow | 6h | ⚪ Planned |
-| **`FE-804`** | Visual Builder | Two-pane visual builder with live DOM document rendering | 8h | ⚪ Planned |
-| **`FE-805`** | Template Engine | Implement 5 template styles (Classic, Modern, Minimal, Tech, Exec) | 6h | ⚪ Planned |
-| **`FE-806`** | React-PDF Export | Wire `@react-pdf/renderer` 4.x with controlled on-demand download | 5h | ⚪ Planned |
-| **`FE-807`** | PDF Quality Diff | Build ATS PDF roundtrip validator UI card | 4h | ⚪ Planned |
+| **`FE-801`** | Dev Route | Scaffold `/dashboard/resume-studio/dev` with mock `ResumeDocument` | 2h | 🟢 **Complete** |
+| **`FE-802`** | Studio Dashboard | Build unified Resume Studio page with 7 interactive section cards | 6h | 🟢 **Complete** |
+| **`FE-803`** | AI Section Editor | Evidence-Locked AI improvement workspace with Accept/Reject workflow | 6h | 🟢 **Complete** |
+| **`FE-804`** | Visual Renderer | Modular HTML/CSS Visual Resume Renderer with Live Reactive Preview | 8h | 🟢 **Complete** |
+| **`FE-805`** | Template Engine | Implement ATS-friendly design templates | 6h | ⚪ Next (Phase 8) |
+| **`FE-806`** | React-PDF Export | Wire `@react-pdf/renderer` 4.x with controlled on-demand download | 5h | ⚪ Planned (Phase 9) |
+| **`FE-807`** | PDF Quality Diff | Build ATS PDF roundtrip validator UI card | 4h | ⚪ Planned (Phase 11) |
 
 ---
 
