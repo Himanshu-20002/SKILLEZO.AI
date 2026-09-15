@@ -3,7 +3,6 @@
 import React from 'react';
 import { UserCheck } from 'lucide-react';
 import { CardHeader } from '@/components/dashboard/common/CardHeader';
-import { mockExtendedProfile } from '@/mock/profile';
 import { toast } from 'sonner';
 
 export const ProfileSettings: React.FC = () => {
@@ -25,7 +24,7 @@ export const ProfileSettings: React.FC = () => {
           <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Professional Headline</label>
           <input
             type="text"
-            defaultValue={mockExtendedProfile.headline}
+            placeholder="e.g. Senior Full Stack Engineer | Next.js & Cloud Specialist"
             className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-[#3D5AFE]"
           />
         </div>
@@ -34,7 +33,7 @@ export const ProfileSettings: React.FC = () => {
           <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Location</label>
           <input
             type="text"
-            defaultValue={mockExtendedProfile.location}
+            placeholder="e.g. San Francisco, California"
             className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-[#3D5AFE]"
           />
         </div>
@@ -43,7 +42,7 @@ export const ProfileSettings: React.FC = () => {
           <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Bio Summary</label>
           <textarea
             rows={3}
-            defaultValue={mockExtendedProfile.bio}
+            placeholder="Introduce your background, key strengths, and career aspirations..."
             className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-[#3D5AFE]"
           />
         </div>

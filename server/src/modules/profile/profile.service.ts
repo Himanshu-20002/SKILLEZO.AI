@@ -264,46 +264,5 @@ export class ProfileService {
     (doc as any).completionPercentage = this.calculateProfileCompletion(doc);
     return doc as IProfile;
   }
-
-  async seedSampleProjects(userId: string): Promise<IProfile> {
-    let profile = await this.profileRepository.findByUserId(userId);
-    if (!profile) {
-      profile = await this.createProfile(userId, {});
-    }
-
-    const sampleProjects = [
-      {
-        title: "SKILLEZO AI — Enterprise Career Intelligence Platform",
-        description: "Architected a full-stack career acceleration ecosystem with ATS resume optimization, cryptographic skill verification badges, and automated 7-stage Career GPS roadmap tracking.",
-        techStack: ["Next.js 15", "React 19", "TypeScript", "Node.js", "MongoDB", "Tailwind CSS"],
-        githubUrl: "https://github.com/Himanshu-20002/SKILLEZO.AI",
-        liveDemoUrl: "https://skillezo-ai.vercel.app",
-        featured: true,
-      },
-      {
-        title: "Distributed Real-Time Job Ingestion & Crawler Engine",
-        description: "High-throughput asynchronous job stream processing pipeline that ingests, deduplicates, and vector-indexes multi-source tech listings from Remotive, Arbeitnow, and custom ATS feeds.",
-        techStack: ["Node.js", "Express", "Redis Pub/Sub", "Docker", "MongoDB", "BullMQ"],
-        githubUrl: "https://github.com/Himanshu-20002/job-ingestion-worker",
-        liveDemoUrl: "https://skillezo-api.vercel.app",
-        featured: true,
-      },
-      {
-        title: "DevFlow — Collaborative Real-Time Code Canvas",
-        description: "Interactive developer collaboration workspace featuring CRDT-based multi-user state synchronization, WebSockets room management, and automated AST syntax parsing.",
-        techStack: ["React", "TypeScript", "WebSockets", "Tailwind CSS", "PostgreSQL", "Zustand"],
-        githubUrl: "https://github.com/Himanshu-20002/devflow-canvas",
-        liveDemoUrl: "https://devflow-canvas.vercel.app",
-        featured: false,
-      },
-    ];
-
-    profile.projects = sampleProjects as any;
-    await profile.save();
-
-    const doc = profile.toObject ? profile.toObject() : profile;
-    (doc as any).completionPercentage = this.calculateProfileCompletion(doc);
-    return doc as IProfile;
-  }
 }
 

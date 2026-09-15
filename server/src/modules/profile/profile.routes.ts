@@ -93,12 +93,6 @@ router.post(
   asyncHandler(controller.addProject)
 );
 
-router.post(
-  "/me/projects/seed",
-  requireAuth,
-  asyncHandler(controller.seedSampleProjects)
-);
-
 router.patch(
   "/me/projects/:projectId",
   requireAuth,

@@ -159,12 +159,5 @@ export const profileService = {
     });
     return res.data;
   },
-
-  async seedSampleProjects(): Promise<CandidateProfile> {
-    const res = await apiFetch<{ success: boolean; data: CandidateProfile }>("/api/profile/me/projects/seed", {
-      method: "POST",
-    });
-    return res.data;
-  },
 };
 

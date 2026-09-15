@@ -38,6 +38,13 @@ Today marked a decisive transition from prototype mock behaviors to a **producti
    - Removed duplicate `Certifications` entry from **VERIFICATION** (keeping single primary portal **Skill Verification**).
    - Eliminated confusing simultaneous multi-link active highlights.
 
+6. **🚫 Complete Fake Projects & Project Mock Seeding Purge (`PROJ-MOCK-PURGE`):**
+   - **Purged "Load 3 Starter Projects" & "Load Sample Projects":** Removed the seeding buttons and `handleSeedProjects` from the Projects engine (`/dashboard/projects`) and profile view (`/dashboard/profile`).
+   - **Clean Authentic Empty State:** Replaced the split button layout with a single, prominent, primary CTA `[ + Add Project ]` opening the authentic project creation modal.
+   - **Eliminated Fake AI Recommended Project Mock Fixtures:** Deleted the static `RECOMMENDED_PROJECTS` array and removed the tab that allowed 1-click importing of fake projects with fake candidate URLs into MongoDB.
+   - **Backend Route & Service Decommission:** Removed `POST /me/projects/seed` endpoint and deleted `seedSampleProjects()` from `profile.service.ts` and `profile.controller.ts` so fake projects can never be seeded into database profiles.
+   - **Clean Settings Fallback:** Replaced hardcoded `mockExtendedProfile` default inputs with neutral input placeholders.
+
 ---
 
 ## 💻 2. Detailed Code Changes

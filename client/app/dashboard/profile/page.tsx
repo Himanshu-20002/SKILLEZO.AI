@@ -24,113 +24,26 @@ export default function ProfilePage() {
   const { data: session } = useSession();
 
   const [profile, setProfile] = useState<CandidateProfile>({
-    userId: session?.user?.id || 'demo-user',
-    headline:
-      'Building AI-driven Enterprise Systems | Next.js, React & Node.js Specialist',
-    phone: '+1 (555) 234-5678',
-    targetRole: 'Senior Full Stack Engineer',
-    bio: 'Passionate software engineer with 6+ years of experience designing scalable cloud solutions, microservices, and modern web applications. Focused on automated skill verification and AI integrations.',
-    skills: [
-      {
-        name: 'React 19 & Next.js 15',
-        category: 'Frontend',
-        level: 5,
-        proficiency: 'Expert',
-        score: 98,
-        verified: true,
-      },
-      {
-        name: 'TypeScript & Node.js',
-        category: 'Language / Backend',
-        level: 4,
-        proficiency: 'Advanced',
-        score: 94,
-        verified: true,
-      },
-      {
-        name: 'Tailwind CSS & Design Systems',
-        category: 'UI / UX',
-        level: 5,
-        proficiency: 'Expert',
-        score: 96,
-        verified: true,
-      },
-      {
-        name: 'GraphQL & REST APIs',
-        category: 'Backend',
-        level: 4,
-        proficiency: 'Advanced',
-        score: 91,
-        verified: true,
-      },
-      {
-        name: 'PostgreSQL & Redis Caching',
-        category: 'Database',
-        level: 3,
-        proficiency: 'Intermediate',
-        score: 85,
-        verified: false,
-      },
-      {
-        name: 'Docker & Kubernetes',
-        category: 'DevOps',
-        level: 3,
-        proficiency: 'Intermediate',
-        score: 82,
-        verified: false,
-      },
-    ],
-    projects: [
-      {
-        title: 'SKILLEZO AI — Enterprise Career Intelligence Platform',
-        description:
-          'Architected a full-stack career acceleration ecosystem with ATS resume optimization, cryptographic skill verification badges, and automated 7-stage Career GPS roadmap tracking.',
-        techStack: ['Next.js 15', 'React 19', 'TypeScript', 'Node.js', 'MongoDB', 'Tailwind CSS', 'Redis'],
-        githubUrl: 'https://github.com/Himanshu-20002/SKILLEZO.AI',
-        liveDemoUrl: 'https://skillezo-ai.vercel.app',
-        featured: true,
-      },
-      {
-        title: 'Distributed Real-Time Job Ingestion & Crawler Engine',
-        description:
-          'High-throughput asynchronous job stream processing pipeline that ingests, deduplicates, and vector-indexes multi-source tech listings from Remotive, Arbeitnow, and custom ATS feeds.',
-        techStack: ['Node.js', 'Express', 'Redis Pub/Sub', 'Docker', 'MongoDB', 'BullMQ'],
-        githubUrl: 'https://github.com/Himanshu-20002/job-ingestion-worker',
-        liveDemoUrl: 'https://skillezo-api.vercel.app',
-        featured: true,
-      },
-      {
-        title: 'CloudScale — Microservices Orchestration & Kubernetes Mesh',
-        description:
-          'Zero-trust service mesh architecture managing multi-region container deployments with automated canary rollouts, Prometheus telemetry dashboards, and AWS ECS Fargate autoscaling.',
-        techStack: ['Kubernetes', 'Docker', 'AWS ECS', 'Terraform', 'Prometheus', 'Grafana'],
-        githubUrl: 'https://github.com/Himanshu-20002/cloudscale-mesh',
-        liveDemoUrl: 'https://cloudscale-demo.vercel.app',
-        featured: false,
-      },
-      {
-        title: 'DevFlow — Collaborative Real-Time Code Canvas',
-        description:
-          'Interactive developer collaboration workspace featuring CRDT-based multi-user state synchronization, WebSockets room management, and automated AST syntax parsing.',
-        techStack: ['React', 'TypeScript', 'WebSockets', 'Tailwind CSS', 'PostgreSQL', 'Zustand'],
-        githubUrl: 'https://github.com/Himanshu-20002/devflow-canvas',
-        liveDemoUrl: 'https://devflow-canvas.vercel.app',
-        featured: false,
-      },
-    ],
+    userId: session?.user?.id || '',
+    headline: '',
+    phone: '',
+    targetRole: '',
+    bio: '',
+    skills: [],
+    projects: [],
     education: [],
     experience: [],
     links: {
-      github: 'https://github.com/Himanshu-20002',
-      linkedin: 'https://linkedin.com/in/candidate',
-      portfolio: 'https://candidate.dev',
+      github: '',
+      linkedin: '',
+      portfolio: '',
     },
     location: {
-      city: 'San Francisco',
-      state: 'California',
-      country: 'United States',
+      city: '',
+      state: '',
+      country: '',
     },
-    completionPercentage: 85,
+    completionPercentage: 0,
   });
 
   const derivedName =
@@ -141,7 +54,7 @@ export default function ProfilePage() {
     'Candidate';
 
   const derivedEmail =
-    session?.user?.email || profile.links?.portfolio || 'candidate@example.com';
+    session?.user?.email || profile.links?.portfolio || '';
 
   const [isLoading, setIsLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -153,29 +66,21 @@ export default function ProfilePage() {
       setIsLoading(true);
       const liveProfile = await profileService.getMyProfile();
       if (liveProfile) {
-        setProfile((prev) => ({
-          ...prev,
+        setProfile({
           ...liveProfile,
-          headline: liveProfile.headline || prev.headline,
-          phone: liveProfile.phone || prev.phone,
-          targetRole: liveProfile.targetRole || prev.targetRole,
-          bio: liveProfile.bio || prev.bio,
-          links: liveProfile.links || prev.links,
-          location: liveProfile.location || prev.location,
-          skills:
-            liveProfile.skills && liveProfile.skills.length > 0
-              ? liveProfile.skills
-              : prev.skills,
-          projects:
-            Array.isArray(liveProfile.projects)
-              ? liveProfile.projects
-              : prev.projects,
-          completionPercentage:
-            liveProfile.completionPercentage || prev.completionPercentage,
-        }));
+          headline: liveProfile.headline || '',
+          phone: liveProfile.phone || '',
+          targetRole: liveProfile.targetRole || '',
+          bio: liveProfile.bio || '',
+          links: liveProfile.links || { github: '', linkedin: '', portfolio: '' },
+          location: liveProfile.location || { city: '', state: '', country: '' },
+          skills: Array.isArray(liveProfile.skills) ? liveProfile.skills : [],
+          projects: Array.isArray(liveProfile.projects) ? liveProfile.projects : [],
+          completionPercentage: liveProfile.completionPercentage ?? 0,
+        });
       }
     } catch {
-      // Fallback seamlessly to initialized demo state
+      // Keep clean zero state on fetch failure
     } finally {
       setIsLoading(false);
     }
@@ -254,19 +159,6 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSeedProjects = async () => {
-    try {
-      setIsLoading(true);
-      const updated = await profileService.seedSampleProjects();
-      setProfile(updated);
-      toast.success('Loaded 3 sample portfolio projects!');
-    } catch {
-      toast.error('Failed to load sample projects');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -311,7 +203,6 @@ export default function ProfilePage() {
                   projects={profile.projects}
                   onAddProject={() => setIsAddProjectModalOpen(true)}
                   onDeleteProject={handleDeleteProject}
-                  onSeedProjects={handleSeedProjects}
                 />
               </div>
 

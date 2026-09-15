@@ -90,11 +90,5 @@ export class ProfileController {
     const profile = await this.profileService.deleteProject(userId, projectId);
     res.status(HTTP_STATUS.OK).json(successResponse(profile));
   };
-
-  seedSampleProjects = async (req: Request, res: Response): Promise<void> => {
-    const userId = req.user!.id;
-    const profile = await this.profileService.seedSampleProjects(userId);
-    res.status(HTTP_STATUS.OK).json(successResponse(profile));
-  };
 }
 

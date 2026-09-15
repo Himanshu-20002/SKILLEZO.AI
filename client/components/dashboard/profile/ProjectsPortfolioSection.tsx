@@ -9,9 +9,6 @@ import {
   Trash2,
   ExternalLink,
   Code2,
-  Layers,
-  Sparkles,
-  GitBranch,
 } from 'lucide-react';
 import { CandidateProject } from '@/services/profile.service';
 
@@ -19,14 +16,12 @@ interface ProjectsPortfolioSectionProps {
   projects?: CandidateProject[];
   onAddProject: () => void;
   onDeleteProject?: (projectId: string) => Promise<void>;
-  onSeedProjects?: () => Promise<void>;
 }
 
 export const ProjectsPortfolioSection: React.FC<ProjectsPortfolioSectionProps> = ({
   projects = [],
   onAddProject,
   onDeleteProject,
-  onSeedProjects,
 }) => {
   return (
     <div className="p-6 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 backdrop-blur-md shadow-sm space-y-6">
@@ -51,24 +46,13 @@ export const ProjectsPortfolioSection: React.FC<ProjectsPortfolioSectionProps> =
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {onSeedProjects && (
-            <button
-              onClick={onSeedProjects}
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer shrink-0"
-            >
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Sample Projects</span>
-            </button>
-          )}
-          <button
-            onClick={onAddProject}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#3D5AFE] to-[#00D9C0] text-white text-xs sm:text-sm font-semibold shadow-md shadow-[#3D5AFE]/20 hover:opacity-95 transition cursor-pointer shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Project</span>
-          </button>
-        </div>
+        <button
+          onClick={onAddProject}
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#3D5AFE] to-[#00D9C0] text-white text-xs sm:text-sm font-semibold shadow-md shadow-[#3D5AFE]/20 hover:opacity-95 transition cursor-pointer shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Project</span>
+        </button>
       </div>
 
       {/* Projects Grid */}
@@ -83,22 +67,13 @@ export const ProjectsPortfolioSection: React.FC<ProjectsPortfolioSectionProps> =
               Attaching GitHub repositories and live demo links accelerates your Employability Index and unlocks Career GPS Stage 3.
             </p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {onSeedProjects && (
-              <button
-                onClick={onSeedProjects}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#3D5AFE] to-[#00D9C0] text-white text-xs font-semibold shadow-md hover:opacity-95 transition cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Load 3 Sample Projects</span>
-              </button>
-            )}
+          <div className="flex items-center justify-center pt-1">
             <button
               onClick={onAddProject}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:opacity-95 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#3D5AFE] to-[#00D9C0] text-white text-xs sm:text-sm font-semibold shadow-md shadow-[#3D5AFE]/20 hover:opacity-95 transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Custom Project</span>
+              <span>Add Project</span>
             </button>
           </div>
         </div>
