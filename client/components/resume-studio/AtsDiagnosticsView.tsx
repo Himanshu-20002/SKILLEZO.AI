@@ -142,11 +142,38 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
         </div>
       </div>
 
+      {/* Upload Callout if no resume analyzed yet */}
+      {scoreResult === null && (
+        <div className="p-6 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600/10 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+              <UploadCloud className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Upload Your Master Resume
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Upload your PDF or DOCX to calculate your real ATS score, role keyword density, and bullet improvements.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onUploadClick}
+            disabled={isUploading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors shrink-0 cursor-pointer disabled:opacity-50"
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span>{isUploading ? 'Analyzing...' : 'Upload Resume'}</span>
+          </button>
+        </div>
+      )}
+
       {/* 2. Primary 3-Pillar Independent Score Header (ATS, Match, Content) */}
       <ResumeScoreCard
-        atsScore={analysis.atsScore}
-        matchScore={analysis.matchScore ?? 78}
-        contentScore={analysis.contentScore ?? 72}
+        atsScore={scoreResult ? analysis.atsScore : 0}
+        matchScore={scoreResult ? (analysis.matchScore ?? 0) : 0}
+        contentScore={scoreResult ? (analysis.contentScore ?? 0) : 0}
         targetRole={targetRole}
       />
 

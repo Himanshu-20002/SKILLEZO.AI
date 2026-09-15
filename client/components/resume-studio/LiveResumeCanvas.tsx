@@ -5,7 +5,7 @@ import { ResumeDocument } from '@/types/resume-document';
 import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { SAMPLE_RESUME_DOCUMENT_FIXTURE } from '@/types/resume-document.fixture';
 import { ResumeRenderer } from './renderer';
-import { ZoomIn, ZoomOut, Maximize2, Minimize2, Move } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Minimize2, Move, FileText, UploadCloud } from 'lucide-react';
 
 interface LiveResumeCanvasProps {
   document: ResumeDocument | null;
@@ -186,13 +186,29 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
             }}
             className="absolute top-0 shadow-2xl rounded-2xl"
           >
-            <ResumeRenderer
-              document={deferredDoc || SAMPLE_RESUME_DOCUMENT_FIXTURE}
-              highlightSectionId={highlightSectionId}
-              onSectionClick={handleSectionClick}
-              interactive={true}
-              config={deferredConfig}
-            />
+            {deferredDoc ? (
+              <ResumeRenderer
+                document={deferredDoc}
+                highlightSectionId={highlightSectionId}
+                onSectionClick={handleSectionClick}
+                interactive={true}
+                config={deferredConfig}
+              />
+            ) : (
+              <div className="w-[850px] min-h-[1100px] bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center p-12 text-center space-y-4 shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <FileText className="w-8 h-8" />
+                </div>
+                <div className="space-y-1 max-w-sm">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">
+                    No Resume Document Loaded
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Upload a PDF or DOCX resume to activate visual rendering, font customization, and live bullet editing.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

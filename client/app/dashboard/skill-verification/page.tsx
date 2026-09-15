@@ -12,13 +12,14 @@ import { VerificationCard } from '@/components/dashboard/verification/Verificati
 import { CertificateModal } from '@/components/dashboard/verification/CertificateModal';
 import { Pagination } from '@/components/dashboard/common/Pagination';
 import { EmptyState } from '@/components/dashboard/common/EmptyState';
-import { mockVerificationRecords } from '@/mock/verification';
 import { SkillVerificationRecord } from '@/types/verification';
 import { VerificationStatusBadge } from '@/components/dashboard/verification/VerificationStatusBadge';
 import { verificationService } from '@/services/verification.service';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export default function SkillVerificationPage() {
+  const router = useRouter();
   const [records, setRecords] = useState<SkillVerificationRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -45,18 +46,10 @@ export default function SkillVerificationPage() {
       try {
         setLoading(true);
         const liveRecords = await verificationService.getUserRecords();
-        if (liveRecords && liveRecords.length > 0) {
-          // Merge with mock records avoiding duplicates by skillName
-          const liveSkillNames = new Set(liveRecords.map((r) => r.skillName.toLowerCase()));
-          const remainingMock = mockVerificationRecords.filter(
-            (m) => !liveSkillNames.has(m.skillName.toLowerCase())
-          );
-          setRecords([...liveRecords, ...remainingMock]);
-        } else {
-          setRecords(mockVerificationRecords);
-        }
-      } catch {
-        setRecords(mockVerificationRecords);
+        setRecords(liveRecords || []);
+      } catch (err) {
+        console.error('Failed to load user verification records:', err);
+        setRecords([]);
       } finally {
         setLoading(false);
       }
@@ -157,7 +150,15 @@ export default function SkillVerificationPage() {
         </div>
 
         {/* Records Display Area */}
-        {filteredRecords.length === 0 ? (
+        {records.length === 0 ? (
+          <EmptyState
+            title="No Skill Verifications Yet"
+            description="You haven't completed any skill assessments or earned verified credentials yet. Take an assessment to test your abilities and generate verified credentials."
+            actionLabel="Take Skill Assessment"
+            onAction={() => router.push('/dashboard/assessments')}
+            icon={<Award className="w-7 h-7 text-[#3D5AFE]" />}
+          />
+        ) : filteredRecords.length === 0 ? (
           <EmptyState
             title="No Verifications Match Criteria"
             description="Try adjusting your search terms or filters to locate skill audit records."

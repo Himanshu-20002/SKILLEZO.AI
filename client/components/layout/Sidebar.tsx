@@ -17,7 +17,6 @@ import {
   Briefcase,
   Sparkles,
   ShieldCheck,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Zap,
@@ -120,12 +119,6 @@ export const sidebarSections: NavSection[] = [
         icon: Briefcase,
         badge: 'JOBS',
       },
-      {
-        label: 'Job Matches',
-        href: '/dashboard/job-center?tab=recommended',
-        icon: Sparkles,
-        badge: 'MATCH',
-      },
     ],
   },
   {
@@ -136,11 +129,6 @@ export const sidebarSections: NavSection[] = [
         href: '/dashboard/skill-verification',
         icon: ShieldCheck,
         badge: 'VERIFIED',
-      },
-      {
-        label: 'Certifications',
-        href: '/dashboard/skill-verification',
-        icon: CheckCircle2,
       },
     ],
   },

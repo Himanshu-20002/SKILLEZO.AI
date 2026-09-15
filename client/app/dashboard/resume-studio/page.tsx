@@ -31,7 +31,8 @@ import {
   Sliders, 
   Palette, 
   Download,
-  Menu
+  Menu,
+  Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SAMPLE_RESUME_DOCUMENT_FIXTURE } from '@/types/resume-document.fixture';
@@ -163,7 +164,7 @@ export default function ResumeStudioPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSampleMode, setIsSampleMode] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   
   // Navigation: overview vs section-detail
   const [activeView, setActiveView] = useState<'overview' | 'detail'>('overview');
@@ -248,7 +249,6 @@ export default function ResumeStudioPage() {
       const uploaded = await resumeService.uploadResume(file);
       setResumes((prev) => [uploaded, ...prev.filter((r) => r._id !== uploaded._id)]);
       setSelectedResumeId(uploaded._id);
-      setIsSampleMode(false);
       if (uploaded.resumeDocument) {
         setResumeDoc(uploaded.resumeDocument as any);
       }
@@ -318,7 +318,6 @@ export default function ResumeStudioPage() {
       if (userResumes && userResumes.length > 0) {
         const defaultResume = userResumes.find((r) => r.isDefault) || userResumes[0];
         setSelectedResumeId(defaultResume._id);
-        setIsSampleMode(false);
         if (defaultResume.resumeDocument) {
           setResumeDoc(defaultResume.resumeDocument as any);
         }
@@ -338,13 +337,13 @@ export default function ResumeStudioPage() {
         await fetchScore(defaultResume._id);
         await fetchAtsIntelligence(defaultResume._id, targetRole);
       } else {
-        setIsSampleMode(true);
-        loadSampleScores();
+        setResumeDoc(null);
+        setScoreResult(null);
       }
     } catch (err: any) {
-      console.warn("Could not load candidate resumes, falling back to sample fixture", err);
-      setIsSampleMode(true);
-      loadSampleScores();
+      console.warn("Could not load candidate resumes", err);
+      setResumeDoc(null);
+      setScoreResult(null);
     } finally {
       setLoading(false);
     }
@@ -363,187 +362,8 @@ export default function ResumeStudioPage() {
     }
   };
 
-  const loadSampleScores = () => {
-    setResumeDoc(SAMPLE_RESUME_DOCUMENT_FIXTURE);
-
-    const sampleScore: ResumeScoreResult = {
-      scoreId: "sample_score_01",
-      resumeId: SAMPLE_RESUME_DOCUMENT_FIXTURE.id,
-      engineVersion: "resume-score-v1",
-      calculatedAt: new Date().toISOString(),
-      overall: {
-        overallScore: 63,
-        maxScore: 100,
-        tier: "Good",
-        summaryReason: "You have a solid foundation. Work Experience is your biggest opportunity to improve.",
-        totalStrengthsCount: 10,
-        totalWeaknessesCount: 4,
-        totalDeductionsCount: 2,
-        sectionWeights: {
-          experience: 0.30,
-          skills: 0.20,
-          projects: 0.15,
-          education: 0.15,
-          summary: 0.10,
-          contact: 0.05,
-          achievements: 0.05,
-        },
-      },
-      sections: {
-        contact: {
-          sectionId: "contact",
-          title: "Contact Information",
-          score: 75,
-          maxScore: 100,
-          weight: 0.05,
-          weightedScore: 3.75,
-          status: "COMPLETE",
-          tier: "Good",
-          components: [
-            { id: "contact.identity", label: "Full Name & Headline", score: 30, maxScore: 30, weight: 0.30, rule: "Candidate name present", reason: "Candidate name verified.", evidenceIds: ["ev_contact_01"] },
-            { id: "contact.reachability", label: "Email & Phone", score: 30, maxScore: 30, weight: 0.30, rule: "Email & phone present", reason: "Email and phone verified.", evidenceIds: ["ev_contact_02"] },
-            { id: "contact.presence", label: "LinkedIn / GitHub Presence", score: 15, maxScore: 25, weight: 0.25, rule: "Professional links present", reason: "LinkedIn link present, GitHub missing.", evidenceIds: ["ev_contact_03"] },
-            { id: "contact.cleanliness", label: "Clean URLs", score: 0, maxScore: 15, weight: 0.15, rule: "No tracking parameters", reason: "Social links contain query parameters.", evidenceIds: ["ev_contact_04"] },
-          ],
-          strengths: ["Clear candidate name and reachability details."],
-          weaknesses: ["Add a clean portfolio or GitHub link."],
-          deductions: ["Clean URL hygiene (-15 pts)"],
-          evidenceIds: ["ev_contact_01", "ev_contact_02"],
-        },
-        summary: {
-          sectionId: "summary",
-          title: "Professional Summary",
-          score: 80,
-          maxScore: 100,
-          weight: 0.10,
-          weightedScore: 8.0,
-          status: "COMPLETE",
-          tier: "Strong",
-          components: [
-            { id: "summary.presence", label: "Summary Content", score: 30, maxScore: 30, weight: 0.30, rule: "Summary present", reason: "Professional summary structured.", evidenceIds: ["ev_sum_01"] },
-            { id: "summary.length", label: "Calibrated Word Count", score: 30, maxScore: 30, weight: 0.30, rule: "30-100 words", reason: "Summary has optimal word length (54 words).", evidenceIds: ["ev_sum_02"] },
-            { id: "summary.tone", label: "Executive Tone", score: 20, maxScore: 20, weight: 0.20, rule: "First-person avoided", reason: "Neutral professional tone.", evidenceIds: ["ev_sum_03"] },
-            { id: "summary.focus", label: "Target Role Focus", score: 0, maxScore: 20, weight: 0.20, rule: "Explicit role keyword", reason: "Specific job title keyword could be sharper.", evidenceIds: ["ev_sum_04"] },
-          ],
-          strengths: ["Concise, professional summary length."],
-          weaknesses: ["Highlight target specializations more directly."],
-          deductions: ["Target role keyword alignment (-20 pts)"],
-          evidenceIds: ["ev_sum_01", "ev_sum_02"],
-        },
-        skills: {
-          sectionId: "skills",
-          title: "Technical Skills",
-          score: 90,
-          maxScore: 100,
-          weight: 0.20,
-          weightedScore: 18.0,
-          status: "COMPLETE",
-          tier: "Excellent",
-          components: [
-            { id: "skills.volume", label: "Skill Breadth", score: 30, maxScore: 30, weight: 0.30, rule: ">= 8 technical skills", reason: "14 verified skills present.", evidenceIds: ["ev_sk_01"] },
-            { id: "skills.diversity", label: "Domain Diversity", score: 30, maxScore: 30, weight: 0.30, rule: ">= 3 skill categories", reason: "Frontend, Backend, and Database domains present.", evidenceIds: ["ev_sk_02"] },
-            { id: "skills.categorization", label: "Structured Categorization", score: 20, maxScore: 25, weight: 0.25, rule: "Skills grouped logically", reason: "Skills grouped into distinct stacks.", evidenceIds: ["ev_sk_03"] },
-            { id: "skills.cleanliness", label: "Clean Standardization", score: 10, maxScore: 15, weight: 0.15, rule: "No redundant duplicates", reason: "Clean skill naming standards.", evidenceIds: ["ev_sk_04"] },
-          ],
-          strengths: ["Rich coverage across frontend and backend technologies.", "Well-structured skill categorization."],
-          weaknesses: ["Add proficiency levels where applicable."],
-          deductions: [],
-          evidenceIds: ["ev_sk_01", "ev_sk_02"],
-        },
-        experience: {
-          sectionId: "experience",
-          title: "Work Experience",
-          score: 31,
-          maxScore: 100,
-          weight: 0.30,
-          weightedScore: 9.3,
-          status: "PARTIAL",
-          tier: "Needs Work",
-          components: [
-            { id: "experience.completeness", label: "Role Structure & Dates", score: 20, maxScore: 25, weight: 0.25, rule: "Company, title, and dates", reason: "Basic role structure is present.", evidenceIds: ["ev_exp_01"] },
-            { id: "experience.bullet_density", label: "Bullet Detail", score: 11, maxScore: 25, weight: 0.25, rule: "2-6 bullets per role", reason: "Only 1 bullet provided for latest role.", evidenceIds: ["ev_exp_02"] },
-            { id: "experience.action_verbs", label: "Action-Oriented Writing", score: 0, maxScore: 25, weight: 0.25, rule: "Power verbs in >=75% bullets", reason: "Limited action-oriented language; uses passive responsibility phrasing.", evidenceIds: ["ev_exp_03"] },
-            { id: "experience.quantitative_metrics", label: "Measurable Impact", score: 0, maxScore: 25, weight: 0.25, rule: "Quantifiable metrics in >=50% roles", reason: "No measurable metrics or quantifiable outcomes found.", evidenceIds: ["ev_exp_04"] },
-          ],
-          strengths: ["Your experience entry has basic role and company structure."],
-          weaknesses: [
-            "Bullets focus on routine duties rather than measurable achievements.",
-            "Limited use of power action verbs."
-          ],
-          deductions: [
-            "Missing action power verbs (-25 pts)",
-            "Missing measurable metrics (-25 pts)",
-            "Sparse bullet elaboration (-14 pts)"
-          ],
-          evidenceIds: ["ev_exp_01", "ev_exp_02"],
-        },
-        projects: {
-          sectionId: "projects",
-          title: "Projects",
-          score: 75,
-          maxScore: 100,
-          weight: 0.15,
-          weightedScore: 11.25,
-          status: "COMPLETE",
-          tier: "Good",
-          components: [
-            { id: "projects.structure", label: "Project Details", score: 30, maxScore: 30, weight: 0.30, rule: "Title, role, description", reason: "2 featured projects structured.", evidenceIds: ["ev_proj_01"] },
-            { id: "projects.tech_stack", label: "Tech Stack Highlights", score: 30, maxScore: 30, weight: 0.30, rule: "Identified technologies", reason: "Clear tech stack list per project.", evidenceIds: ["ev_proj_02"] },
-            { id: "projects.links", label: "Live / Repository Links", score: 15, maxScore: 25, weight: 0.25, rule: "Demo or GitHub links", reason: "GitHub repo provided, live demo link missing.", evidenceIds: ["ev_proj_03"] },
-            { id: "projects.bullet_depth", label: "Impact Description", score: 0, maxScore: 15, weight: 0.15, rule: "Bullet depth per project", reason: "Project bullets could explain architecture in more detail.", evidenceIds: ["ev_proj_04"] },
-          ],
-          strengths: ["Clear technical stack listed for each project."],
-          weaknesses: ["Add live preview or deployment URLs."],
-          deductions: ["Missing live deployment link (-10 pts)"],
-          evidenceIds: ["ev_proj_01", "ev_proj_02"],
-        },
-        education: {
-          sectionId: "education",
-          title: "Education",
-          score: 60,
-          maxScore: 100,
-          weight: 0.15,
-          weightedScore: 9.0,
-          status: "COMPLETE",
-          tier: "Developing",
-          components: [
-            { id: "education.degree_institution", label: "Degree & Institution", score: 40, maxScore: 40, weight: 0.40, rule: "Institution and degree", reason: "University and B.S. degree listed.", evidenceIds: ["ev_edu_01"] },
-            { id: "education.timeline", label: "Graduation Date", score: 20, maxScore: 30, weight: 0.30, rule: "Graduation year or range", reason: "Graduation year listed.", evidenceIds: ["ev_edu_02"] },
-            { id: "education.specialization", label: "Field & Academic Honors", score: 0, maxScore: 30, weight: 0.30, rule: "Field of study & GPA", reason: "Field of study or honors not specified.", evidenceIds: ["ev_edu_03"] },
-          ],
-          strengths: ["Recognized degree and university listed."],
-          weaknesses: ["Specify exact major/field of study and relevant coursework."],
-          deductions: ["Academic specialization missing (-30 pts)"],
-          evidenceIds: ["ev_edu_01", "ev_edu_02"],
-        },
-        achievements: {
-          sectionId: "achievements",
-          title: "Achievements & Certifications",
-          score: 70,
-          maxScore: 100,
-          weight: 0.05,
-          weightedScore: 3.5,
-          status: "COMPLETE",
-          tier: "Good",
-          components: [
-            { id: "achievements.volume", label: "Certifications Count", score: 35, maxScore: 35, weight: 0.35, rule: ">= 1 credential", reason: "AWS Certified Solutions Architect listed.", evidenceIds: ["ev_ach_01"] },
-            { id: "achievements.issuer", label: "Issuing Organization", score: 35, maxScore: 35, weight: 0.35, rule: "Issuer name", reason: "Issuer identified.", evidenceIds: ["ev_ach_02"] },
-            { id: "achievements.credentials", label: "Verification URLs", score: 0, maxScore: 30, weight: 0.30, rule: "Verification link/ID", reason: "Credential URL or verification ID missing.", evidenceIds: ["ev_ach_03"] },
-          ],
-          strengths: ["Industry recognized certification present."],
-          weaknesses: ["Add credential ID or verification URL."],
-          deductions: ["Missing verification URL (-30 pts)"],
-          evidenceIds: ["ev_ach_01", "ev_ach_02"],
-        },
-      },
-    };
-
-    setScoreResult(sampleScore);
-  };
-
   const handleSelectResume = useCallback((resumeId: string) => {
     setSelectedResumeId(resumeId);
-    setIsSampleMode(false);
     setActiveView('overview');
     setCurrentSuggestion(null);
     setScoreDeltaNotice(null);
@@ -578,80 +398,10 @@ export default function ResumeStudioPage() {
 
   // Phase 7 Optimization Workflow Handlers
   const handleLaunchOptimization = async (rec: AIResumeRecommendation) => {
+    if (!selectedResumeId) return;
     setIsOptimizing(true);
     setOptimizingRecId(rec.id);
     try {
-      if (isSampleMode || !selectedResumeId) {
-        const targetSource =
-          analysis.extractedData?.experience?.[0]?.description?.split('\n')[0] ||
-          'Worked on React frontend applications and APIs.';
-        const cleanSource = targetSource.replace(/^[•*–—\-\d.]+\s*/, '').trim();
-
-        const demoDraft: ResumeOptimizationDraft = {
-          draftId: `draft_${Date.now()}`,
-          resumeId: selectedResumeId || 'sample_resume',
-          baseResumeVersionId: 'v1',
-          recommendationId: rec.id,
-          target: {
-            recommendationId: rec.id,
-            type: 'IMPROVE_IMPACT',
-            section: 'EXPERIENCE',
-            sourceText: cleanSource,
-            sourceEvidenceIds: ['exp_0_bullet_0'],
-            isRewritable: true,
-          },
-          originalText: cleanSource,
-          proposedText: cleanSource.replace(/^worked on/i, 'Engineered high-performance').replace(/^responsible for/i, 'Developed scalable'),
-          validation: {
-            valid: true,
-            safetyLevel: 'SAFE',
-            safetyScore: 100,
-            errors: [],
-            warnings: [],
-            unsupportedClaims: [],
-            changedMetrics: [],
-            addedSkills: [],
-            changedOwnershipClaims: [],
-            meaningPreserved: true,
-          },
-          beforeScores: {
-            atsScore: analysis.atsScore,
-            matchScore: analysis.matchScore ?? 78,
-            contentScore: analysis.contentScore ?? 72,
-            timestamp: new Date().toISOString(),
-          },
-          afterScores: {
-            atsScore: Math.min(100, analysis.atsScore + 1),
-            matchScore: Math.min(100, (analysis.matchScore ?? 78) + 2),
-            contentScore: Math.min(100, (analysis.contentScore ?? 72) + 6),
-            timestamp: new Date().toISOString(),
-          },
-          scoreComparison: {
-            before: {
-              atsScore: analysis.atsScore,
-              matchScore: analysis.matchScore ?? 78,
-              contentScore: analysis.contentScore ?? 72,
-              timestamp: new Date().toISOString(),
-            },
-            after: {
-              atsScore: Math.min(100, analysis.atsScore + 1),
-              matchScore: Math.min(100, (analysis.matchScore ?? 78) + 2),
-              contentScore: Math.min(100, (analysis.contentScore ?? 72) + 6),
-              timestamp: new Date().toISOString(),
-            },
-            delta: { ats: 1, match: 2, content: 6 },
-            improved: true,
-            regressed: false,
-          },
-          decision: 'IMPROVED',
-          status: 'VALIDATED',
-          createdAt: new Date().toISOString(),
-        };
-        setSelectedDraft(demoDraft);
-        setIsOptimizationModalOpen(true);
-        return;
-      }
-
       const draft = await resumeService.proposeOptimization(
         selectedResumeId,
         rec.id,
@@ -750,7 +500,7 @@ export default function ResumeStudioPage() {
   const handleBuilderConfigChange = useCallback((newConfig: ResumeBuilderConfig) => {
     setBuilderConfig(newConfig);
 
-    if (isSampleMode || !selectedResumeId) return;
+    if (!selectedResumeId) return;
 
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
@@ -766,7 +516,7 @@ export default function ResumeStudioPage() {
         setIsSavingBuilder(false);
       }
     }, 600);
-  }, [isSampleMode, selectedResumeId]);
+  }, [selectedResumeId]);
 
   const handleViewModeChange = useCallback((mode: any) => {
     if (mode === 'audit' || mode === 'analysis') {
@@ -814,70 +564,11 @@ export default function ResumeStudioPage() {
 
   // Phase 5: Generate Suggestion Handler
   const handleGenerateSuggestion = useCallback(async (instruction?: string) => {
+    if (!selectedResumeId) return;
+
     try {
       setIsGenerating(true);
       setCurrentSuggestion(null);
-
-      if (isSampleMode || !selectedResumeId) {
-        // Simulate evidence-locked proposal for sample preview
-        await new Promise((r) => setTimeout(r, 900));
-        const sampleSuggestion: SectionImprovementSuggestion = {
-          suggestionId: "sug_sample_exp_01",
-          sectionId: activeSectionKey,
-          original: (resumeDoc as any)?.[activeSectionKey] || (SAMPLE_RESUME_DOCUMENT_FIXTURE as any)[activeSectionKey],
-          proposed: [
-            {
-              id: "exp_01",
-              companyName: "Acme Cloud Technologies",
-              jobTitle: "Senior Software Engineer",
-              location: "San Francisco, CA",
-              startDate: "2022-01",
-              isCurrent: true,
-              bullets: [
-                {
-                  id: "b_01",
-                  text: "Architected and delivered distributed event-driven microservices using Node.js and TypeScript, handling 15M+ daily requests.",
-                  verbs: ["Architected", "delivered"],
-                  metrics: ["15M+"],
-                  evidenceIds: ["ev_exp_01"],
-                },
-                {
-                  id: "b_02",
-                  text: "Optimized PostgreSQL query execution plans and Redis caching layer, reducing p99 API latency by 42%.",
-                  verbs: ["Optimized", "reducing"],
-                  metrics: ["42%"],
-                  evidenceIds: ["ev_exp_02"],
-                },
-              ],
-            },
-          ],
-          changes: [
-            {
-              field: "bullet text",
-              before: "Worked on web applications and microservices.",
-              after: "Architected and delivered distributed event-driven microservices using Node.js and TypeScript, handling 15M+ daily requests.",
-              reason: "Replaced passive phrasing with strong power action verbs and highlighted existing architecture scale.",
-            },
-            {
-              field: "bullet text",
-              before: "Helped with database query tuning.",
-              after: "Optimized PostgreSQL query execution plans and Redis caching layer, reducing p99 API latency by 42%.",
-              reason: "Articulated concrete database optimization techniques supported by resume evidence.",
-            },
-          ],
-          evidenceUsed: [
-            "Node.js & TypeScript microservices",
-            "PostgreSQL & Redis caching",
-            "Daily request throughput scale",
-          ],
-          unsupportedClaims: [],
-          warnings: [],
-          generatedAt: new Date().toISOString(),
-          baseDocumentVersion: 1,
-        };
-        setCurrentSuggestion(sampleSuggestion);
-        return;
-      }
 
       const suggestion = await resumeService.suggestSectionImprovement(
         selectedResumeId,
@@ -891,47 +582,14 @@ export default function ResumeStudioPage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [isSampleMode, selectedResumeId, activeSectionKey, resumeDoc]);
+  }, [selectedResumeId, activeSectionKey]);
 
   // Phase 5: Approve Suggestion Handler
   const handleApproveSuggestion = async () => {
-    if (!currentSuggestion) return;
+    if (!currentSuggestion || !selectedResumeId) return;
 
     try {
       setIsApplying(true);
-
-      if (isSampleMode || !selectedResumeId) {
-        await new Promise((r) => setTimeout(r, 600));
-        // Mock sample approval and deterministic re-score
-        const prev = scoreResult?.sections[activeSectionKey]?.score ?? 31;
-        const next = Math.min(100, prev + 37);
-        
-        if (scoreResult) {
-          const updatedScore = { ...scoreResult };
-          updatedScore.sections[activeSectionKey].score = next;
-          updatedScore.sections[activeSectionKey].tier = next >= 85 ? 'Excellent' : next >= 70 ? 'Good' : 'Developing';
-          updatedScore.overall.overallScore = 84;
-          updatedScore.overall.tier = 'Strong';
-          setScoreResult(updatedScore);
-        }
-
-        if (resumeDoc) {
-          const updatedDoc: ResumeDocument = {
-            ...resumeDoc,
-            [activeSectionKey]: currentSuggestion.proposed,
-          };
-          setResumeDoc(updatedDoc);
-        }
-
-        setScoreDeltaNotice({
-          section: SECTION_CONFIGS.find((s) => s.id === activeSectionKey)?.title || activeSectionKey,
-          from: prev,
-          to: next,
-        });
-        setCurrentSuggestion(null);
-        toast.success("Section improvement applied! Score recalculated deterministically.");
-        return;
-      }
 
       const result = await resumeService.applySectionImprovement(
         selectedResumeId,
@@ -1032,7 +690,7 @@ export default function ResumeStudioPage() {
   }
 
   // Error State
-  if (error && !scoreResult) {
+  if (error && !scoreResult && resumes.length > 0) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-4">
         <div className="max-w-md w-full p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-4">
@@ -1050,55 +708,6 @@ export default function ResumeStudioPage() {
             <RefreshCw className="w-4 h-4" />
             <span>Try Again</span>
           </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Empty State: No Resumes
-  if (!loading && resumes.length === 0 && !isSampleMode) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center p-4">
-        <div className="max-w-md w-full p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-5">
-          <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto">
-            <UploadCloud className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Build your resume analysis</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
-              Upload a resume to see your real section scores, strengths, and improvement areas.
-            </p>
-          </div>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileInputChange}
-              accept=".pdf,.docx,application/pdf"
-              className="hidden"
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-            >
-              {isUploading ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <UploadCloud className="w-4 h-4" />
-              )}
-              <span>{isUploading ? 'Analyzing...' : 'Upload Resume'}</span>
-            </button>
-            <button
-              onClick={() => {
-                setIsSampleMode(true);
-                loadSampleScores();
-              }}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <span>View Sample Preview</span>
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -1560,133 +1169,249 @@ export default function ResumeStudioPage() {
     </div>
   );
 
+  const isLocked = !loading && resumes.length === 0;
+
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC] dark:bg-[#0B1130] text-slate-900 dark:text-slate-100 flex flex-col lg:flex-row font-sans selection:bg-indigo-500/20">
+    <div className="relative min-h-screen w-full bg-[#F8FAFC] dark:bg-[#0B1130] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-indigo-500/20 overflow-x-hidden">
       
-      {/* 1. Extreme-Left Docked Studio Sidebar (Desktop + Mobile Slide-Over) */}
-      <ResumeStudioSidebar
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
-        activeSectionKey={previewHighlightSection || (activeView === 'detail' ? activeSectionKey : undefined)}
-        onSectionClick={handleSectionClick}
-        overallScore={scoreResult?.overall.overallScore}
-        scoreTier={scoreResult?.overall.tier}
-        templateId={builderConfig.templateId}
-        isOpen={isMobileSidebarOpen}
-        onClose={() => setIsMobileSidebarOpen(false)}
-      />
+      {/* Background Dashboard & Studio Workspace (Blurred & non-interactive when locked) */}
+      <div className={`flex flex-col lg:flex-row flex-1 min-w-0 transition-all duration-500 ${
+        isLocked ? 'filter blur-[7px] opacity-40 dark:opacity-30 pointer-events-none select-none scale-[0.995] origin-top' : ''
+      }`}>
+        {/* 1. Extreme-Left Docked Studio Sidebar (Desktop + Mobile Slide-Over) */}
+        <ResumeStudioSidebar
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          activeSectionKey={previewHighlightSection || (activeView === 'detail' ? activeSectionKey : undefined)}
+          onSectionClick={handleSectionClick}
+          overallScore={scoreResult?.overall.overallScore}
+          scoreTier={scoreResult?.overall.tier}
+          templateId={builderConfig.templateId}
+          isOpen={isMobileSidebarOpen}
+          onClose={() => setIsMobileSidebarOpen(false)}
+        />
 
-      {/* 2. Main Studio Workspace Area (Edge-to-edge, zero useless outer dead space) */}
-      <div className="flex-1 min-w-0 flex flex-col min-h-screen overflow-x-hidden">
-        
-        {/* Top Studio Action & Status Bar */}
-        <header className="h-16 shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 gap-3">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Mobile Hamburger to toggle sidebar */}
-            <button
-              onClick={() => setIsMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              aria-label="Open Workspace Menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            {/* Current Active Mode Title */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {isAudit
-                  ? 'ATS Audit & Score'
-                  : viewMode === 'builder'
-                  ? 'Design & Layout Settings'
-                  : 'Section Content & AI'}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {isSampleMode && (
-              <span className="hidden sm:inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                Sample
-              </span>
-            )}
-
-            {resumes.length > 0 && (
-              <div className="relative">
-                <select
-                  value={selectedResumeId || ''}
-                  onChange={(e) => handleSelectResume(e.target.value)}
-                  className="appearance-none pl-3 pr-7 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 max-w-[130px] sm:max-w-[200px] truncate"
-                >
-                  {resumes.map((r) => (
-                    <option key={r._id} value={r._id}>
-                      {r.title || r.originalFileName || 'Resume'} {r.isDefault ? '(Default)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            )}
-
-            {selectedResumeId && !isSampleMode && (
+        {/* 2. Main Studio Workspace Area (Edge-to-edge, zero useless outer dead space) */}
+        <div className="flex-1 min-w-0 flex flex-col min-h-screen overflow-x-hidden">
+          
+          {/* Top Studio Action & Status Bar */}
+          <header className="h-16 shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              {/* Mobile Hamburger to toggle sidebar */}
               <button
-                onClick={() => fetchScore(selectedResumeId)}
-                disabled={refreshing}
-                title="Refresh score"
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
+                onClick={() => setIsMobileSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                aria-label="Open Workspace Menu"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                <Menu className="w-5 h-5" />
               </button>
-            )}
 
-            {/* Download Button in Header */}
-            <button
-              onClick={handleDownloadPDF}
-              disabled={isDownloadingPdf}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition-all cursor-pointer shadow-xs shrink-0 disabled:opacity-60"
-              title="Download High-Fidelity Vector PDF"
-            >
-              {isDownloadingPdf ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-              ) : (
-                <Download className="w-3.5 h-3.5" />
-              )}
-              <span className="hidden sm:inline">
-                {isDownloadingPdf ? 'Generating...' : 'Download'}
-              </span>
-            </button>
-          </div>
-        </header>
+              {/* Current Active Mode Title */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  {isAudit
+                    ? 'ATS Audit & Score'
+                    : viewMode === 'builder'
+                    ? 'Design & Layout Settings'
+                    : 'Section Content & AI'}
+                </span>
+              </div>
+            </div>
 
-        {/* Studio Workspace Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
-          {/* Score Delta Notification Banner (After Approval) */}
-          {scoreDeltaNotice && (
-            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-200 flex items-center justify-between animate-fadeIn">
-              <div className="flex items-center gap-2.5 text-xs">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <div>
-                  <span className="font-bold">{scoreDeltaNotice.section} score updated: </span>
-                  <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{scoreDeltaNotice.from} → </span>
-                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{scoreDeltaNotice.to} / 100</span>
-                  <span className="text-slate-500 dark:text-slate-400 ml-2">Re-analyzed from updated resume.</span>
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              {resumes.length > 0 && (
+                <div className="relative">
+                  <select
+                    value={selectedResumeId || ''}
+                    onChange={(e) => handleSelectResume(e.target.value)}
+                    className="appearance-none pl-3 pr-7 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 max-w-[130px] sm:max-w-[200px] truncate"
+                  >
+                    {resumes.map((r) => (
+                      <option key={r._id} value={r._id}>
+                        {r.title || r.originalFileName || 'Resume'} {r.isDefault ? '(Default)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
-              </div>
+              )}
+
+              {selectedResumeId && (
+                <button
+                  onClick={() => fetchScore(selectedResumeId)}
+                  disabled={refreshing}
+                  title="Refresh score"
+                  className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                </button>
+              )}
+
+              {/* Download Button in Header */}
               <button
-                onClick={() => setScoreDeltaNotice(null)}
-                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold cursor-pointer"
+                onClick={handleDownloadPDF}
+                disabled={isDownloadingPdf}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition-all cursor-pointer shadow-xs shrink-0 disabled:opacity-60"
+                title="Download High-Fidelity Vector PDF"
               >
-                Dismiss
+                {isDownloadingPdf ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
+                <span className="hidden sm:inline">
+                  {isDownloadingPdf ? 'Generating...' : 'Download'}
+                </span>
               </button>
             </div>
-          )}
+          </header>
 
-          {/* 1. Destination 1: ATS Audit & Score */}
-          {isAudit && renderAtsDiagnosticsContent()}
+          {/* Studio Workspace Content */}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
+            {/* Score Delta Notification Banner (After Approval) */}
+            {scoreDeltaNotice && (
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-200 flex items-center justify-between animate-fadeIn">
+                <div className="flex items-center gap-2.5 text-xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <div>
+                    <span className="font-bold">{scoreDeltaNotice.section} score updated: </span>
+                    <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{scoreDeltaNotice.from} → </span>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{scoreDeltaNotice.to} / 100</span>
+                    <span className="text-slate-500 dark:text-slate-400 ml-2">Re-analyzed from updated resume.</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setScoreDeltaNotice(null)}
+                  className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
 
-          {/* 2. Destination 2: Edit & Design */}
-          {!isAudit && renderEditAndDesignContent()}
-        </main>
+            {/* 1. Destination 1: ATS Audit & Score */}
+            {isAudit && renderAtsDiagnosticsContent()}
+
+            {/* 2. Destination 2: Edit & Design */}
+            {!isAudit && renderEditAndDesignContent()}
+          </main>
+        </div>
       </div>
+
+      {/* Centered Glassmorphism Lock Screen Overlay when candidate has no uploaded resume */}
+      {isLocked && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/25 dark:bg-[#070b1e]/55 backdrop-blur-[4px] animate-in fade-in duration-300">
+          {/* Ambient radial blur glowing backdrop */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-gradient-to-tr from-indigo-500/20 via-purple-500/15 to-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Frosted Glass Card */}
+          <div className="relative max-w-lg w-full rounded-3xl p-8 sm:p-10 bg-white/75 dark:bg-[#0c1236]/85 backdrop-blur-2xl border border-white/60 dark:border-indigo-500/30 shadow-[0_25px_60px_rgba(0,0,0,0.18)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.6)] text-center space-y-6 overflow-hidden">
+            {/* Internal ambient corner glows */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-indigo-500/20 dark:bg-indigo-400/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/20 dark:bg-purple-400/20 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Lock Icon with Glowing Ring */}
+            <div className="relative mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/15 via-purple-500/10 to-indigo-600/20 dark:from-indigo-900/50 dark:via-purple-900/30 dark:to-indigo-800/50 border border-indigo-500/30 dark:border-indigo-400/40 flex items-center justify-center shadow-inner">
+              <Lock className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white flex items-center justify-center shadow-md">
+                <Sparkles className="w-3.5 h-3.5" />
+              </div>
+            </div>
+
+            {/* Heading & Subtitle */}
+            <div className="relative z-10 space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                Resume Studio is Locked
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto">
+                Upload your resume to unlock real-time ATS scoring, section-by-section AI diagnostics, and the interactive live editor.
+              </p>
+            </div>
+
+            {/* Drag & Drop Upload Zone */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) handleFileUpload(file);
+              }}
+              className={`group relative z-10 p-6 rounded-2xl border-2 border-dashed transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-3 ${
+                isDragging
+                  ? 'border-indigo-500 bg-indigo-500/10'
+                  : 'border-slate-300/80 dark:border-slate-700/80 hover:border-indigo-500/70 dark:hover:border-indigo-400/70 bg-white/40 dark:bg-slate-900/40 hover:bg-white/70 dark:hover:bg-slate-900/60'
+              }`}
+            >
+              <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+                {isUploading ? (
+                  <RefreshCw className="w-6 h-6 animate-spin text-indigo-600 dark:text-indigo-400" />
+                ) : (
+                  <UploadCloud className="w-6 h-6" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                  {isUploading ? 'Analyzing and parsing resume...' : 'Click to upload or drag & drop'}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                  Supports PDF or DOCX (Max 5MB)
+                </p>
+              </div>
+            </div>
+
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileInputChange}
+              accept=".pdf,.docx,application/pdf"
+              className="hidden"
+            />
+
+            {/* Primary Action Button */}
+            <div className="relative z-10">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-[0.99]"
+              >
+                {isUploading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Analyzing Resume...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4" />
+                    <span>Upload Resume to Unlock</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Unlocked Capabilities Highlights */}
+            <div className="relative z-10 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-center gap-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-emerald-500" /> ATS Scoring
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-emerald-500" /> AI Diagnostics
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-emerald-500" /> Live Editor
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Phase 7 Interactive Optimization Review Modal with Target Selector */}
       <OptimizationReviewModal

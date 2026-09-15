@@ -5,12 +5,11 @@ import Link from 'next/link';
 import { Target, Award, CheckCircle2, ArrowUpRight, ShieldCheck } from 'lucide-react';
 import { profileService, CandidateProfile } from '@/services/profile.service';
 import { verificationService } from '@/services/verification.service';
-import { mockVerificationRecords } from '@/mock/verification';
 import { SkillVerificationRecord } from '@/types/verification';
 
 export const DashboardSummary: React.FC = () => {
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
-  const [records, setRecords] = useState<SkillVerificationRecord[]>(mockVerificationRecords);
+  const [records, setRecords] = useState<SkillVerificationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -25,15 +24,7 @@ export const DashboardSummary: React.FC = () => {
 
         if (isMounted) {
           if (profileData) setProfile(profileData);
-          if (recordsData && recordsData.length > 0) {
-            const liveSkillNames = new Set(recordsData.map((r) => r.skillName.toLowerCase()));
-            const remainingMock = mockVerificationRecords.filter(
-              (m) => !liveSkillNames.has(m.skillName.toLowerCase())
-            );
-            setRecords([...recordsData, ...remainingMock]);
-          } else {
-            setRecords(mockVerificationRecords);
-          }
+          setRecords(recordsData || []);
         }
       } catch (err) {
         console.error('Error fetching dashboard summary data:', err);
@@ -51,8 +42,8 @@ export const DashboardSummary: React.FC = () => {
 
   // 1. Dynamic Target Role
   const targetRoleName =
-    profile?.targetRole || profile?.headline || 'Senior Full Stack Engineer';
-  const hasTargetRole = Boolean(profile?.targetRole);
+    profile?.targetRole || profile?.headline || 'Not Selected';
+  const hasTargetRole = Boolean(profile?.targetRole || profile?.headline);
 
   // 2. Dynamic Verified Credentials / Badges Count
   const verifiedCount = records.filter((r) => r.status === 'verified').length;
@@ -62,8 +53,14 @@ export const DashboardSummary: React.FC = () => {
   const evaluatedRecords = records.filter((r) => r.status === 'verified' || r.status === 'failed');
   const passRate = evaluatedRecords.length > 0
     ? Math.round((verifiedCount / evaluatedRecords.length) * 100)
-    : 85;
-  const verificationBadgeTier = passRate >= 90 ? 'Top Tier' : passRate >= 70 ? 'Proficient' : 'Developing';
+    : 0;
+  const verificationBadgeTier = evaluatedRecords.length === 0
+    ? 'New'
+    : passRate >= 90
+    ? 'Top Tier'
+    : passRate >= 70
+    ? 'Proficient'
+    : 'Developing';
 
   if (isLoading) {
     return (
@@ -162,7 +159,7 @@ export const DashboardSummary: React.FC = () => {
               </span>
             </div>
             <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-              {passRate}% Pass Rate
+              {evaluatedRecords.length > 0 ? `${passRate}% Pass Rate` : 'No Tests Taken'}
             </p>
           </div>
           <ArrowUpRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity -ml-1 shrink-0" />

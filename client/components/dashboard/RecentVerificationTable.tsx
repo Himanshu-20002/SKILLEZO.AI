@@ -8,7 +8,6 @@ import { StatusBadge } from '@/components/dashboard/common/StatusBadge';
 import { SkillVerificationRecord, VerificationStatus } from '@/types/verification';
 import { CardHeader } from '@/components/dashboard/common/CardHeader';
 import { verificationService } from '@/services/verification.service';
-import { mockVerificationRecords } from '@/mock/verification';
 
 export const RecentVerificationTable: React.FC = () => {
   const [records, setRecords] = useState<SkillVerificationRecord[]>([]);
@@ -24,18 +23,13 @@ export const RecentVerificationTable: React.FC = () => {
         if (!isMounted) return;
 
         if (liveRecords && liveRecords.length > 0) {
-          // Merge live records with catalog mock records to match Skill Verification page exactly
-          const liveSkillNames = new Set(liveRecords.map((r) => r.skillName.toLowerCase()));
-          const remainingMock = mockVerificationRecords.filter(
-            (m) => !liveSkillNames.has(m.skillName.toLowerCase())
-          );
-          setRecords([...liveRecords, ...remainingMock].slice(0, 5));
+          setRecords(liveRecords.slice(0, 5));
         } else {
-          setRecords(mockVerificationRecords.slice(0, 5));
+          setRecords([]);
         }
       } catch (err) {
         console.error('Failed to load recent verification records:', err);
-        if (isMounted) setRecords(mockVerificationRecords.slice(0, 5));
+        if (isMounted) setRecords([]);
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -190,6 +184,7 @@ export const RecentVerificationTable: React.FC = () => {
             columns={columns}
             data={records}
             keyExtractor={(row) => row.id}
+            emptyText="No skills verified yet. Take a quick quiz to earn your first verified credential."
           />
         )}
       </div>

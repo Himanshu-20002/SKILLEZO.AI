@@ -6,13 +6,12 @@ import { Sparkles, ArrowRight, ShieldCheck, Zap, Award } from 'lucide-react';
 import { useSession } from '@/lib/auth-client';
 import { profileService, CandidateProfile } from '@/services/profile.service';
 import { verificationService } from '@/services/verification.service';
-import { mockVerificationRecords } from '@/mock/verification';
 
 export const WelcomeBanner: React.FC = () => {
   const { data: session } = useSession();
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
-  const [verifiedCount, setVerifiedCount] = useState<number>(3);
-  const [totalSkillsCount, setTotalSkillsCount] = useState<number>(5);
+  const [verifiedCount, setVerifiedCount] = useState<number>(0);
+  const [totalSkillsCount, setTotalSkillsCount] = useState<number>(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -28,18 +27,9 @@ export const WelcomeBanner: React.FC = () => {
 
         if (profileData) setProfile(profileData);
 
-        // Merge live records with catalog to get accurate counts
-        let allRecords = mockVerificationRecords;
-        if (liveRecords && liveRecords.length > 0) {
-          const liveSkillNames = new Set(liveRecords.map((r) => r.skillName.toLowerCase()));
-          const remainingMock = mockVerificationRecords.filter(
-            (m) => !liveSkillNames.has(m.skillName.toLowerCase())
-          );
-          allRecords = [...liveRecords, ...remainingMock];
-        }
-
-        const countVerified = allRecords.filter((r) => r.status === 'verified').length;
-        const totalCount = allRecords.length;
+        // Use real live records only - no mock fallbacks
+        const countVerified = (liveRecords || []).filter((r) => r.status === 'verified').length;
+        const totalCount = profileData?.skills?.length || 0;
 
         setVerifiedCount(countVerified);
         setTotalSkillsCount(totalCount);
@@ -60,9 +50,9 @@ export const WelcomeBanner: React.FC = () => {
     : 'Candidate';
 
   // Dynamic Metrics
-  const readinessScore = profile?.completionPercentage || 88;
+  const readinessScore = profile?.completionPercentage ?? 10;
   const strokeDashoffset = 100 - readinessScore;
-  const targetRole = profile?.targetRole || 'Senior Full Stack Engineer';
+  const targetRole = profile?.targetRole;
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 dark:from-[#0f2766] dark:via-[#131f4e] dark:to-[#091129] border border-blue-500/30 dark:border-blue-500/20 p-6 sm:p-8 shadow-[0_12px_36px_-8px_rgba(29,78,216,0.35)] dark:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.8)] text-white transition-all group">
@@ -97,9 +87,17 @@ export const WelcomeBanner: React.FC = () => {
               Welcome back, <span className="text-cyan-300">{displayName}</span> 👋
             </h1>
             <p className="mt-1.5 text-blue-100 dark:text-blue-200 text-sm sm:text-base leading-relaxed font-normal">
-              Your career profile is <span className="font-bold text-white underline decoration-cyan-400/60 decoration-2 underline-offset-2">{readinessScore}% complete</span> for <span className="font-semibold text-cyan-200">{targetRole}</span>. You have{' '}
-              <span className="font-bold text-emerald-300">{verifiedCount} verified {verifiedCount === 1 ? 'skill' : 'skills'}</span> and{' '}
-              <span className="font-bold text-cyan-300">{totalSkillsCount} total {totalSkillsCount === 1 ? 'skill' : 'skills'}</span> highlighted for recruiters.
+              {targetRole ? (
+                <>
+                  Your career profile is <span className="font-bold text-white underline decoration-cyan-400/60 decoration-2 underline-offset-2">{readinessScore}% complete</span> for <span className="font-semibold text-cyan-200">{targetRole}</span>. You have{' '}
+                  <span className="font-bold text-emerald-300">{verifiedCount} verified {verifiedCount === 1 ? 'skill' : 'skills'}</span> and{' '}
+                  <span className="font-bold text-cyan-300">{totalSkillsCount} total {totalSkillsCount === 1 ? 'skill' : 'skills'}</span> highlighted for recruiters.
+                </>
+              ) : (
+                <>
+                  Your career profile is <span className="font-bold text-white underline decoration-cyan-400/60 decoration-2 underline-offset-2">{readinessScore}% complete</span>. Set your target role and verify your first skill to get highlighted for recruiters.
+                </>
+              )}
             </p>
           </div>
 
@@ -174,10 +172,10 @@ export const WelcomeBanner: React.FC = () => {
                 </span>
               </div>
               <p className="text-sm font-black text-white whitespace-nowrap">
-                {readinessScore >= 85 ? 'Top 5% Talent' : 'Recruiter Ready'}
+                {readinessScore >= 85 ? 'Top 5% Talent' : readinessScore >= 60 ? 'Recruiter Ready' : 'Getting Started'}
               </p>
-              <p className="text-[11px] text-emerald-300 font-bold flex items-center gap-1">
-                <span>●</span> Verified Profile
+              <p className={`text-[11px] font-bold flex items-center gap-1 ${verifiedCount > 0 ? 'text-emerald-300' : 'text-cyan-200'}`}>
+                <span>●</span> {verifiedCount > 0 ? `${verifiedCount} Verified` : 'Verification Pending'}
               </p>
             </div>
 

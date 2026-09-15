@@ -24,14 +24,16 @@ export class ProfileService {
   }
 
   public calculateProfileCompletion(profile: Partial<IProfile>): number {
-    let score = 25; // base score for account registration
-    if (profile.headline) score += 10;
-    if (profile.bio && profile.bio.length > 20) score += 10;
-    if (profile.location?.city || profile.location?.country) score += 10;
-    if (profile.phone) score += 10;
+    let score = 10; // base score for account registration
+    if (profile.headline && profile.headline.trim().length > 0) score += 15;
+    if (profile.targetRole && profile.targetRole.trim().length > 0) score += 15;
+    if (profile.bio && profile.bio.trim().length > 20) score += 10;
+    if (profile.location?.city || profile.location?.country) score += 5;
+    if (profile.phone && profile.phone.trim().length > 0) score += 5;
     if (profile.skills && profile.skills.length >= 3) score += 15;
+    if (profile.skills && profile.skills.some((s) => s.verified)) score += 10;
     if (profile.projects && profile.projects.length >= 1) score += 10;
-    if (profile.links?.github || profile.links?.portfolio) score += 10;
+    if (profile.links?.github || profile.links?.portfolio || profile.links?.linkedin) score += 5;
     return Math.min(score, 100);
   }
 
@@ -49,57 +51,17 @@ export class ProfileService {
 
     const profileData: Partial<IProfile> = {
       userId,
-      headline: data.headline || "Building AI-driven Enterprise Systems | Next.js, React & Node.js Specialist",
-      phone: data.phone || "+1 (555) 234-5678",
-      targetRole: data.targetRole || "Senior Full Stack Engineer",
+      headline: data.headline || "",
+      phone: data.phone || "",
+      targetRole: data.targetRole || "",
       targetRoleId,
-      bio: data.bio || "Passionate software engineer with 6+ years of experience designing scalable cloud solutions, microservices, and modern web applications. Focused on automated skill verification and AI integrations.",
-      skills: (data.skills as IProfileSkill[]) || [
-        { name: "React 19 & Next.js 15", category: "Frontend", level: 5, proficiency: "Expert", score: 98, source: SkillSource.ASSESSMENT, verified: true },
-        { name: "TypeScript & Node.js", category: "Language / Backend", level: 4, proficiency: "Advanced", score: 94, source: SkillSource.ASSESSMENT, verified: true },
-        { name: "Tailwind CSS & Design Systems", category: "UI / UX", level: 5, proficiency: "Expert", score: 96, source: SkillSource.ASSESSMENT, verified: true },
-        { name: "GraphQL & REST APIs", category: "Backend", level: 4, proficiency: "Advanced", score: 91, source: SkillSource.ASSESSMENT, verified: true },
-        { name: "PostgreSQL & Redis Caching", category: "Database", level: 3, proficiency: "Intermediate", score: 85, source: SkillSource.PROFILE, verified: false },
-        { name: "Docker & Kubernetes", category: "DevOps", level: 3, proficiency: "Intermediate", score: 82, source: SkillSource.PROFILE, verified: false },
-      ],
+      bio: data.bio || "",
+      skills: (data.skills as IProfileSkill[]) || [],
       education: (data.education as IProfileEducation[]) || [],
       experience: (data.experience as IProfileExperience[]) || [],
-      projects: [
-        {
-          title: "SKILLEZO AI — Enterprise Career Intelligence Platform",
-          description: "Architected a full-stack career acceleration ecosystem with ATS resume optimization, cryptographic skill verification badges, and automated 7-stage Career GPS roadmap tracking.",
-          techStack: ["Next.js 15", "React 19", "TypeScript", "Node.js", "MongoDB", "Tailwind CSS", "Redis"],
-          githubUrl: "https://github.com/Himanshu-20002/SKILLEZO.AI",
-          liveDemoUrl: "https://skillezo-ai.vercel.app",
-          featured: true,
-        },
-        {
-          title: "Distributed Real-Time Job Ingestion & Crawler Engine",
-          description: "High-throughput asynchronous job stream processing pipeline that ingests, deduplicates, and vector-indexes multi-source tech listings from Remotive, Arbeitnow, and custom ATS feeds.",
-          techStack: ["Node.js", "Express", "Redis Pub/Sub", "Docker", "MongoDB", "BullMQ"],
-          githubUrl: "https://github.com/Himanshu-20002/job-ingestion-worker",
-          liveDemoUrl: "https://skillezo-api.vercel.app",
-          featured: true,
-        },
-        {
-          title: "CloudScale — Microservices Orchestration & Kubernetes Mesh",
-          description: "Zero-trust service mesh architecture managing multi-region container deployments with automated canary rollouts, Prometheus telemetry dashboards, and AWS ECS Fargate autoscaling.",
-          techStack: ["Kubernetes", "Docker", "AWS ECS", "Terraform", "Prometheus", "Grafana"],
-          githubUrl: "https://github.com/Himanshu-20002/cloudscale-mesh",
-          liveDemoUrl: "https://cloudscale-demo.vercel.app",
-          featured: false,
-        },
-        {
-          title: "DevFlow — Collaborative Real-Time Code Canvas",
-          description: "Interactive developer collaboration workspace featuring CRDT-based multi-user state synchronization, WebSockets room management, and automated AST syntax parsing.",
-          techStack: ["React", "TypeScript", "WebSockets", "Tailwind CSS", "PostgreSQL", "Zustand"],
-          githubUrl: "https://github.com/Himanshu-20002/devflow-canvas",
-          liveDemoUrl: "https://devflow-canvas.vercel.app",
-          featured: false,
-        },
-      ],
-      links: (data.links as IProfileLinks) || { github: "https://github.com/candidate", linkedin: "https://linkedin.com/in/candidate", portfolio: "https://candidate.dev" },
-      location: data.location || { city: "San Francisco", state: "California", country: "United States" },
+      projects: (data as any).projects || [],
+      links: (data.links as IProfileLinks) || { github: "", linkedin: "", portfolio: "" },
+      location: data.location || { city: "", state: "", country: "" },
     };
 
     return await this.profileRepository.create(profileData);
