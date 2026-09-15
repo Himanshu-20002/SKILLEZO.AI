@@ -6,3 +6,4 @@ export * from './ExperienceSection';
 export * from './ProjectsSection';
 export * from './EducationSection';
 export * from './AchievementsSection';
+export * from './templates';

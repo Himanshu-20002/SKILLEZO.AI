@@ -63,6 +63,18 @@ router.post(
 );
 
 router.get(
+  "/:resumeId/builder",
+  validate({ params: resumeIdParamValidator }),
+  asyncHandler(controller.getBuilderConfig)
+);
+
+router.put(
+  "/:resumeId/builder",
+  validate({ params: resumeIdParamValidator }),
+  asyncHandler(controller.saveBuilderConfig)
+);
+
+router.get(
   "/:resumeId",
   validate({ params: resumeIdParamValidator }),
   asyncHandler(controller.getResumeById)

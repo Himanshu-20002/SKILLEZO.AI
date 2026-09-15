@@ -12,7 +12,7 @@ const COLUMNS = [
     title: "Product",
     links: [
       { label: "Employability Index", href: "/dashboard/employability-index" },
-      { label: "Resume Intelligence", href: "/dashboard/resume-intelligence" },
+      { label: "Resume Studio", href: "/dashboard/resume-studio" },
       { label: "Career GPS", href: "/dashboard/career-gps" },
       { label: "AI Coach", href: "/dashboard/ai-career-coach" },
       { label: "Job Center", href: "/dashboard/job-center" },

@@ -78,6 +78,16 @@ describe('Phase 6: Visual Resume Renderer & Section Contract Suite', () => {
       templateConfig: {
         templateId: 'modern',
       },
+      currentVersion: {
+        versionId: 'v1',
+        versionNumber: 1,
+        name: 'Initial',
+        createdAt: new Date().toISOString(),
+      },
+      schemaVersion: '1.0.0',
+      isMaster: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     expect(minimalDoc.contact.fullName).toBe('Jane Doe');

@@ -1,25 +1,32 @@
 import React from 'react';
 import { ResumeProjectItem } from '@/types/resume-document';
+import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { ExternalLink, FolderGit2 } from 'lucide-react';
+import { resolveConfigClasses } from './templates';
 
 interface ProjectsSectionProps {
   projects?: ResumeProjectItem[];
   isHighlighted?: boolean;
   onClick?: () => void;
+  config?: ResumeBuilderConfig | null;
 }
 
-export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
+export const ProjectsSection: React.FC<ProjectsSectionProps> = React.memo(({
   projects,
   isHighlighted,
   onClick,
+  config,
 }) => {
   if (!projects || projects.length === 0) return null;
+
+  const { template, sectionSpacingClass, lineHeightClass, accentTextClass } = resolveConfigClasses(config);
+  const isCompact = config?.templateId === 'compact';
 
   return (
     <section
       id="resume-section-projects"
       onClick={onClick}
-      className={`transition-all duration-200 mb-6 ${
+      className={`transition-all duration-200 break-inside-avoid print:break-inside-avoid ${sectionSpacingClass} ${
         isHighlighted
           ? 'ring-2 ring-indigo-500/40 bg-indigo-50/30 dark:bg-indigo-950/20 rounded-lg p-3 -m-3'
           : onClick
@@ -27,13 +34,18 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
           : ''
       }`}
     >
-      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-slate-700 pb-1 mb-3 font-mono">
+      <h2 className={template.sectionHeaderStyle}>
         Projects
       </h2>
 
-      <div className="space-y-4">
+      <div className={isCompact ? 'space-y-2.5' : 'space-y-3.5'}>
         {projects.map((proj) => (
-          <div key={proj.id} className="space-y-1.5 text-xs sm:text-sm">
+          <div
+            key={proj.id}
+            className={`space-y-1 break-inside-avoid print:break-inside-avoid ${
+              isCompact ? 'text-xs' : 'text-xs sm:text-sm'
+            }`}
+          >
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-bold text-slate-900 dark:text-slate-100">
@@ -53,7 +65,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                     href={proj.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                    className={`inline-flex items-center gap-1 hover:underline font-medium ${accentTextClass}`}
                   >
                     <span>Live Demo</span>
                     <ExternalLink className="w-3 h-3" />
@@ -83,14 +95,16 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
 
             {/* Description */}
             {proj.description && (
-              <p className="text-slate-700 dark:text-slate-300 text-xs sm:text-sm leading-relaxed">
+              <p className={`text-slate-700 dark:text-slate-300 ${lineHeightClass}`}>
                 {proj.description}
               </p>
             )}
 
             {/* Bullets */}
             {proj.bullets && proj.bullets.length > 0 && (
-              <ul className="list-disc list-outside pl-4 space-y-1 text-slate-700 dark:text-slate-300 text-xs sm:text-sm leading-relaxed">
+              <ul
+                className={`${template.bulletStyle} text-slate-700 dark:text-slate-300 ${lineHeightClass}`}
+              >
                 {proj.bullets.map((bullet, idx) => (
                   <li key={idx}>
                     <span>{bullet}</span>
@@ -103,4 +117,6 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
       </div>
     </section>
   );
-};
+});
+
+ProjectsSection.displayName = 'ProjectsSection';

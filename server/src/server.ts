@@ -78,6 +78,12 @@ app.get("/", (_req: Request, res: Response) => {
   });
 });
 
+// Gracefully forward client dashboard routes to frontend if hit on backend server
+app.use("/dashboard", (req: Request, res: Response) => {
+  const clientBase = env.CLIENT_URL || "http://localhost:3000";
+  res.redirect(`${clientBase}${req.originalUrl}`);
+});
+
 // Middleware pipeline order: Not Found -> Global Error
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

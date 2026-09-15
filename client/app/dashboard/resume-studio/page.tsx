@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { 
   FileText, 
@@ -13,30 +14,130 @@ import {
   FolderGit2, 
   Code2, 
   UserCheck, 
-  ArrowLeft,
-  RefreshCw,
-  Target,
-  ChevronDown,
-  UploadCloud,
-  Check,
-  ArrowRight,
-  Sparkles,
-  ShieldCheck,
-  Wand2,
-  XCircle,
-  Clock,
-  Eye,
-  Columns2,
-  Sliders
+  ArrowLeft, 
+  RefreshCw, 
+  Target, 
+  ChevronDown, 
+  UploadCloud, 
+  Check, 
+  ArrowRight, 
+  Sparkles, 
+  ShieldCheck, 
+  Wand2, 
+  XCircle, 
+  Clock, 
+  Eye, 
+  Columns2, 
+  Sliders, 
+  Palette, 
+  Download,
+  Menu
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SAMPLE_RESUME_DOCUMENT_FIXTURE } from '@/types/resume-document.fixture';
 import { ResumeDocument } from '@/types/resume-document';
 import { ResumeScoreResult, SectionScore, ScoreRatingTier } from '@/types/resume-scoring.types';
 import { SectionImprovementSuggestion } from '@/types/resume-editor.types';
+import { ResumeBuilderConfig, DEFAULT_BUILDER_CONFIG } from '@/types/resume-builder.types';
 import { resumeService } from '@/services/resume.service';
-import { ResumeRecord } from '@/types/resume';
-import { ResumeRenderer } from '@/components/resume-studio/renderer';
+import { ResumeRecord, ResumeAnalysisData, ResumeOptimizationDraft, AIResumeRecommendation } from '@/types/resume';
+import { 
+  ResumeRenderer, 
+  ResumeStudioSidebar, 
+  StudioViewMode, 
+  SectionAiWorkspace, 
+  LiveResumeCanvas 
+} from '@/components/resume-studio';
+import { exportResumeToPdf } from '@/services/pdf-export.service';
+import { AuditPillarType } from '@/components/dashboard/resume-intelligence/ATSCompatibility';
+import { mockCareerIntelligence } from '@/mock/career-intelligence';
+
+const TARGET_ROLES = [
+  'Full-Stack Engineer',
+  'Frontend Engineer',
+  'Backend Engineer',
+  'AI/ML Specialist',
+  'DevOps & Cloud Engineer',
+  'Mobile App Developer',
+];
+
+function formatFileSize(bytes?: number): string {
+  if (!bytes || bytes === 0) return '1.2 MB';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function mapResumeToExtractedData(resume: ResumeRecord): ResumeAnalysisData['extractedData'] {
+  const extracted = resume.extractedData;
+  const candidateName = extracted?.personalInfo?.fullName || extracted?.candidateName || undefined;
+  const rawLoc = extracted?.personalInfo?.location || extracted?.location || undefined;
+  const cleanLocation =
+    rawLoc && candidateName
+      ? rawLoc.replace(new RegExp(candidateName, 'gi'), '').replace(/^[,\s|/.-]+/, '').trim() || undefined
+      : rawLoc;
+
+  const skillsList =
+    extracted?.skillsExtracted ||
+    (extracted?.skills || []).map((s: any) => (typeof s === 'string' ? s : s.name)) ||
+    [];
+
+  return {
+    fileName: resume.originalFileName || resume.fileName,
+    fileSize: formatFileSize(resume.fileSize),
+    uploadedAt: new Date(resume.createdAt).toLocaleDateString(),
+    candidateName,
+    email: extracted?.personalInfo?.email || extracted?.email || undefined,
+    phone: extracted?.personalInfo?.phone || extracted?.phone || undefined,
+    location: cleanLocation,
+    summary: extracted?.summary || null,
+    skillsExtracted: skillsList,
+    skills: extracted?.skills || skillsList.map((name: string) => ({ name })),
+    totalExperienceYears: extracted?.totalExperienceYears || undefined,
+    experience: extracted?.experience || [],
+    projects: extracted?.projects || [],
+    education: extracted?.education || [],
+    certifications: extracted?.certifications || [],
+  };
+}
+
+// Code-split heavy builder controls for instant page loads & fast TTI
+const ResumeBuilderControls = dynamic(
+  () => import('@/components/resume-studio/builder').then((mod) => mod.ResumeBuilderControls),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse h-96 space-y-4">
+        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
+        <div className="h-24 bg-slate-100 dark:bg-slate-800/60 rounded" />
+      </div>
+    ),
+  }
+);
+
+// Code-split ATS diagnostics view for rapid initial paint
+const AtsDiagnosticsView = dynamic(
+  () => import('@/components/resume-studio').then((mod) => mod.AtsDiagnosticsView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-pulse">
+        <div className="h-24 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6" />
+        <div className="h-44 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6" />
+      </div>
+    ),
+  }
+);
+
+// Code-split optimization review modal (only loaded when user triggers optimization)
+const OptimizationReviewModal = dynamic(
+  () =>
+    import('@/components/dashboard/resume-intelligence/OptimizationReviewModal').then(
+      (mod) => mod.OptimizationReviewModal
+    ),
+  { ssr: false }
+);
 
 interface SectionConfigItem {
   id: keyof ResumeScoreResult['sections'];
@@ -69,21 +170,143 @@ export default function ResumeStudioPage() {
   const [activeSectionKey, setActiveSectionKey] = useState<keyof ResumeScoreResult['sections']>('experience');
   const [showScoringDetails, setShowScoringDetails] = useState(false);
 
-  // Phase 6: Visual Renderer & View Modes
-  const [viewMode, setViewMode] = useState<'analysis' | 'visual' | 'split'>('analysis');
+  // Resume Intelligence & ATS Diagnostics State
+  const [targetRole, setTargetRole] = useState('Full-Stack Engineer');
+  const [activePillar, setActivePillar] = useState<AuditPillarType>('impact');
+  const [analysis, setAnalysis] = useState<ResumeAnalysisData>({
+    ...mockCareerIntelligence.resumeAnalysis,
+    matchScore: 78,
+    contentScore: 72,
+  });
+
+  // Phase 7 Optimization Workflow State
+  const [selectedDraft, setSelectedDraft] = useState<ResumeOptimizationDraft | null>(null);
+  const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isSwitchingTarget, setIsSwitchingTarget] = useState(false);
+  const [optimizingRecId, setOptimizingRecId] = useState<string | null>(null);
+  const [isApplyingOptimization, setIsApplyingOptimization] = useState(false);
+
+  // The 2 Human-Centered Destinations: 'audit' (ATS Audit & Score) or 'editor' (Edit & Design)
+  const [viewMode, setViewMode] = useState<StudioViewMode>('audit');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [mobileEditorView, setMobileEditorView] = useState<'editor' | 'preview'>('editor');
   const [previewHighlightSection, setPreviewHighlightSection] = useState<string | null>(null);
+  const [builderConfig, setBuilderConfig] = useState<ResumeBuilderConfig>(DEFAULT_BUILDER_CONFIG);
+  const [isSavingBuilder, setIsSavingBuilder] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isAudit = viewMode === 'audit' || viewMode === 'analysis';
 
   // Phase 5: Section AI Editor State
-  const [userInstruction, setUserInstruction] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState<SectionImprovementSuggestion | null>(null);
   const [scoreDeltaNotice, setScoreDeltaNotice] = useState<{ section: string; from: number; to: number } | null>(null);
 
+  // Direct Upload State inside Resume Studio
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync viewMode from URL query parameters (e.g. ?view=audit, ?view=editor, or ?view=builder)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const viewParam = params.get('view') || params.get('tab');
+      if (viewParam) {
+        if (viewParam === 'audit' || viewParam === 'analysis') {
+          setViewMode('audit');
+        } else if (viewParam === 'builder' || viewParam === 'design') {
+          setViewMode('builder');
+        } else if (['editor', 'split', 'visual', 'content'].includes(viewParam)) {
+          setViewMode('editor');
+        }
+      }
+    }
+  }, []);
+
+  const handleFileUpload = async (file: File) => {
+    const isAllowed =
+      file.name.toLowerCase().endsWith('.pdf') ||
+      file.name.toLowerCase().endsWith('.docx') ||
+      file.type === 'application/pdf' ||
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+    if (!isAllowed) {
+      toast.error('Please upload a .PDF or .DOCX document.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size exceeds 5MB limit.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const uploaded = await resumeService.uploadResume(file);
+      setResumes((prev) => [uploaded, ...prev.filter((r) => r._id !== uploaded._id)]);
+      setSelectedResumeId(uploaded._id);
+      setIsSampleMode(false);
+      if (uploaded.resumeDocument) {
+        setResumeDoc(uploaded.resumeDocument as any);
+      }
+      if (uploaded.extractedData) {
+        setAnalysis((prev) => ({
+          ...prev,
+          extractedData: mapResumeToExtractedData(uploaded),
+        }));
+      }
+      if (uploaded.builderConfig) {
+        setBuilderConfig(uploaded.builderConfig);
+      }
+      await fetchScore(uploaded._id);
+      await fetchAtsIntelligence(uploaded._id, targetRole);
+      toast.success('Resume uploaded & analyzed successfully!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload and analyze resume.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   // Load candidate resumes on mount
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  const fetchAtsIntelligence = useCallback(async (resumeId?: string, role = targetRole) => {
+    try {
+      const liveAts = await resumeService.getResumeAtsScore(resumeId, role);
+      if (liveAts) {
+        setAnalysis((prev) => ({
+          ...prev,
+          overallScore: liveAts.overallScore ?? prev.overallScore,
+          atsScore: liveAts.atsScore ?? prev.atsScore,
+          matchScore: liveAts.matchScore ?? 78,
+          contentScore: liveAts.contentScore ?? 72,
+          impactScore: liveAts.impactScore ?? prev.impactScore,
+          brevityScore: liveAts.brevityScore ?? prev.brevityScore,
+          auditPillars: liveAts.auditPillars ?? prev.auditPillars,
+          atsCompatibility: liveAts.atsCompatibility || prev.atsCompatibility || [],
+          keywords: liveAts.keywords || prev.keywords || [],
+          missingSkills: liveAts.missingSkills || liveAts.missingKeywords || prev.missingSkills || [],
+          recommendations: liveAts.recommendations || prev.recommendations || [],
+          topAction: liveAts.topAction ?? prev.topAction,
+          recommendationSummary: liveAts.recommendationSummary ?? prev.recommendationSummary,
+        }));
+      }
+    } catch (err) {
+      console.warn('Could not fetch live ATS intelligence, using fallback', err);
+    }
+  }, [targetRole]);
 
   const loadInitialData = async () => {
     try {
@@ -99,7 +322,21 @@ export default function ResumeStudioPage() {
         if (defaultResume.resumeDocument) {
           setResumeDoc(defaultResume.resumeDocument as any);
         }
+        if (defaultResume.extractedData) {
+          setAnalysis((prev) => ({
+            ...prev,
+            extractedData: mapResumeToExtractedData(defaultResume),
+          }));
+        }
+        if (defaultResume.builderConfig) {
+          setBuilderConfig(defaultResume.builderConfig);
+        } else {
+          resumeService.getBuilderConfig(defaultResume._id).then((cfg) => {
+            if (cfg) setBuilderConfig(cfg);
+          }).catch(() => {});
+        }
         await fetchScore(defaultResume._id);
+        await fetchAtsIntelligence(defaultResume._id, targetRole);
       } else {
         setIsSampleMode(true);
         loadSampleScores();
@@ -304,7 +541,7 @@ export default function ResumeStudioPage() {
     setScoreResult(sampleScore);
   };
 
-  const handleSelectResume = (resumeId: string) => {
+  const handleSelectResume = useCallback((resumeId: string) => {
     setSelectedResumeId(resumeId);
     setIsSampleMode(false);
     setActiveView('overview');
@@ -315,11 +552,268 @@ export default function ResumeStudioPage() {
     if (resume?.resumeDocument) {
       setResumeDoc(resume.resumeDocument as any);
     }
+    if (resume?.extractedData) {
+      setAnalysis((prev) => ({
+        ...prev,
+        extractedData: mapResumeToExtractedData(resume),
+      }));
+    }
+    if (resume?.builderConfig) {
+      setBuilderConfig(resume.builderConfig);
+    } else {
+      resumeService.getBuilderConfig(resumeId).then((cfg) => {
+        if (cfg) setBuilderConfig(cfg);
+      }).catch(() => {});
+    }
     fetchScore(resumeId);
+    fetchAtsIntelligence(resumeId, targetRole);
+  }, [resumes, targetRole, fetchAtsIntelligence]);
+
+  const handleTargetRoleChange = async (newRole: string) => {
+    setTargetRole(newRole);
+    if (selectedResumeId) {
+      await fetchAtsIntelligence(selectedResumeId, newRole);
+    }
   };
 
+  // Phase 7 Optimization Workflow Handlers
+  const handleLaunchOptimization = async (rec: AIResumeRecommendation) => {
+    setIsOptimizing(true);
+    setOptimizingRecId(rec.id);
+    try {
+      if (isSampleMode || !selectedResumeId) {
+        const targetSource =
+          analysis.extractedData?.experience?.[0]?.description?.split('\n')[0] ||
+          'Worked on React frontend applications and APIs.';
+        const cleanSource = targetSource.replace(/^[•*–—\-\d.]+\s*/, '').trim();
+
+        const demoDraft: ResumeOptimizationDraft = {
+          draftId: `draft_${Date.now()}`,
+          resumeId: selectedResumeId || 'sample_resume',
+          baseResumeVersionId: 'v1',
+          recommendationId: rec.id,
+          target: {
+            recommendationId: rec.id,
+            type: 'IMPROVE_IMPACT',
+            section: 'EXPERIENCE',
+            sourceText: cleanSource,
+            sourceEvidenceIds: ['exp_0_bullet_0'],
+            isRewritable: true,
+          },
+          originalText: cleanSource,
+          proposedText: cleanSource.replace(/^worked on/i, 'Engineered high-performance').replace(/^responsible for/i, 'Developed scalable'),
+          validation: {
+            valid: true,
+            safetyLevel: 'SAFE',
+            safetyScore: 100,
+            errors: [],
+            warnings: [],
+            unsupportedClaims: [],
+            changedMetrics: [],
+            addedSkills: [],
+            changedOwnershipClaims: [],
+            meaningPreserved: true,
+          },
+          beforeScores: {
+            atsScore: analysis.atsScore,
+            matchScore: analysis.matchScore ?? 78,
+            contentScore: analysis.contentScore ?? 72,
+            timestamp: new Date().toISOString(),
+          },
+          afterScores: {
+            atsScore: Math.min(100, analysis.atsScore + 1),
+            matchScore: Math.min(100, (analysis.matchScore ?? 78) + 2),
+            contentScore: Math.min(100, (analysis.contentScore ?? 72) + 6),
+            timestamp: new Date().toISOString(),
+          },
+          scoreComparison: {
+            before: {
+              atsScore: analysis.atsScore,
+              matchScore: analysis.matchScore ?? 78,
+              contentScore: analysis.contentScore ?? 72,
+              timestamp: new Date().toISOString(),
+            },
+            after: {
+              atsScore: Math.min(100, analysis.atsScore + 1),
+              matchScore: Math.min(100, (analysis.matchScore ?? 78) + 2),
+              contentScore: Math.min(100, (analysis.contentScore ?? 72) + 6),
+              timestamp: new Date().toISOString(),
+            },
+            delta: { ats: 1, match: 2, content: 6 },
+            improved: true,
+            regressed: false,
+          },
+          decision: 'IMPROVED',
+          status: 'VALIDATED',
+          createdAt: new Date().toISOString(),
+        };
+        setSelectedDraft(demoDraft);
+        setIsOptimizationModalOpen(true);
+        return;
+      }
+
+      const draft = await resumeService.proposeOptimization(
+        selectedResumeId,
+        rec.id,
+        targetRole,
+        undefined
+      );
+      if (draft) {
+        setSelectedDraft(draft);
+        setIsOptimizationModalOpen(true);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to generate optimization proposal.');
+    } finally {
+      setIsOptimizing(false);
+      setOptimizingRecId(null);
+    }
+  };
+
+  const handleTargetChange = async (targetBulletId: string) => {
+    if (!selectedDraft || !selectedResumeId) return;
+    setIsSwitchingTarget(true);
+    try {
+      const newDraft = await resumeService.proposeOptimization(
+        selectedResumeId,
+        selectedDraft.recommendationId,
+        targetRole,
+        undefined,
+        targetBulletId
+      );
+      if (newDraft) {
+        setSelectedDraft(newDraft);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to optimize selected bullet target.');
+    } finally {
+      setIsSwitchingTarget(false);
+    }
+  };
+
+  const handleAcceptOptimization = async (draft: ResumeOptimizationDraft) => {
+    if (!selectedResumeId) {
+      toast.error('Please select an active resume first.');
+      return;
+    }
+    setIsApplyingOptimization(true);
+    try {
+      const res = await resumeService.acceptOptimization(selectedResumeId, draft);
+      if (res && res.freshIntelligence) {
+        setAnalysis((prev) => ({
+          ...prev,
+          atsScore: res.freshIntelligence.atsScore,
+          matchScore: res.freshIntelligence.matchScore ?? prev.matchScore,
+          contentScore: res.freshIntelligence.contentScore ?? prev.contentScore,
+          auditPillars: res.freshIntelligence.auditPillars ?? prev.auditPillars,
+          recommendations: res.freshIntelligence.recommendations || prev.recommendations,
+          topAction: res.freshIntelligence.topAction ?? prev.topAction,
+        }));
+        if (res.resume) {
+          setResumes((prev) =>
+            prev.map((r) => (r._id === res.resume._id ? res.resume : r))
+          );
+          if (res.resume.resumeDocument) {
+            setResumeDoc(res.resume.resumeDocument as any);
+          }
+        }
+      } else {
+        setAnalysis((prev) => ({
+          ...prev,
+          atsScore: draft.afterScores?.atsScore ?? prev.atsScore + 1,
+          matchScore: draft.afterScores?.matchScore ?? (prev.matchScore ?? 78) + 2,
+          contentScore: draft.afterScores?.contentScore ?? (prev.contentScore ?? 72) + 6,
+        }));
+      }
+      toast.success('Optimization accepted! New resume version created and re-scored.');
+      setIsOptimizationModalOpen(false);
+      setSelectedDraft(null);
+      await fetchScore(selectedResumeId);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to apply optimization.');
+    } finally {
+      setIsApplyingOptimization(false);
+    }
+  };
+
+  const handleRejectOptimization = async (draft: ResumeOptimizationDraft) => {
+    try {
+      await resumeService.rejectOptimization(draft);
+    } catch {
+      // Graceful fallback
+    }
+    toast.info('Optimization dismissed. Base resume content remains untouched.');
+    setIsOptimizationModalOpen(false);
+    setSelectedDraft(null);
+  };
+
+  const handleBuilderConfigChange = useCallback((newConfig: ResumeBuilderConfig) => {
+    setBuilderConfig(newConfig);
+
+    if (isSampleMode || !selectedResumeId) return;
+
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+
+    setIsSavingBuilder(true);
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        await resumeService.saveBuilderConfig(selectedResumeId, newConfig);
+      } catch (err) {
+        console.error("Failed to persist builder config", err);
+      } finally {
+        setIsSavingBuilder(false);
+      }
+    }, 600);
+  }, [isSampleMode, selectedResumeId]);
+
+  const handleViewModeChange = useCallback((mode: any) => {
+    if (mode === 'audit' || mode === 'analysis') {
+      setViewMode('audit');
+    } else if (mode === 'builder' || mode === 'design') {
+      setViewMode('builder');
+    } else {
+      setViewMode('editor');
+    }
+    setPreviewHighlightSection(activeSectionKey);
+  }, [activeSectionKey]);
+
+  const handleSectionClick = useCallback((secId: string) => {
+    setPreviewHighlightSection(secId);
+    setActiveSectionKey(secId as any);
+    setActiveView('detail');
+    setViewMode('editor');
+    setMobileEditorView('editor');
+  }, []);
+
+  const handleDownloadPDF = useCallback(async () => {
+    const docToExport = resumeDoc || SAMPLE_RESUME_DOCUMENT_FIXTURE;
+    if (!docToExport) {
+      toast.error('No resume document available to download.');
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+    const toastId = toast.loading('Generating high-fidelity vector PDF...');
+
+    try {
+      await exportResumeToPdf(docToExport, builderConfig);
+      toast.success('Resume downloaded as vector PDF!', { id: toastId });
+    } catch (err: any) {
+      console.error('Vector PDF export failed:', err);
+      toast.dismiss(toastId);
+      toast.info('Direct PDF download encountered an issue. Opening print dialog as fallback...');
+      setTimeout(() => {
+        window.print();
+      }, 200);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  }, [resumeDoc, builderConfig]);
+
   // Phase 5: Generate Suggestion Handler
-  const handleGenerateSuggestion = async () => {
+  const handleGenerateSuggestion = useCallback(async (instruction?: string) => {
     try {
       setIsGenerating(true);
       setCurrentSuggestion(null);
@@ -388,7 +882,7 @@ export default function ResumeStudioPage() {
       const suggestion = await resumeService.suggestSectionImprovement(
         selectedResumeId,
         activeSectionKey,
-        userInstruction.trim() || undefined
+        instruction?.trim() || undefined
       );
 
       setCurrentSuggestion(suggestion);
@@ -397,7 +891,7 @@ export default function ResumeStudioPage() {
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [isSampleMode, selectedResumeId, activeSectionKey, resumeDoc]);
 
   // Phase 5: Approve Suggestion Handler
   const handleApproveSuggestion = async () => {
@@ -503,31 +997,6 @@ export default function ResumeStudioPage() {
   const selectedSectionData: SectionScore | undefined = scoreResult?.sections[activeSectionKey];
   const selectedConfig = SECTION_CONFIGS.find((s) => s.id === activeSectionKey);
 
-  // Review areas derived deterministically
-  const reviewAreas = useMemo(() => {
-    if (!selectedSectionData) return [];
-
-    const areas: { label: string; status: 'Needs attention' | 'Good' | 'Strong'; reason: string }[] = [];
-
-    for (const comp of selectedSectionData.components) {
-      const ratio = comp.score / comp.maxScore;
-      let status: 'Needs attention' | 'Good' | 'Strong' = 'Good';
-      if (ratio < 0.6) {
-        status = 'Needs attention';
-      } else if (ratio >= 0.9) {
-        status = 'Strong';
-      }
-
-      areas.push({
-        label: comp.label,
-        status,
-        reason: comp.reason,
-      });
-    }
-
-    return areas;
-  }, [selectedSectionData]);
-
   const getTierPill = (tier: ScoreRatingTier | 'Needs attention' | 'Good' | 'Strong') => {
     switch (tier) {
       case 'Excellent':
@@ -601,13 +1070,25 @@ export default function ResumeStudioPage() {
             </p>
           </div>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/dashboard/resume-intelligence"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm"
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileInputChange}
+              accept=".pdf,.docx,application/pdf"
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
             >
-              <UploadCloud className="w-4 h-4" />
-              <span>Upload Resume</span>
-            </Link>
+              {isUploading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <UploadCloud className="w-4 h-4" />
+              )}
+              <span>{isUploading ? 'Analyzing...' : 'Upload Resume'}</span>
+            </button>
             <button
               onClick={() => {
                 setIsSampleMode(true);
@@ -623,9 +1104,87 @@ export default function ResumeStudioPage() {
     );
   }
 
-  // Render Left Analysis Column (Overview or Detail)
+  // Render Full ATS Diagnostics & Intelligence Dashboard (viewMode === 'analysis')
+  const renderAtsDiagnosticsContent = () => (
+    <AtsDiagnosticsView
+      targetRole={targetRole}
+      onTargetRoleChange={handleTargetRoleChange}
+      analysis={analysis}
+      activePillar={activePillar}
+      onSelectPillar={setActivePillar}
+      onOpenEditor={() => {
+        setViewMode('editor');
+        setMobileEditorView('editor');
+      }}
+      onUploadClick={() => fileInputRef.current?.click()}
+      isUploading={isUploading}
+      onOptimize={handleLaunchOptimization}
+      isOptimizing={isOptimizing}
+      optimizingRecId={optimizingRecId}
+      scoreResult={scoreResult}
+      prioritySection={prioritySection}
+      onSectionFixWithAi={(secId) => {
+        setActiveSectionKey(secId as any);
+        setPreviewHighlightSection(secId);
+        setActiveView('detail');
+        setViewMode('editor');
+        setMobileEditorView('editor');
+      }}
+    />
+  );
+
+  // Render Left Analysis Column (Overview or Detail in Split View)
   const renderAnalysisContent = () => (
     <div className="space-y-6">
+      {/* Top Action & Control Bar for AI Analysis */}
+      <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          {activeView === 'detail' ? (
+            <button
+              onClick={() => {
+                setActiveView('overview');
+                setCurrentSuggestion(null);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Sections</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 px-1">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shrink-0" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-mono truncate">
+                Section AI Assistant
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Upload New Resume Button */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileInputChange}
+            accept=".pdf,.docx,application/pdf"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+            title="Upload New Resume for ATS Analysis"
+          >
+            {isUploading ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-500" />
+            ) : (
+              <UploadCloud className="w-3.5 h-3.5 text-indigo-500" />
+            )}
+            <span>{isUploading ? 'Analyzing...' : 'Upload Resume'}</span>
+          </button>
+        </div>
+      </div>
+
       {/* VIEW 1: OVERVIEW */}
       {activeView === 'overview' && (
         <div className="space-y-6">
@@ -802,301 +1361,26 @@ export default function ResumeStudioPage() {
         </div>
       )}
 
-      {/* VIEW 2: SECTION DETAIL & AI EDITOR */}
+      {/* VIEW 2: SECTION DETAIL & AI EDITOR (Isolated memoized workspace) */}
       {activeView === 'detail' && selectedSectionData && selectedConfig && (
-        <div className="space-y-6">
-          
-          {/* Back Action & Navigation */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => {
-                setActiveView('overview');
-                setCurrentSuggestion(null);
-              }}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Resume Overview</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setPreviewHighlightSection(activeSectionKey);
-                setViewMode('visual');
-              }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Preview on Resume</span>
-            </button>
-          </div>
-
-          {/* Section Summary Card */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  {React.createElement(selectedConfig.icon, { className: 'w-5 h-5' })}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                    {selectedSectionData.title}
-                  </h2>
-                  <span className="text-xs text-slate-400 font-medium">
-                    Section Analysis
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <span className={`text-2xl font-extrabold ${getScoreColor(selectedSectionData.score)}`}>
-                  {selectedSectionData.score} <span className="text-sm font-semibold text-slate-400">/ 100</span>
-                </span>
-                <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${getTierPill(selectedSectionData.tier)}`}>
-                  {selectedSectionData.tier}
-                </span>
-              </div>
-            </div>
-
-            {/* What needs attention */}
-            {selectedSectionData.weaknesses && selectedSectionData.weaknesses.length > 0 && (
-              <div className="pt-2 space-y-1.5 border-t border-slate-100 dark:border-slate-800">
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
-                  What needs attention
-                </span>
-                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {selectedSectionData.weaknesses.join(' ')}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* AI IMPROVEMENT WORKSPACE (Phase 5) */}
-          <div className="p-6 rounded-2xl bg-gradient-to-b from-indigo-50/40 to-white dark:from-indigo-950/20 dark:to-slate-900 border border-indigo-100 dark:border-indigo-900/40 shadow-xs space-y-5">
-            
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" />
-                    Evidence-Locked AI
-                  </span>
-                  <span className="text-xs text-slate-400">Zero Hallucinations</span>
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  Improve {selectedSectionData.title}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Strengthen wording, action verbs, and structure using only information already present in your resume.
-                </p>
-              </div>
-            </div>
-
-            {/* Instruction input & Trigger */}
-            {!currentSuggestion && !isGenerating && (
-              <div className="space-y-3 pt-1">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                    Optional candidate instruction (e.g., &ldquo;Focus on action verbs&rdquo; or &ldquo;Make more concise&rdquo;)
-                  </label>
-                  <input
-                    type="text"
-                    value={userInstruction}
-                    onChange={(e) => setUserInstruction(e.target.value)}
-                    placeholder="Focus on action verbs and leadership outcomes..."
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                  />
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleGenerateSuggestion}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer shadow-indigo-500/20"
-                  >
-                    <Wand2 className="w-3.5 h-3.5" />
-                    <span>Improve with AI</span>
-                  </button>
-                  <span className="text-[11px] text-slate-400">Your original resume remains unchanged until you approve.</span>
-                </div>
-              </div>
-            )}
-
-            {/* Generating Loading State */}
-            {isGenerating && (
-              <div className="p-6 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-indigo-200/60 dark:border-indigo-800/60 text-center space-y-3">
-                <RefreshCw className="w-6 h-6 text-indigo-600 dark:text-indigo-400 animate-spin mx-auto" />
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                    Improving your {selectedSectionData.title} section...
-                  </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Analyzing existing facts and calibrating power verbs. Zero facts are being invented.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Proposed Suggestion Review Panel */}
-            {currentSuggestion && (
-              <div className="space-y-4 pt-2 border-t border-indigo-100 dark:border-indigo-900/40 animate-fadeIn">
-                
-                {/* Evidence Used Badges */}
-                {currentSuggestion.evidenceUsed.length > 0 && (
-                  <div className="space-y-1.5">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Based on your resume facts
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {currentSuggestion.evidenceUsed.map((fact, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1"
-                        >
-                          <Check className="w-3 h-3 text-emerald-500 shrink-0" />
-                          <span>{fact}</span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Changes Explanation */}
-                {currentSuggestion.changes.length > 0 && (
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Why this is better
-                    </span>
-                    <div className="space-y-2">
-                      {currentSuggestion.changes.map((ch, idx) => (
-                        <div
-                          key={idx}
-                          className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs"
-                        >
-                          <div className="space-y-1">
-                            <div className="text-[11px] text-slate-400 line-through">
-                              {ch.before}
-                            </div>
-                            <div className="font-semibold text-slate-900 dark:text-slate-100 text-indigo-600 dark:text-indigo-400">
-                              {ch.after}
-                            </div>
-                          </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-                            <span>{ch.reason}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons: Keep Original vs Approve */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Approving updates your ResumeDocument and recalculates your deterministic score.
-                  </span>
-
-                  <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                    <button
-                      onClick={handleRejectSuggestion}
-                      disabled={isApplying}
-                      className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
-                    >
-                      Keep Original
-                    </button>
-                    <button
-                      onClick={handleApproveSuggestion}
-                      disabled={isApplying}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm cursor-pointer shadow-emerald-500/20"
-                    >
-                      {isApplying ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Applying & Scoring...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Approve Changes</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-            )}
-
-          </div>
-
-          {/* Review Areas */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Review Areas
-            </h3>
-
-            <div className="space-y-3">
-              {reviewAreas.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                >
-                  <div className="space-y-0.5">
-                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                      {item.label}
-                    </span>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {item.reason}
-                    </p>
-                  </div>
-                  <span className={`self-start sm:self-center px-2 py-0.5 rounded text-[11px] font-bold border shrink-0 ${getTierPill(item.status)}`}>
-                    {item.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* What is working */}
-          {selectedSectionData.strengths && selectedSectionData.strengths.length > 0 && (
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                What is working
-              </h3>
-              <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                {selectedSectionData.strengths.map((s, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <span>{s}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Transparent Scoring Details (Optional Disclosure) */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800 text-xs">
-            <button
-              onClick={() => setShowScoringDetails(!showScoringDetails)}
-              className="w-full flex items-center justify-between text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold cursor-pointer"
-            >
-              <span>{showScoringDetails ? 'Hide scoring details' : 'View scoring details'}</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showScoringDetails ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showScoringDetails && (
-              <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5 font-mono">
-                {selectedSectionData.components.map((comp) => (
-                  <div key={comp.id} className="flex items-center justify-between text-slate-600 dark:text-slate-400 text-[11px]">
-                    <span>{comp.label}</span>
-                    <span className="font-bold">{comp.score} / {comp.maxScore} pts ({comp.rule})</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-        </div>
+        <SectionAiWorkspace
+          sectionData={selectedSectionData}
+          icon={selectedConfig.icon}
+          isGenerating={isGenerating}
+          isApplying={isApplying}
+          currentSuggestion={currentSuggestion}
+          onGenerate={handleGenerateSuggestion}
+          onApply={handleApproveSuggestion}
+          onDismissSuggestion={() => setCurrentSuggestion(null)}
+          onBack={() => {
+            setActiveView('overview');
+            setCurrentSuggestion(null);
+          }}
+          onPreviewOnResume={() => {
+            setPreviewHighlightSection(activeSectionKey);
+            setViewMode('visual');
+          }}
+        />
       )}
     </div>
   );
@@ -1152,176 +1436,269 @@ export default function ResumeStudioPage() {
             setActiveSectionKey(sectionId as any);
           }}
           interactive={true}
+          config={builderConfig}
         />
       </div>
     </div>
   );
 
-  const containerMaxWidth = 
-    viewMode === 'split' ? 'max-w-7xl' : viewMode === 'visual' ? 'max-w-4xl' : 'max-w-4xl';
+  // Destination 2 & 3: Unified Edit & Design Workspace (Combines Section AI Editor, Full Builder Controls & Live Canvas)
+  const renderEditAndDesignContent = () => (
+    <div className="space-y-6">
+      {/* Integrated Mode Switcher & Summary Bar */}
+      <div className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {/* Sub-Switch: Edit Content vs Design & Layout Settings */}
+          <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+            <button
+              onClick={() => {
+                setViewMode('editor');
+                setMobileEditorView('editor');
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode !== 'builder'
+                  ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>Section Content & AI</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setViewMode('builder');
+                setMobileEditorView('editor');
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'builder'
+                  ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Design & Layout Settings</span>
+            </button>
+          </div>
+
+          {/* Active Template & Font summary badge */}
+          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+            <span className="font-semibold text-slate-700 dark:text-slate-300 capitalize flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5 text-indigo-500" />
+              <span>{builderConfig.templateId} Template</span>
+            </span>
+            <span>•</span>
+            <span className="font-mono text-[11px] capitalize">{builderConfig.fontFamily}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Responsive Work Area: Side-by-Side on Desktop (lg+), Toggleable on Mobile (<lg) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Either Full Resume Builder Controls OR Section AI Copilot */}
+        <div className={`lg:col-span-6 space-y-6 ${mobileEditorView === 'editor' ? 'block' : 'hidden lg:block'}`}>
+          {viewMode === 'builder' ? (
+            <ResumeBuilderControls
+              config={builderConfig}
+              onChange={handleBuilderConfigChange}
+              isSaving={isSavingBuilder}
+            />
+          ) : (
+            renderAnalysisContent()
+          )}
+        </div>
+
+        {/* Right Column: Live A4 Resume Canvas (Concurrently deferred rendering for 60-120 FPS) */}
+        <LiveResumeCanvas
+          document={resumeDoc}
+          config={builderConfig}
+          highlightSectionId={activeView === 'detail' ? activeSectionKey : previewHighlightSection}
+          onSectionClick={(secId) => {
+            setActiveSectionKey(secId as any);
+            setActiveView('detail');
+            setViewMode('editor');
+            setMobileEditorView('editor');
+          }}
+          isVisibleOnMobile={mobileEditorView === 'preview'}
+        />
+      </div>
+
+      {/* Floating Bottom Pill for Mobile (< lg) */}
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 lg:hidden flex items-center p-1 rounded-full bg-slate-900/90 dark:bg-slate-800/90 text-white shadow-2xl backdrop-blur-md border border-slate-700/80">
+        <button
+          onClick={() => setMobileEditorView('editor')}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            mobileEditorView === 'editor'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-slate-300 hover:text-white'
+          }`}
+        >
+          {viewMode === 'builder' ? (
+            <>
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Layout Settings</span>
+            </>
+          ) : (
+            <>
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>Edit Content</span>
+            </>
+          )}
+        </button>
+        <button
+          onClick={() => setMobileEditorView('preview')}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            mobileEditorView === 'preview'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-slate-300 hover:text-white'
+          }`}
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>View Paper</span>
+        </button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className={`min-h-screen bg-slate-50/50 dark:bg-[#0B1130] text-slate-900 dark:text-slate-100 p-4 sm:p-6 lg:p-8 ${containerMaxWidth} mx-auto font-sans space-y-6 pb-20 transition-all duration-200`}>
+    <div className="min-h-screen w-full bg-[#F8FAFC] dark:bg-[#0B1130] text-slate-900 dark:text-slate-100 flex flex-col lg:flex-row font-sans selection:bg-indigo-500/20">
       
-      {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Resume Studio
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Turn resume intelligence into a real visual resume.
-          </p>
-        </div>
+      {/* 1. Extreme-Left Docked Studio Sidebar (Desktop + Mobile Slide-Over) */}
+      <ResumeStudioSidebar
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+        activeSectionKey={previewHighlightSection || (activeView === 'detail' ? activeSectionKey : undefined)}
+        onSectionClick={handleSectionClick}
+        overallScore={scoreResult?.overall.overallScore}
+        scoreTier={scoreResult?.overall.tier}
+        templateId={builderConfig.templateId}
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
+      />
 
-        <div className="flex items-center gap-2.5">
-          {isSampleMode && (
-            <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-              Sample Preview
-            </span>
-          )}
-
-          {resumes.length > 0 && (
-            <div className="relative">
-              <select
-                value={selectedResumeId || ''}
-                onChange={(e) => handleSelectResume(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-              >
-                {resumes.map((r) => (
-                  <option key={r._id} value={r._id}>
-                    {r.title || r.originalFileName || 'Resume'} {r.isDefault ? '(Default)' : ''}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          )}
-
-          {selectedResumeId && !isSampleMode && (
+      {/* 2. Main Studio Workspace Area (Edge-to-edge, zero useless outer dead space) */}
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen overflow-x-hidden">
+        
+        {/* Top Studio Action & Status Bar */}
+        <header className="h-16 shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Mobile Hamburger to toggle sidebar */}
             <button
-              onClick={() => fetchScore(selectedResumeId)}
-              disabled={refreshing}
-              title="Refresh analysis"
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-900 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-colors cursor-pointer"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              aria-label="Open Workspace Menu"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              <Menu className="w-5 h-5" />
             </button>
-          )}
-        </div>
-      </div>
 
-      {/* View Mode Switcher Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
-          <button
-            onClick={() => setViewMode('analysis')}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              viewMode === 'analysis'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Analysis & AI</span>
-          </button>
-          <button
-            onClick={() => {
-              setViewMode('visual');
-              setPreviewHighlightSection(activeSectionKey);
-            }}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              viewMode === 'visual'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-            }`}
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Visual Resume</span>
-          </button>
-          <button
-            onClick={() => {
-              setViewMode('split');
-              setPreviewHighlightSection(activeSectionKey);
-            }}
-            className={`hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              viewMode === 'split'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-            }`}
-          >
-            <Columns2 className="w-3.5 h-3.5" />
-            <span>Split View</span>
-          </button>
-        </div>
-
-        {viewMode !== 'visual' && (
-          <button
-            onClick={() => {
-              setViewMode('visual');
-              setPreviewHighlightSection(activeSectionKey);
-            }}
-            className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer self-start sm:self-auto font-medium"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Switch to Live Resume Preview</span>
-          </button>
-        )}
-      </div>
-
-      {/* Score Delta Notification Banner (After Approval) */}
-      {scoreDeltaNotice && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-200 flex items-center justify-between animate-fadeIn">
-          <div className="flex items-center gap-2.5 text-xs">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div>
-              <span className="font-bold">{scoreDeltaNotice.section} score updated: </span>
-              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{scoreDeltaNotice.from} → </span>
-              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{scoreDeltaNotice.to} / 100</span>
-              <span className="text-slate-500 dark:text-slate-400 ml-2">Re-analyzed from updated resume.</span>
-            </div>
-          </div>
-          <button
-            onClick={() => setScoreDeltaNotice(null)}
-            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold cursor-pointer"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {/* Main Content Area based on View Mode */}
-      {viewMode === 'analysis' && renderAnalysisContent()}
-
-      {viewMode === 'visual' && renderVisualResumeContent()}
-
-      {viewMode === 'split' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-6 space-y-6">
-            {renderAnalysisContent()}
-          </div>
-          <div className="lg:col-span-6 lg:sticky lg:top-6 space-y-4">
-            <div className="flex items-center justify-between px-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Live Resume Preview
+            {/* Current Active Mode Title */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                {isAudit
+                  ? 'ATS Audit & Score'
+                  : viewMode === 'builder'
+                  ? 'Design & Layout Settings'
+                  : 'Section Content & AI'}
               </span>
-              <span className="text-[11px] text-slate-400">Updates live on approval</span>
-            </div>
-            <div className="max-h-[85vh] overflow-y-auto p-1 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-100/50 dark:bg-slate-900/40">
-              <ResumeRenderer
-                document={resumeDoc || SAMPLE_RESUME_DOCUMENT_FIXTURE}
-                highlightSectionId={activeView === 'detail' ? activeSectionKey : previewHighlightSection}
-                onSectionClick={(secId) => {
-                  setActiveSectionKey(secId as any);
-                  setActiveView('detail');
-                }}
-                interactive={true}
-              />
             </div>
           </div>
-        </div>
-      )}
 
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {isSampleMode && (
+              <span className="hidden sm:inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                Sample
+              </span>
+            )}
+
+            {resumes.length > 0 && (
+              <div className="relative">
+                <select
+                  value={selectedResumeId || ''}
+                  onChange={(e) => handleSelectResume(e.target.value)}
+                  className="appearance-none pl-3 pr-7 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 max-w-[130px] sm:max-w-[200px] truncate"
+                >
+                  {resumes.map((r) => (
+                    <option key={r._id} value={r._id}>
+                      {r.title || r.originalFileName || 'Resume'} {r.isDefault ? '(Default)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            )}
+
+            {selectedResumeId && !isSampleMode && (
+              <button
+                onClick={() => fetchScore(selectedResumeId)}
+                disabled={refreshing}
+                title="Refresh score"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
+            )}
+
+            {/* Download Button in Header */}
+            <button
+              onClick={handleDownloadPDF}
+              disabled={isDownloadingPdf}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition-all cursor-pointer shadow-xs shrink-0 disabled:opacity-60"
+              title="Download High-Fidelity Vector PDF"
+            >
+              {isDownloadingPdf ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden sm:inline">
+                {isDownloadingPdf ? 'Generating...' : 'Download'}
+              </span>
+            </button>
+          </div>
+        </header>
+
+        {/* Studio Workspace Content */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
+          {/* Score Delta Notification Banner (After Approval) */}
+          {scoreDeltaNotice && (
+            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-200 flex items-center justify-between animate-fadeIn">
+              <div className="flex items-center gap-2.5 text-xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div>
+                  <span className="font-bold">{scoreDeltaNotice.section} score updated: </span>
+                  <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{scoreDeltaNotice.from} → </span>
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{scoreDeltaNotice.to} / 100</span>
+                  <span className="text-slate-500 dark:text-slate-400 ml-2">Re-analyzed from updated resume.</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setScoreDeltaNotice(null)}
+                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* 1. Destination 1: ATS Audit & Score */}
+          {isAudit && renderAtsDiagnosticsContent()}
+
+          {/* 2. Destination 2: Edit & Design */}
+          {!isAudit && renderEditAndDesignContent()}
+        </main>
+      </div>
+
+      {/* Phase 7 Interactive Optimization Review Modal with Target Selector */}
+      <OptimizationReviewModal
+        draft={selectedDraft}
+        isOpen={isOptimizationModalOpen}
+        isApplying={isApplyingOptimization}
+        isSwitchingTarget={isSwitchingTarget}
+        onClose={() => setIsOptimizationModalOpen(false)}
+        onAccept={handleAcceptOptimization}
+        onReject={handleRejectOptimization}
+        onTargetChange={handleTargetChange}
+      />
     </div>
   );
 }

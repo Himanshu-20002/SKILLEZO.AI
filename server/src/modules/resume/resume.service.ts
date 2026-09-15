@@ -24,6 +24,11 @@ import {
   ApplyImprovementPayload,
   ApplyImprovementResult,
 } from "@/modules/resume-intelligence";
+import {
+  ResumeBuilderConfig,
+  DEFAULT_BUILDER_CONFIG,
+  validateBuilderConfig,
+} from "@/modules/resume-intelligence/builder/builder.validator";
 import { GeminiProvider } from "@/core/ai/providers/gemini.provider";
 import path from "path";
 import fs from "fs";
@@ -647,6 +652,36 @@ export class ResumeService {
 
   async rejectOptimization(draft: any) {
     return optimizationIntelligenceService.rejectDraft(draft);
+  }
+
+  async getBuilderConfig(userId: string, resumeId: string): Promise<ResumeBuilderConfig> {
+    const resume = await this.getResumeById(userId, resumeId);
+    return resume.builderConfig || DEFAULT_BUILDER_CONFIG;
+  }
+
+  async saveBuilderConfig(
+    userId: string,
+    resumeId: string,
+    configPayload: unknown
+  ): Promise<ResumeBuilderConfig> {
+    const resume = await this.getResumeById(userId, resumeId);
+
+    const validation = validateBuilderConfig(configPayload);
+    if (!validation.success || !validation.data) {
+      throw new AppError(
+        `Invalid builder configuration: ${validation.errors?.join("; ")}`,
+        HTTP_STATUS.BAD_REQUEST,
+        ERROR_CODES.VALIDATION_ERROR
+      );
+    }
+
+    const validConfig = validation.data;
+    resume.builderConfig = validConfig;
+    await this.resumeRepository.updateById(resume._id.toString(), {
+      builderConfig: validConfig,
+    });
+
+    return validConfig;
   }
 }
 

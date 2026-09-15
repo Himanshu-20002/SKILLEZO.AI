@@ -273,6 +273,7 @@ export interface ResumeRecord {
   status: "pending" | "processing" | "completed" | "failed" | "uploaded";
   extractedData?: ResumeExtractedData;
   resumeDocument?: import("./resume-document").ResumeDocument | null;
+  builderConfig?: import("./resume-builder.types").ResumeBuilderConfig | null;
   errorMessage?: string;
   createdAt: string;
   updatedAt: string;

@@ -80,10 +80,9 @@ export default function RegisterCard() {
       {/* Social Divider */}
       <Divider label="Or continue with" />
 
-      {/* Social OAuth Buttons */}
-      <div className="grid grid-cols-2 gap-3 w-full">
-        <SocialButton provider="google" label="Google" />
-        <SocialButton provider="linkedin" label="LinkedIn" />
+      {/* Social OAuth Button */}
+      <div className="w-full">
+        <SocialButton provider="google" label="Continue with Google" />
       </div>
 
       {/* Footer Navigation Link */}

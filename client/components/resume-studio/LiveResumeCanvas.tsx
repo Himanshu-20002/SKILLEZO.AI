@@ -1,0 +1,203 @@
+'use client';
+
+import React, { useDeferredValue, useCallback, useState, useRef, useEffect } from 'react';
+import { ResumeDocument } from '@/types/resume-document';
+import { ResumeBuilderConfig } from '@/types/resume-builder.types';
+import { SAMPLE_RESUME_DOCUMENT_FIXTURE } from '@/types/resume-document.fixture';
+import { ResumeRenderer } from './renderer';
+import { ZoomIn, ZoomOut, Maximize2, Minimize2, Move } from 'lucide-react';
+
+interface LiveResumeCanvasProps {
+  document: ResumeDocument | null;
+  config: ResumeBuilderConfig;
+  highlightSectionId?: string | null;
+  onSectionClick?: (sectionId: string) => void;
+  isVisibleOnMobile?: boolean;
+}
+
+export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
+  document,
+  config,
+  highlightSectionId,
+  onSectionClick,
+  isVisibleOnMobile = false,
+}) => {
+  // Concurrently defer heavy A4 DOM re-renders so builder controls & typing run at 60-120 FPS
+  const deferredConfig = useDeferredValue(config);
+  const deferredDoc = useDeferredValue(document);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Zoom Modes: 'fit' (entire resume visible on screen with zero scrolling) vs '100%' (natural reading size) vs custom
+  const [zoomMode, setZoomMode] = useState<'fit' | '100%' | 'custom'>('fit');
+  const [fitScale, setFitScale] = useState<number>(0.68);
+  const [customScale, setCustomScale] = useState<number>(1);
+  const [contentHeight, setContentHeight] = useState<number>(1150);
+
+  // Measure container and content to compute the exact scale needed to fit 100% of the resume on screen
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (!containerRef.current || !contentWrapperRef.current) return;
+
+      const containerHeight = containerRef.current.clientHeight;
+      const containerWidth = containerRef.current.clientWidth;
+      const naturalHeight = contentWrapperRef.current.scrollHeight || 1150;
+      const standardWidth = 850;
+
+      setContentHeight(naturalHeight);
+
+      if (containerHeight > 0 && naturalHeight > 0) {
+        // Leave comfortable padding for margins and borders
+        const scaleH = (containerHeight - 24) / naturalHeight;
+        const scaleW = (containerWidth - 24) / standardWidth;
+        const optimal = Math.min(scaleH, scaleW);
+        setFitScale(Math.max(0.45, Math.min(optimal, 1)));
+      }
+    };
+
+    updateDimensions();
+
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
+    if (contentWrapperRef.current) resizeObserver.observe(contentWrapperRef.current);
+
+    window.addEventListener('resize', updateDimensions);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, [deferredDoc, deferredConfig]);
+
+  const activeScale =
+    zoomMode === 'fit' ? fitScale : zoomMode === '100%' ? 1 : customScale;
+
+  const handleZoomIn = () => {
+    setZoomMode('custom');
+    setCustomScale((prev) => Math.min(1.5, Number((prev + 0.1).toFixed(2))));
+  };
+
+  const handleZoomOut = () => {
+    setZoomMode('custom');
+    setCustomScale((prev) => Math.max(0.45, Number((prev - 0.1).toFixed(2))));
+  };
+
+  const handleSectionClick = useCallback((sectionId: string) => {
+    if (onSectionClick) {
+      onSectionClick(sectionId);
+    }
+  }, [onSectionClick]);
+
+  return (
+    <div
+      className={`lg:col-span-6 lg:sticky lg:top-24 space-y-3 ${
+        isVisibleOnMobile ? 'block' : 'hidden lg:block'
+      }`}
+    >
+      {/* Canvas Header & Interactive Zoom Controller */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            Live Resume Canvas
+          </span>
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Live Sync</span>
+          </span>
+        </div>
+
+        {/* View Scaling Toolbar */}
+        <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs text-xs">
+          <button
+            onClick={() => setZoomMode('fit')}
+            title="Fit entire 1-page resume on screen without scrolling"
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              zoomMode === 'fit'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            Fit Page
+          </button>
+
+          <button
+            onClick={() => {
+              setZoomMode('100%');
+              setCustomScale(1);
+            }}
+            title="View at 100% actual reading size"
+            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              zoomMode === '100%'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            100%
+          </button>
+
+          <div className="h-3.5 w-px bg-slate-200 dark:bg-slate-700 mx-0.5" />
+
+          <button
+            onClick={handleZoomOut}
+            title="Zoom Out"
+            className="p-1 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+
+          <span className="text-[11px] font-mono font-bold text-slate-600 dark:text-slate-300 px-1 min-w-[36px] text-center">
+            {Math.round(activeScale * 100)}%
+          </span>
+
+          <button
+            onClick={handleZoomIn}
+            title="Zoom In"
+            className="p-1 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Canvas Viewport Container */}
+      <div
+        ref={containerRef}
+        className={`h-[calc(100vh-140px)] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-100/70 dark:bg-slate-950/60 p-3 overscroll-contain will-change-scroll transform-gpu flex justify-center ${
+          zoomMode === 'fit' ? 'overflow-hidden items-center' : 'overflow-y-auto items-start'
+        }`}
+      >
+        {/* Scaled A4 Sheet Wrapper */}
+        <div
+          style={{
+            width: `${850 * activeScale}px`,
+            height: `${contentHeight * activeScale}px`,
+            transition: 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+          className="relative shrink-0 flex justify-center"
+        >
+          <div
+            ref={contentWrapperRef}
+            style={{
+              width: '850px',
+              transform: `scale(${activeScale})`,
+              transformOrigin: 'top center',
+              transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+            className="absolute top-0 shadow-2xl rounded-2xl"
+          >
+            <ResumeRenderer
+              document={deferredDoc || SAMPLE_RESUME_DOCUMENT_FIXTURE}
+              highlightSectionId={highlightSectionId}
+              onSectionClick={handleSectionClick}
+              interactive={true}
+              config={deferredConfig}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+LiveResumeCanvas.displayName = 'LiveResumeCanvas';

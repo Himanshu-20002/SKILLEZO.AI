@@ -27,7 +27,7 @@ export function Hero({ onGetScore }: HeroProps) {
 
   const handleSecondaryClick = () => {
     if (isLoggedIn) {
-      router.push("/dashboard/resume-intelligence");
+      router.push("/dashboard/resume-studio?view=analysis");
     } else {
       onGetScore();
     }

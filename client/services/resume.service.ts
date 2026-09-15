@@ -205,6 +205,33 @@ export const resumeService = {
     );
     return res.data;
   },
+
+  /**
+   * Fetch saved builder presentation configuration for a resume (Phase 7).
+   */
+  async getBuilderConfig(resumeId: string): Promise<import("@/types/resume-builder.types").ResumeBuilderConfig> {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume-builder.types").ResumeBuilderConfig }>(
+      `/api/resumes/${resumeId}/builder`
+    );
+    return res.data;
+  },
+
+  /**
+   * Save builder presentation configuration for a resume (Phase 7).
+   */
+  async saveBuilderConfig(
+    resumeId: string,
+    config: import("@/types/resume-builder.types").ResumeBuilderConfig
+  ): Promise<import("@/types/resume-builder.types").ResumeBuilderConfig> {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume-builder.types").ResumeBuilderConfig }>(
+      `/api/resumes/${resumeId}/builder`,
+      {
+        method: "PUT",
+        body: JSON.stringify(config),
+      }
+    );
+    return res.data;
+  },
 };
 
 

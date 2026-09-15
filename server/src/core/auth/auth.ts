@@ -28,7 +28,9 @@ export function getAuth() {
         env.CLIENT_URL,
         "https://skillezo-ai-rho.vercel.app",
         "https://skillezo-ai.vercel.app",
+        "https://skillezoai-production.up.railway.app",
         "http://localhost:3000",
+        "http://localhost:5000",
       ].filter(Boolean),
       advanced: {
         disableCSRFCheck: true,
@@ -46,6 +48,12 @@ export function getAuth() {
       checkOrigin: () => true,
       emailAndPassword: {
         enabled: true,
+      },
+      socialProviders: {
+        google: {
+          clientId: env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || "",
+          clientSecret: env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || "",
+        },
       },
       user: {
         additionalFields: {
@@ -112,6 +120,3 @@ export const authHandler = async (req: any, res: any) => {
 };
 
 export type Auth = ReturnType<typeof getAuth>;
-
-
-

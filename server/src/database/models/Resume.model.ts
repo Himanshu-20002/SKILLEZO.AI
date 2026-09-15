@@ -1,6 +1,7 @@
 import { Schema, model, Document, Types } from "mongoose";
 import { ResumeStatus } from "@/core/constants/enums";
 import { ResumeDocument } from "@/modules/resume-intelligence/document/resume-document.types";
+import { ResumeBuilderConfig } from "@/modules/resume-intelligence/builder/builder.types";
 
 export interface IResumePersonalInfo {
   fullName?: string | null;
@@ -71,6 +72,7 @@ export interface IResume extends Document {
   version: number;
   extractedData?: IResumeExtractedData | null;
   resumeDocument?: ResumeDocument | null;
+  builderConfig?: ResumeBuilderConfig | null;
   rawText?: string | null;
   parsingError?: string | null;
   uploadedAt: Date;
@@ -216,6 +218,10 @@ const resumeSchema = new Schema<IResume>(
       default: null,
     },
     resumeDocument: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    builderConfig: {
       type: Schema.Types.Mixed,
       default: null,
     },

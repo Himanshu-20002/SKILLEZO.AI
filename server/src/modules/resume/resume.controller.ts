@@ -154,5 +154,19 @@ export class ResumeController {
     );
     res.status(HTTP_STATUS.OK).json(successResponse(result));
   };
+
+  getBuilderConfig = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const resumeId = req.params.resumeId as string;
+    const config = await this.resumeService.getBuilderConfig(userId, resumeId);
+    res.status(HTTP_STATUS.OK).json(successResponse(config));
+  };
+
+  saveBuilderConfig = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const resumeId = req.params.resumeId as string;
+    const savedConfig = await this.resumeService.saveBuilderConfig(userId, resumeId, req.body);
+    res.status(HTTP_STATUS.OK).json(successResponse(savedConfig));
+  };
 }
 

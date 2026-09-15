@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react';
 import { ResumeSkillItem } from '@/types/resume-document';
+import { ResumeBuilderConfig } from '@/types/resume-builder.types';
+import { resolveConfigClasses } from './templates';
 
 interface SkillsSectionProps {
   skills?: ResumeSkillItem[];
   isHighlighted?: boolean;
   onClick?: () => void;
+  config?: ResumeBuilderConfig | null;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -21,10 +24,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: 'Other Skills',
 };
 
-export const SkillsSection: React.FC<SkillsSectionProps> = ({
+export const SkillsSection: React.FC<SkillsSectionProps> = React.memo(({
   skills,
   isHighlighted,
   onClick,
+  config,
 }) => {
   const groupedSkills = useMemo(() => {
     if (!skills || skills.length === 0) return {};
@@ -43,11 +47,14 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
 
   if (!skills || skills.length === 0) return null;
 
+  const { template, sectionSpacingClass, lineHeightClass } = resolveConfigClasses(config);
+  const isCompact = config?.templateId === 'compact';
+
   return (
     <section
       id="resume-section-skills"
       onClick={onClick}
-      className={`transition-all duration-200 mb-6 ${
+      className={`transition-all duration-200 break-inside-avoid print:break-inside-avoid ${sectionSpacingClass} ${
         isHighlighted
           ? 'ring-2 ring-indigo-500/40 bg-indigo-50/30 dark:bg-indigo-950/20 rounded-lg p-3 -m-3'
           : onClick
@@ -55,14 +62,14 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
           : ''
       }`}
     >
-      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-slate-700 pb-1 mb-2 font-mono">
+      <h2 className={template.sectionHeaderStyle}>
         Technical Skills
       </h2>
 
-      <div className="space-y-1.5 text-xs sm:text-sm">
+      <div className={`${isCompact ? 'space-y-1 text-xs' : 'space-y-1.5'} ${lineHeightClass}`}>
         {Object.entries(groupedSkills).map(([catKey, skillNames]) => (
           <div key={catKey} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-            <span className="font-semibold text-slate-900 dark:text-slate-100 shrink-0 min-w-[130px]">
+            <span className="font-semibold text-slate-900 dark:text-slate-100 shrink-0 min-w-[125px]">
               {CATEGORY_LABELS[catKey] || catKey}:
             </span>
             <span className="text-slate-700 dark:text-slate-300">
@@ -73,4 +80,6 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
       </div>
     </section>
   );
-};
+});
+
+SkillsSection.displayName = 'SkillsSection';

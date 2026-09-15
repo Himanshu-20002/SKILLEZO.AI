@@ -1,25 +1,32 @@
 import React from 'react';
 import { ResumeAchievementItem } from '@/types/resume-document';
+import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { ExternalLink } from 'lucide-react';
+import { resolveConfigClasses } from './templates';
 
 interface AchievementsSectionProps {
   achievements?: ResumeAchievementItem[];
   isHighlighted?: boolean;
   onClick?: () => void;
+  config?: ResumeBuilderConfig | null;
 }
 
-export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
+export const AchievementsSection: React.FC<AchievementsSectionProps> = React.memo(({
   achievements,
   isHighlighted,
   onClick,
+  config,
 }) => {
   if (!achievements || achievements.length === 0) return null;
+
+  const { template, sectionSpacingClass, lineHeightClass, accentTextClass } = resolveConfigClasses(config);
+  const isCompact = config?.templateId === 'compact';
 
   return (
     <section
       id="resume-section-achievements"
       onClick={onClick}
-      className={`transition-all duration-200 mb-6 ${
+      className={`transition-all duration-200 break-inside-avoid print:break-inside-avoid ${sectionSpacingClass} ${
         isHighlighted
           ? 'ring-2 ring-indigo-500/40 bg-indigo-50/30 dark:bg-indigo-950/20 rounded-lg p-3 -m-3'
           : onClick
@@ -27,31 +34,39 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
           : ''
       }`}
     >
-      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-slate-700 pb-1 mb-3 font-mono">
+      <h2 className={template.sectionHeaderStyle}>
         Achievements & Certifications
       </h2>
 
-      <div className="space-y-3">
+      <div className={isCompact ? 'space-y-2' : 'space-y-3'}>
         {achievements.map((ach) => (
-          <div key={ach.id} className="space-y-1 text-xs sm:text-sm">
-            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-0.5">
-              <div className="flex flex-wrap items-baseline gap-1.5">
+          <div
+            key={ach.id}
+            className={`space-y-0.5 break-inside-avoid print:break-inside-avoid ${
+              isCompact ? 'text-xs' : 'text-xs sm:text-sm'
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+              <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-bold text-slate-900 dark:text-slate-100">
                   {ach.title}
                 </span>
+
                 {ach.issuer && (
-                  <span className="text-slate-600 dark:text-slate-400 text-xs">
+                  <span className="text-xs text-slate-600 dark:text-slate-400">
                     — {ach.issuer}
                   </span>
                 )}
+
                 {ach.url && (
                   <a
                     href={ach.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:underline text-xs ml-1"
+                    className={`inline-flex items-center gap-0.5 text-xs hover:underline ${accentTextClass}`}
                   >
-                    <ExternalLink className="w-3 h-3 inline" />
+                    <ExternalLink className="w-3 h-3" />
+                    <span>Credential</span>
                   </a>
                 )}
               </div>
@@ -64,7 +79,7 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
             </div>
 
             {ach.description && (
-              <p className="text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
+              <p className={`text-slate-700 dark:text-slate-300 text-xs ${lineHeightClass}`}>
                 {ach.description}
               </p>
             )}
@@ -73,4 +88,6 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
       </div>
     </section>
   );
-};
+});
+
+AchievementsSection.displayName = 'AchievementsSection';

@@ -1,24 +1,30 @@
 import React from 'react';
 import { ResumeSummary } from '@/types/resume-document';
+import { ResumeBuilderConfig } from '@/types/resume-builder.types';
+import { resolveConfigClasses } from './templates';
 
 interface SummarySectionProps {
   summary?: ResumeSummary;
   isHighlighted?: boolean;
   onClick?: () => void;
+  config?: ResumeBuilderConfig | null;
 }
 
-export const SummarySection: React.FC<SummarySectionProps> = ({
+export const SummarySection: React.FC<SummarySectionProps> = React.memo(({
   summary,
   isHighlighted,
   onClick,
+  config,
 }) => {
   if (!summary?.text?.trim()) return null;
+
+  const { template, sectionSpacingClass, lineHeightClass } = resolveConfigClasses(config);
 
   return (
     <section
       id="resume-section-summary"
       onClick={onClick}
-      className={`transition-all duration-200 mb-6 ${
+      className={`transition-all duration-200 break-inside-avoid print:break-inside-avoid ${sectionSpacingClass} ${
         isHighlighted
           ? 'ring-2 ring-indigo-500/40 bg-indigo-50/30 dark:bg-indigo-950/20 rounded-lg p-3 -m-3'
           : onClick
@@ -26,12 +32,14 @@ export const SummarySection: React.FC<SummarySectionProps> = ({
           : ''
       }`}
     >
-      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-slate-700 pb-1 mb-2 font-mono">
-        Summary
+      <h2 className={template.sectionHeaderStyle}>
+        Professional Summary
       </h2>
-      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed text-justify">
+      <p className={`text-slate-700 dark:text-slate-300 ${lineHeightClass} text-justify`}>
         {summary.text}
       </p>
     </section>
   );
-};
+});
+
+SummarySection.displayName = 'SummarySection';

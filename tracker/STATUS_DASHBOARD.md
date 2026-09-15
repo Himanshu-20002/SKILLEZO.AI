@@ -1,8 +1,9 @@
 # 📊 SKILLEZO AI — Project Status Dashboard
 
-> **Last Updated:** September 10, 2026 (End of Day Update)  
-> **Active Sprint:** Sprint 7 (Resume Intelligence Engine Architecture & Gemini Bullet Studio)  
-> **Target Release:** September 25, 2026  
+> **Last Updated:** September 15, 2026 (Mid-Day Execution Update)  
+> **Active Sprint:** Sprint 1 — Week 1 Candidate Loop Closure, Google OAuth & Career GPS  
+> **Target Soft MVP:** September 30, 2026  
+> **Target Release:** October 10, 2026  
 
 ---
 
@@ -10,12 +11,12 @@
 
 ```text
 ========================================================================================
-OVERALL PROJECT PROGRESS: [███████████████░░░░░] 75% (Usable Product Completeness)
+OVERALL PROJECT PROGRESS: [████████████████░░░░] 82% (Usable Product Completeness)
 ========================================================================================
-Backend Architecture & Mongoose Models : [███████████████████░] 95% (Resume Parser + DB Live)
-Frontend Layouts & Design System       : [█████████████████░░░] 85% (Live Jobs & Studio Live)
-Live End-to-End Integration            : [████████████████░░░░] 80% (Jobs + Resumes + AI Studio)
-AI Intelligence & Career Plan Engines  : [██████████████████░░] 90% (7-Phase Engine + Gemini Live)
+Backend Architecture & Mongoose Models : [███████████████████░] 96% (Resume Parser + DB Live)
+Frontend Layouts & Design System       : [██████████████████░░] 92% (Studio, Jobs, Vector PDF Live)
+Live End-to-End Integration            : [█████████████████░░░] 85% (Jobs + Resumes + AI Studio + PDF)
+AI Intelligence & Career Plan Engines  : [██████████████████░░] 92% (7-Phase Engine + Gemini Live)
 ========================================================================================
 ```
 
@@ -26,9 +27,10 @@ AI Intelligence & Career Plan Engines  : [████████████�
 | Milestone | Window | Focus Area | Deliverable Goal | Status |
 | :--- | :---: | :--- | :--- | :---: |
 | **M1 — Core Integration** | 01–05 Sep | Live Jobs API, Resume Upload, Backend Test Setup | Candidate can search real jobs & upload PDF resumes | 🟢 **Complete (100%)** |
-| **M2 — Applications & AI** | 07–11 Sep | AI Resume Intelligence, Bullet Studio, Live Gemini | Candidate gets ATS diagnostics & live AI bullet optimization | 🟢 **Complete (95%)** |
-| **M3 — Recruiter Portal** | 14–17 Sep | Employer Dashboard, Candidate Review Drawer, OAuth | Recruiter reviews applicants & streams resumes | 🟡 **Next Sprint** |
-| **M4 — Hardening & Launch**| 18–25 Sep | E2E QA, Performance, Security Audit, Production Deploy| 100% Production-Ready Platform on Vercel + Railway | ⚪ Not Started |
+| **M2 — Applications & AI** | 07–11 Sep | AI Resume Intelligence, Bullet Studio, Live Gemini | Candidate gets ATS diagnostics & live AI bullet optimization | 🟢 **Complete (100%)** |
+| **W1 — Candidate Loop Closure** | 14–19 Sep | Vector PDF (`FE-806`), Google OAuth, Career GPS, AI Coach | Native vector PDF download, 1-click Google OAuth, Career Coach | 🟢 **In Progress (Deliv 1.1 Done)** |
+| **W2 — Recruiter Portal** | 21–26 Sep | Employer Dashboard, Candidate Review Drawer, Email Alerts | Recruiter reviews applicants & streams resumes | 🟡 **Scheduled** |
+| **W3/4 — Hardening & Launch**| 28 Sep–10 Oct | E2E QA, Inngest Auto-Apply, Performance, Prod Deploy | 100% Production-Ready Platform on Vercel + Railway | ⚪ Scheduled |
 
 ---
 

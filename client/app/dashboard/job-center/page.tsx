@@ -90,6 +90,17 @@ export default function SmartJobCenterPage() {
     sortBy: 'AI Match',
   });
 
+  // Sync activeTab from URL query parameter if present (e.g. ?tab=applied)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['all', 'recommended', 'platform', 'external', 'saved', 'applied'].includes(tabParam)) {
+        setActiveTab(tabParam as ActiveTab);
+      }
+    }
+  }, []);
+
   // Load candidate profile skills for live matching
   useEffect(() => {
     async function loadCandidateProfile() {

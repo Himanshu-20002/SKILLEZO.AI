@@ -11,6 +11,7 @@
 
 | Document | Purpose | Primary Audience |
 | :--- | :--- | :---: |
+| **[DELIVERABLES_ROADMAP_MVP.md](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/tracker/DELIVERABLES_ROADMAP_MVP.md)** | **Master MVP Deliverables & Week-by-Week Timeline (Sep 30 / Oct 10 Deadlines)** | Project Owner / All |
 | **[STATUS_DASHBOARD.md](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/tracker/STATUS_DASHBOARD.md)** | High-level project health, completion metrics & milestone burn-down. | Project Owner / Lead |
 | **[SPRINT_1_ACTIVE.md](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/tracker/SPRINT_1_ACTIVE.md)** | **Daily active execution plan** — exact step-by-step tasks to do **NEXT**. | All Developers |
 | **[BACKEND_TASKS.md](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/tracker/BACKEND_TASKS.md)** | Developer 1 Backlog: AI services, ATS scoring, career plans, and security. | Developer 1 (Backend) |

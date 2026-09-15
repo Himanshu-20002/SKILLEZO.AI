@@ -1,24 +1,31 @@
 import React from 'react';
 import { ResumeExperienceItem } from '@/types/resume-document';
+import { ResumeBuilderConfig } from '@/types/resume-builder.types';
+import { resolveConfigClasses } from './templates';
 
 interface ExperienceSectionProps {
   experience?: ResumeExperienceItem[];
   isHighlighted?: boolean;
   onClick?: () => void;
+  config?: ResumeBuilderConfig | null;
 }
 
-export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
+export const ExperienceSection: React.FC<ExperienceSectionProps> = React.memo(({
   experience,
   isHighlighted,
   onClick,
+  config,
 }) => {
   if (!experience || experience.length === 0) return null;
+
+  const { template, sectionSpacingClass, lineHeightClass } = resolveConfigClasses(config);
+  const isCompact = config?.templateId === 'compact';
 
   return (
     <section
       id="resume-section-experience"
       onClick={onClick}
-      className={`transition-all duration-200 mb-6 ${
+      className={`transition-all duration-200 break-inside-avoid print:break-inside-avoid ${sectionSpacingClass} ${
         isHighlighted
           ? 'ring-2 ring-indigo-500/40 bg-indigo-50/30 dark:bg-indigo-950/20 rounded-lg p-3 -m-3'
           : onClick
@@ -26,11 +33,11 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
           : ''
       }`}
     >
-      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-slate-700 pb-1 mb-3 font-mono">
+      <h2 className={template.sectionHeaderStyle}>
         Work Experience
       </h2>
 
-      <div className="space-y-4">
+      <div className={isCompact ? 'space-y-2.5' : 'space-y-3.5'}>
         {experience.map((item) => {
           const dateRange = [
             item.startDate,
@@ -40,35 +47,38 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
             .join(' – ');
 
           return (
-            <div key={item.id} className="space-y-1.5 text-xs sm:text-sm">
+            <div
+              key={item.id}
+              className={`space-y-1 break-inside-avoid print:break-inside-avoid ${
+                isCompact ? 'text-xs' : 'text-xs sm:text-sm'
+              }`}
+            >
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-0.5">
                 <div className="flex flex-wrap items-baseline gap-x-1.5">
                   <span className="font-bold text-slate-900 dark:text-slate-100">
                     {item.jobTitle}
                   </span>
-                  <span className="text-slate-400">|</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <span className="text-slate-400 dark:text-slate-500">|</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
                     {item.companyName}
                   </span>
                   {item.location && (
-                    <span className="text-slate-500 dark:text-slate-400 text-xs">
+                    <span className="text-slate-400 dark:text-slate-500 text-xs">
                       ({item.location})
                     </span>
                   )}
                 </div>
 
-                {dateRange && (
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 shrink-0 font-mono">
-                    {dateRange}
-                  </span>
-                )}
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                  {dateRange}
+                </div>
               </div>
 
-              {/* Bullets */}
+              {/* Bullets with metric badges */}
               {item.bullets && item.bullets.length > 0 && (
-                <ul className="list-disc list-outside pl-4 space-y-1 text-slate-700 dark:text-slate-300 text-xs sm:text-sm leading-relaxed">
+                <ul className={`list-disc list-outside pl-4 space-y-0.5 text-slate-700 dark:text-slate-300 ${lineHeightClass}`}>
                   {item.bullets.map((b) => (
-                    <li key={b.id}>
+                    <li key={b.id} className="leading-relaxed">
                       <span>{b.text}</span>
                     </li>
                   ))}
@@ -88,4 +98,6 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
       </div>
     </section>
   );
-};
+});
+
+ExperienceSection.displayName = 'ExperienceSection';
