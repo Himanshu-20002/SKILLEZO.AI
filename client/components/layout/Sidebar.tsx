@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  UserCircle,
   FileText,
   Target,
   BarChart3,
@@ -54,11 +53,6 @@ export const sidebarSections: NavSection[] = [
   {
     title: 'CAREER INTELLIGENCE',
     items: [
-      {
-        label: 'Career Profile',
-        href: '/dashboard/career-profile',
-        icon: UserCircle,
-      },
       {
         label: 'Resume Studio',
         href: '/dashboard/resume-studio',
