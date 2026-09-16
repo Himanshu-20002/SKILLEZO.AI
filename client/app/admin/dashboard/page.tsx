@@ -43,7 +43,7 @@ import { API_BASE_URL } from '@/lib/api';
 
 type AdminTab = 'overview' | 'users' | 'jobs' | 'resumes';
 
-export default function AdminDashboardPage() {
+function AdminDashboardContent() {
   const router = useRouter();
   const { data: session, isPending: sessionPending } = useSession();
 
@@ -896,5 +896,22 @@ export default function AdminDashboardPage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B1130] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 text-slate-400">
+            <RefreshCw className="w-8 h-8 animate-spin text-[#3D5AFE]" />
+            <span className="text-xs font-mono uppercase tracking-wider">Loading Command Center...</span>
+          </div>
+        </div>
+      }
+    >
+      <AdminDashboardContent />
+    </React.Suspense>
   );
 }

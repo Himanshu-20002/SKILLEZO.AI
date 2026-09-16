@@ -137,10 +137,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         aria-hidden={isSuspended}
       >
         {/* Desktop Sidebar */}
-        <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
+        <React.Suspense fallback={<aside className="hidden md:flex w-64 fixed top-0 left-0 bottom-0 bg-white dark:bg-[#080D26]" />}>
+          <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
+        </React.Suspense>
 
         {/* Mobile Drawer */}
-        <MobileSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+        <React.Suspense fallback={null}>
+          <MobileSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+        </React.Suspense>
 
         {/* Top Header */}
         <Topbar onOpenMobileSidebar={() => setMobileOpen(true)} collapsed={collapsed} />
