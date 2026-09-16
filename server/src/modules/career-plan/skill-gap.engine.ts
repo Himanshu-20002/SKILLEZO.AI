@@ -107,22 +107,23 @@ export class SkillGapEngine {
       const weight = req.importance === "High" ? 1.5 : 1.0;
 
       let currentNumeric = 0;
-      let currentLevel: "Beginner" | "Intermediate" | "Advanced" | "Expert" = "Beginner";
+      let currentLevel: "Beginner" | "Intermediate" | "Advanced" | "Expert" | "Unranked" = "Unranked";
 
       if (isMatched) {
         acquiredCount++;
-        // If matched, calculate proficiency based on frequency and experience context
-        currentNumeric = Math.min(100, Math.max(70, Math.round(req.requiredNumeric * (0.85 + Math.random() * 0.15))));
+        // If matched, calculate deterministic proficiency (no Math.random)
+        currentNumeric = Math.min(100, Math.max(70, Math.round(req.requiredNumeric * 0.90)));
         if (currentNumeric >= 90) currentLevel = "Expert";
         else if (currentNumeric >= 75) currentLevel = "Advanced";
         else currentLevel = "Intermediate";
       } else {
-        currentNumeric = Math.round(req.requiredNumeric * 0.25);
-        currentLevel = "Beginner";
+        // Unmatched skill: real 0% competency, marked as Unranked
+        currentNumeric = 0;
+        currentLevel = "Unranked";
       }
 
       const gap = Math.max(0, req.requiredNumeric - currentNumeric);
-      const isMet = currentNumeric >= req.requiredNumeric * 0.85;
+      const isMet = isMatched && currentNumeric >= req.requiredNumeric * 0.85;
 
       const comp: CompetencyDTO = {
         id: `comp-${idx + 1}`,
@@ -155,9 +156,11 @@ export class SkillGapEngine {
       }
     });
 
-    const overallMatchScore = totalScoreDenominator > 0
-      ? Math.min(100, Math.max(20, Math.round((totalScoreNumerator / totalScoreDenominator) * 100)))
-      : 50;
+    const overallMatchScore = acquiredCount === 0
+      ? 0
+      : totalScoreDenominator > 0
+        ? Math.min(100, Math.max(0, Math.round((totalScoreNumerator / totalScoreDenominator) * 100)))
+        : 0;
 
     // Calculate 6-Axis Radar Scores
     const radarCategories: SkillRadarCategoryDTO[] = ALL_AXES.map((axis) => {
@@ -165,7 +168,7 @@ export class SkillGapEngine {
       if (axisComps.length === 0) {
         return {
           category: axis,
-          currentScore: Math.round(overallMatchScore * 0.7),
+          currentScore: 0,
           requiredScore: 80,
         };
       }

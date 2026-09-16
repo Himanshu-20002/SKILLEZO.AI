@@ -8,10 +8,9 @@ import { RoadmapTimeline } from '@/components/dashboard/career-gps/RoadmapTimeli
 import { CurrentMilestoneWidget } from '@/components/dashboard/career-gps/CurrentMilestoneWidget';
 import { SalaryProgressionChart } from '@/components/dashboard/career-gps/SalaryProgressionChart';
 
-import { mockCareerIntelligence } from '@/mock/career-intelligence';
-import { CareerGPSData, RoadmapStage } from '@/types/career-intelligence';
+import { CareerGPSData, RoadmapStage, SalaryProgressionItem } from '@/types/career-intelligence';
 import { employabilityService } from '@/services/employability.service';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TARGET_ROLES = [
@@ -23,8 +22,16 @@ const TARGET_ROLES = [
   'Mobile App Developer',
 ];
 
+const DEFAULT_SALARY_PROGRESSION: Record<string, SalaryProgressionItem[]> = {
+  default: [
+    { level: 'Current', label: 'Entry Baseline', salaryText: '₹4 - ₹6 LPA', numericSalary: 5 },
+    { level: 'Next Target', label: 'Role Alignment', salaryText: '₹8 - ₹12 LPA', numericSalary: 10 },
+    { level: 'Target Role', label: 'Market Standard', salaryText: '₹14 - ₹22 LPA', numericSalary: 18 },
+  ],
+};
+
 export default function CareerGPSPage() {
-  const [data, setData] = useState<CareerGPSData>(mockCareerIntelligence.careerRoadmap);
+  const [data, setData] = useState<CareerGPSData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [targetRole, setTargetRole] = useState<string>('Full-Stack Engineer');
 
@@ -38,28 +45,29 @@ export default function CareerGPSPage() {
           id: m.id || `stage-${idx + 1}`,
           stageNumber: idx + 1,
           title: m.title,
-          status: idx === 0 ? 'In Progress' : 'Pending',
-          completionPercentage: idx === 0 ? 35 : 0,
+          status: m.status === 'completed' ? 'Completed' : m.status === 'in_progress' ? 'In Progress' : 'Pending',
+          completionPercentage: m.status === 'completed' ? 100 : m.status === 'in_progress' ? 40 : 0,
           description: m.description,
           actionText: m.priority === 'HIGH' ? 'High-Priority Focus' : 'Explore Tasks',
         }));
 
         const firstMilestone = gpsResult.milestones[0];
 
-        setData((prev) => ({
-          ...prev,
+        setData({
           targetRole: role,
+          targetSalary: '₹12 - ₹18 LPA',
           targetTimeline: `${gpsResult.totalEstimatedWeeks || 8} Weeks`,
-          currentMilestone: firstMilestone ? {
-            focusTitle: firstMilestone.title,
-            progressPercentage: 35,
-            nextAction: firstMilestone.description,
-          } : prev.currentMilestone,
-          stages: dynamicStages.length > 0 ? dynamicStages : prev.stages,
-        }));
+          currentMilestone: {
+            focusTitle: firstMilestone ? firstMilestone.title : 'Target Role Alignment',
+            progressPercentage: firstMilestone ? (firstMilestone.status === 'completed' ? 100 : 0) : 0,
+            nextAction: firstMilestone ? firstMilestone.description : 'Upload your master resume or add skills to activate Career GPS.',
+          },
+          salaryProgression: DEFAULT_SALARY_PROGRESSION[role] || DEFAULT_SALARY_PROGRESSION.default,
+          stages: dynamicStages,
+        });
       }
     } catch {
-      // Fallback to demo structure if offline
+      toast.error('Failed to generate real-time Career GPS Roadmap.');
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +122,7 @@ export default function CareerGPSPage() {
               Generating Dynamic Career GPS Roadmap for {targetRole}...
             </p>
           </div>
-        ) : (
+        ) : data ? (
           <>
             {/* Career Goal Header */}
             <CareerGoalHeader data={data} />
@@ -128,6 +136,13 @@ export default function CareerGPSPage() {
             {/* Salary Progression Chart */}
             <SalaryProgressionChart items={data.salaryProgression} />
           </>
+        ) : (
+          <div className="p-12 text-center rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
+            <AlertCircle className="w-8 h-8 text-amber-500 mx-auto" />
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Unable to generate Career GPS Roadmap. Please check your connection and retry.
+            </p>
+          </div>
         )}
       </div>
     </DashboardLayout>

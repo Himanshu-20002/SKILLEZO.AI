@@ -45,7 +45,17 @@ export const CompetencyTable: React.FC<CompetencyTableProps> = ({
               <tr key={comp.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                 <td className="py-3 px-2 font-bold text-slate-900 dark:text-slate-100">{comp.skill}</td>
                 <td className="py-3 px-2 text-slate-500 dark:text-slate-400">{comp.category}</td>
-                <td className="py-3 px-2 font-semibold text-[#3D5AFE] dark:text-[#00D9C0]">{comp.currentLevel}</td>
+                <td className="py-3 px-2">
+                  {comp.currentLevel === 'Unranked' ? (
+                    <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400">
+                      Unranked
+                    </span>
+                  ) : (
+                    <span className="font-semibold text-[#3D5AFE] dark:text-[#00D9C0] text-xs">
+                      {comp.currentLevel}
+                    </span>
+                  )}
+                </td>
                 <td className="py-3 px-2 font-medium text-slate-700 dark:text-slate-300">{comp.requiredLevel}</td>
                 <td className="py-3 px-2 text-center">
                   <span

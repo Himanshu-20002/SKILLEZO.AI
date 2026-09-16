@@ -52,7 +52,6 @@ import {
 } from '@/components/resume-studio';
 import { exportResumeToPdf } from '@/services/pdf-export.service';
 import { AuditPillarType } from '@/components/dashboard/resume-intelligence/ATSCompatibility';
-import { mockCareerIntelligence } from '@/mock/career-intelligence';
 
 const TARGET_ROLES = [
   'Full-Stack Engineer',
@@ -62,6 +61,19 @@ const TARGET_ROLES = [
   'DevOps & Cloud Engineer',
   'Mobile App Developer',
 ];
+
+const EMPTY_RESUME_ANALYSIS: ResumeAnalysisData = {
+  overallScore: 0,
+  atsScore: 0,
+  matchScore: 0,
+  contentScore: 0,
+  impactScore: 0,
+  brevityScore: 0,
+  atsCompatibility: [],
+  keywords: [],
+  missingSkills: [],
+  recommendations: [],
+};
 
 function formatFileSize(bytes?: number): string {
   if (!bytes || bytes === 0) return '1.2 MB';
@@ -175,11 +187,7 @@ export default function ResumeStudioPage() {
   // Resume Intelligence & ATS Diagnostics State
   const [targetRole, setTargetRole] = useState('Full-Stack Engineer');
   const [activePillar, setActivePillar] = useState<AuditPillarType>('impact');
-  const [analysis, setAnalysis] = useState<ResumeAnalysisData>({
-    ...mockCareerIntelligence.resumeAnalysis,
-    matchScore: 78,
-    contentScore: 72,
-  });
+  const [analysis, setAnalysis] = useState<ResumeAnalysisData>(EMPTY_RESUME_ANALYSIS);
 
   // Phase 7 Optimization Workflow State
   const [selectedDraft, setSelectedDraft] = useState<ResumeOptimizationDraft | null>(null);
@@ -345,11 +353,13 @@ export default function ResumeStudioPage() {
       } else {
         setResumeDoc(null);
         setScoreResult(null);
+        setAnalysis(EMPTY_RESUME_ANALYSIS);
       }
     } catch (err: any) {
       console.warn("Could not load candidate resumes", err);
       setResumeDoc(null);
       setScoreResult(null);
+      setAnalysis(EMPTY_RESUME_ANALYSIS);
     } finally {
       setLoading(false);
     }

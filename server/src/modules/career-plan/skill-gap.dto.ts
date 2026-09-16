@@ -2,7 +2,7 @@ export interface CompetencyDTO {
   id: string;
   skill: string;
   category: 'Frontend' | 'Backend' | 'Database' | 'Cloud' | 'DevOps' | 'System Design';
-  currentLevel: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+  currentLevel: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert' | 'Unranked';
   requiredLevel: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
   currentNumeric: number; // 0-100
   requiredNumeric: number; // 0-100

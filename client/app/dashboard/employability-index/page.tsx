@@ -8,10 +8,9 @@ import { ScoreBreakdown } from '@/components/dashboard/employability-index/Score
 import { StrengthsAndGaps } from '@/components/dashboard/employability-index/StrengthsAndGaps';
 import { ActionList } from '@/components/dashboard/employability-index/ActionList';
 
-import { mockCareerIntelligence } from '@/mock/career-intelligence';
 import { EmployabilityIndexData } from '@/types/career-intelligence';
 import { employabilityService } from '@/services/employability.service';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TARGET_ROLES = [
@@ -24,7 +23,7 @@ const TARGET_ROLES = [
 ];
 
 export default function EmployabilityIndexPage() {
-  const [data, setData] = useState<EmployabilityIndexData>(mockCareerIntelligence.employabilityIndex);
+  const [data, setData] = useState<EmployabilityIndexData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [targetRole, setTargetRole] = useState<string>('Full-Stack Engineer');
 
@@ -36,7 +35,7 @@ export default function EmployabilityIndexPage() {
         setData(liveData);
       }
     } catch {
-      // Fallback gracefully to demo state if offline
+      toast.error('Failed to load live Employability Index.');
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +90,7 @@ export default function EmployabilityIndexPage() {
               Calculating Multi-Factor Employability Index for {targetRole}...
             </p>
           </div>
-        ) : (
+        ) : data ? (
           <>
             {/* Main Employability Gauge */}
             <EmployabilityGauge data={data} />
@@ -105,6 +104,13 @@ export default function EmployabilityIndexPage() {
             {/* Action List */}
             <ActionList actions={data.actionList} />
           </>
+        ) : (
+          <div className="p-12 text-center rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
+            <AlertCircle className="w-8 h-8 text-amber-500 mx-auto" />
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Unable to load Employability Index. Please check your connection and retry.
+            </p>
+          </div>
         )}
       </div>
     </DashboardLayout>
