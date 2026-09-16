@@ -75,17 +75,33 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 }) => {
   const [headline, setHeadline] = useState(profile.headline || '');
   const [bio, setBio] = useState(profile.bio || '');
-  const [targetRole, setTargetRole] = useState(profile.targetRole || 'Senior Full Stack Engineer');
-  const [city, setCity] = useState(profile.location?.city || 'San Francisco');
-  const [state, setState] = useState(profile.location?.state || 'California');
-  const [country, setCountry] = useState(profile.location?.country || 'United States');
-  const [phone, setPhone] = useState(profile.phone || '+1 (555) 234-5678');
+  const [targetRole, setTargetRole] = useState(profile.targetRole || '');
+  const [city, setCity] = useState(profile.location?.city || '');
+  const [state, setState] = useState(profile.location?.state || '');
+  const [country, setCountry] = useState(profile.location?.country || '');
+  const [phone, setPhone] = useState(profile.phone || '');
   const [github, setGithub] = useState(profile.links?.github || '');
   const [linkedin, setLinkedin] = useState(profile.links?.linkedin || '');
   const [portfolio, setPortfolio] = useState(profile.links?.portfolio || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRoleOpen, setIsRoleOpen] = useState(false);
   const roleDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Sync state whenever modal opens or profile changes
+  useEffect(() => {
+    if (isOpen) {
+      setHeadline(profile.headline || '');
+      setBio(profile.bio || '');
+      setTargetRole(profile.targetRole || '');
+      setCity(profile.location?.city || '');
+      setState(profile.location?.state || '');
+      setCountry(profile.location?.country || '');
+      setPhone(profile.phone || '');
+      setGithub(profile.links?.github || '');
+      setLinkedin(profile.links?.linkedin || '');
+      setPortfolio(profile.links?.portfolio || '');
+    }
+  }, [isOpen, profile]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -253,7 +269,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+1 (555) 234-5678"
+                placeholder="e.g. +1 (555) 234-5678"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#3D5AFE]/50 font-medium text-xs sm:text-sm"
               />
             </div>
@@ -269,7 +285,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="San Francisco"
+                placeholder="e.g. San Francisco"
                 className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white"
               />
             </div>
@@ -279,7 +295,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 type="text"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                placeholder="California"
+                placeholder="e.g. California"
                 className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white"
               />
             </div>
@@ -289,7 +305,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 type="text"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                placeholder="United States"
+                placeholder="e.g. United States"
                 className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white"
               />
             </div>

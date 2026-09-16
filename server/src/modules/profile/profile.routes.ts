@@ -106,5 +106,11 @@ router.delete(
   asyncHandler(controller.deleteProject)
 );
 
+router.post(
+  "/me/sync-resume",
+  requireAuth,
+  asyncHandler(controller.syncResume)
+);
+
 export default router;
 

@@ -41,67 +41,90 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
         </button>
       </div>
 
-      {/* 2-Column Skill Cards Grid with Light & Dark Theme Adaptation */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
-        {skills.map((skill, idx) => {
-          const isExpert = skill.proficiency === 'Expert' || (skill.score && skill.score >= 95);
-          const isAdvanced = skill.proficiency === 'Advanced' || (skill.score && skill.score >= 90);
-
-          return (
-            <div
-              key={idx}
-              className="p-4 sm:p-4.5 rounded-2xl bg-slate-50/90 dark:bg-[#1c263d] border border-slate-200/80 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700/90 flex items-center justify-between gap-4 transition-all group relative overflow-hidden shadow-sm"
+      {/* Skills Content: Empty State or 2-Column Grid */}
+      {skills.length === 0 ? (
+        <div className="relative z-10 p-8 rounded-2xl bg-slate-50/60 dark:bg-[#1c263d]/60 border border-dashed border-slate-250 dark:border-slate-800 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+            <Award className="w-6 h-6" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">No technical skills added yet</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+              Upload your resume to automatically extract skills, or click &quot;Add Skill&quot; to specify your proficiencies manually.
+            </p>
+          </div>
+          {onAddSkill && (
+            <button
+              onClick={onAddSkill}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
             >
-              <div className="space-y-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate tracking-tight">
-                    {skill.name}
-                  </span>
-                  {skill.verified !== false && (
-                    <span title="Verified Skill" className="shrink-0">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block truncate">
-                  {skill.category || 'Technical'}
-                </span>
-              </div>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Your First Skill</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
+          {skills.map((skill, idx) => {
+            const isExpert = skill.proficiency === 'Expert' || (skill.score && skill.score >= 95);
+            const isAdvanced = skill.proficiency === 'Advanced' || (skill.score && skill.score >= 90);
 
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="text-right space-y-1">
-                  <span
-                    className={`inline-block px-3.5 py-0.5 rounded-full text-[11px] font-bold text-center border ${
-                      isExpert
-                        ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-[#3b1e54] dark:text-[#d8b4fe] dark:border-[#6b21a8]/60'
-                        : isAdvanced
-                        ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-[#172554] dark:text-[#93c5fd] dark:border-[#1e40af]/60'
-                        : 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-[#064e3b] dark:text-[#6ee7b7] dark:border-[#047857]/60'
-                    }`}
-                  >
-                    {skill.proficiency || (isExpert ? 'Expert' : isAdvanced ? 'Advanced' : 'Intermediate')}
-                  </span>
-                  {skill.score && (
-                    <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 block tracking-tight">
-                      {skill.score}/100
+            return (
+              <div
+                key={idx}
+                className="p-4 sm:p-4.5 rounded-2xl bg-slate-50/90 dark:bg-[#1c263d] border border-slate-200/80 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700/90 flex items-center justify-between gap-4 transition-all group relative overflow-hidden shadow-sm"
+              >
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate tracking-tight">
+                      {skill.name}
                     </span>
-                  )}
+                    {skill.verified !== false && (
+                      <span title="Verified Skill" className="shrink-0">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block truncate">
+                    {skill.category || 'Technical'}
+                  </span>
                 </div>
 
-                {onDeleteSkill && (
-                  <button
-                    onClick={() => onDeleteSkill(skill.name)}
-                    title="Remove Skill"
-                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right space-y-1">
+                    <span
+                      className={`inline-block px-3.5 py-0.5 rounded-full text-[11px] font-bold text-center border ${
+                        isExpert
+                          ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-[#3b1e54] dark:text-[#d8b4fe] dark:border-[#6b21a8]/60'
+                          : isAdvanced
+                          ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-[#172554] dark:text-[#93c5fd] dark:border-[#1e40af]/60'
+                          : 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-[#064e3b] dark:text-[#6ee7b7] dark:border-[#047857]/60'
+                      }`}
+                    >
+                      {skill.proficiency || (isExpert ? 'Expert' : isAdvanced ? 'Advanced' : 'Intermediate')}
+                    </span>
+                    {skill.score && (
+                      <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 block tracking-tight">
+                        {skill.score}/100
+                      </span>
+                    )}
+                  </div>
+
+                  {onDeleteSkill && (
+                    <button
+                      onClick={() => onDeleteSkill(skill.name)}
+                      title="Remove Skill"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

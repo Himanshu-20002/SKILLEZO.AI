@@ -1292,6 +1292,16 @@ export default function ResumeStudioPage() {
 
               {selectedResumeId && (
                 <>
+                  <a
+                    href={`/api/resumes/${selectedResumeId}/download?view=true`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="View uploaded resume in new tab"
+                    className="p-2 rounded-xl text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-slate-200 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-colors cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </a>
+
                   <button
                     onClick={() => fetchScore(selectedResumeId)}
                     disabled={refreshing}

@@ -8,6 +8,9 @@ export interface IResumePersonalInfo {
   email?: string | null;
   phone?: string | null;
   location?: string | null;
+  github?: string | null;
+  linkedin?: string | null;
+  portfolio?: string | null;
 }
 
 export interface IResumeSkill {
@@ -37,6 +40,8 @@ export interface IResumeProject {
   description?: string | null;
   technologies?: string[];
   link?: string | null;
+  githubUrl?: string | null;
+  liveDemoUrl?: string | null;
 }
 
 export interface IResumeCertification {
@@ -86,6 +91,9 @@ const personalInfoSchema = new Schema<IResumePersonalInfo>(
     email: { type: String, default: null, trim: true },
     phone: { type: String, default: null, trim: true },
     location: { type: String, default: null, trim: true },
+    github: { type: String, default: null, trim: true },
+    linkedin: { type: String, default: null, trim: true },
+    portfolio: { type: String, default: null, trim: true },
   },
   { _id: false }
 );
@@ -127,6 +135,8 @@ const resumeProjectSchema = new Schema<IResumeProject>(
     description: { type: String, default: null, trim: true },
     technologies: [{ type: String, trim: true }],
     link: { type: String, default: null, trim: true },
+    githubUrl: { type: String, default: null, trim: true },
+    liveDemoUrl: { type: String, default: null, trim: true },
   },
   { _id: false }
 );

@@ -90,4 +90,123 @@ describe('ProfileService — Clean Slate Onboarding & Real Profile Completion', 
     });
     expect(score).toBe(75);
   });
+
+  it('should hydrate empty profile from parsed resume data non-destructively', async () => {
+    const userId = 'user_hydrate_test';
+    const mockProfileDoc: any = {
+      userId,
+      headline: '',
+      targetRole: '',
+      bio: '',
+      phone: '',
+      location: { city: '', state: '', country: '' },
+      links: { github: '', linkedin: '', portfolio: '' },
+      skills: [],
+      projects: [],
+      experience: [],
+      education: [],
+      save: vi.fn().mockResolvedValue(true),
+      toObject: function () {
+        return { ...this };
+      },
+    };
+
+    mockRepo.findByUserId.mockResolvedValue(mockProfileDoc);
+
+    const mockExtractedData: any = {
+      personalInfo: {
+        phone: '+1 555 123 4567',
+        location: 'Seattle, WA, USA',
+      },
+      summary: 'Experienced Cloud Architect specialized in microservices.',
+      skills: [
+        { name: 'Go', category: 'Backend' },
+        { name: 'Kubernetes', category: 'Cloud' },
+      ],
+      experience: [
+        { companyName: 'CloudCorp', jobTitle: 'Senior Cloud Engineer', isCurrent: true },
+      ],
+      education: [
+        { institution: 'UW', degree: 'BS Computer Science' },
+      ],
+    };
+
+    const mockResumeDoc: any = {
+      summary: {
+        targetRole: 'Cloud Solutions Architect',
+      },
+      contact: {
+        links: [
+          { label: 'GitHub', url: 'https://github.com/clouduser' },
+          { label: 'LinkedIn', url: 'https://linkedin.com/in/clouduser' },
+        ],
+      },
+    };
+
+    const hydrated = await profileService.hydrateFromParsedResume(
+      userId,
+      mockExtractedData,
+      mockResumeDoc
+    );
+
+    expect(hydrated.phone).toBe('+1 555 123 4567');
+    expect(hydrated.bio).toBe('Experienced Cloud Architect specialized in microservices.');
+    expect(hydrated.targetRole).toBe('Cloud Solutions Architect');
+    expect(hydrated.links?.github).toBe('https://github.com/clouduser');
+    expect(hydrated.links?.linkedin).toBe('https://linkedin.com/in/clouduser');
+    expect(hydrated.location?.city).toBe('Seattle');
+    expect(hydrated.skills.length).toBe(2);
+    expect(hydrated.skills[0].name).toBe('Go');
+    expect(hydrated.skills[0].source).toBe(SkillSource.RESUME);
+    expect(hydrated.experience.length).toBe(1);
+    expect(hydrated.experience[0].companyName).toBe('CloudCorp');
+    expect(hydrated.education.length).toBe(1);
+    expect(hydrated.education[0].institution).toBe('UW');
+    expect(mockProfileDoc.save).toHaveBeenCalled();
+  });
+
+  it('should preserve existing user modifications during resume hydration', async () => {
+    const userId = 'user_preserve_test';
+    const mockProfileDoc: any = {
+      userId,
+      headline: 'My Custom Headline',
+      targetRole: 'Principal Architect',
+      bio: 'User written custom bio that exceeds twenty characters.',
+      phone: '+1 999 888 7777',
+      location: { city: 'Austin', state: 'TX', country: 'USA' },
+      links: { github: 'https://github.com/existing', linkedin: '', portfolio: '' },
+      skills: [{ name: 'Rust', level: 5, verified: true, source: SkillSource.PROFILE }],
+      projects: [],
+      experience: [],
+      education: [],
+      save: vi.fn().mockResolvedValue(true),
+      toObject: function () {
+        return { ...this };
+      },
+    };
+
+    mockRepo.findByUserId.mockResolvedValue(mockProfileDoc);
+
+    const mockExtractedData: any = {
+      personalInfo: { phone: '+1 111 222 3333' },
+      summary: 'Resume summary text.',
+      skills: [{ name: 'Rust' }, { name: 'Python' }],
+    };
+
+    const hydrated = await profileService.hydrateFromParsedResume(
+      userId,
+      mockExtractedData,
+      null
+    );
+
+    // Existing fields remain untouched
+    expect(hydrated.phone).toBe('+1 999 888 7777');
+    expect(hydrated.targetRole).toBe('Principal Architect');
+    expect(hydrated.bio).toBe('User written custom bio that exceeds twenty characters.');
+    expect(hydrated.links?.github).toBe('https://github.com/existing');
+    // Existing skill is preserved, new skill is added
+    expect(hydrated.skills.length).toBe(2);
+    expect(hydrated.skills.find((s) => s.name === 'Rust')?.verified).toBe(true);
+    expect(hydrated.skills.find((s) => s.name === 'Python')?.source).toBe(SkillSource.RESUME);
+  });
 });

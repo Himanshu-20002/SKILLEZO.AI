@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   FileText,
@@ -19,8 +19,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  Users,
+  ArrowLeftRight,
   LucideIcon,
 } from 'lucide-react';
+import { useSession } from '@/lib/auth-client';
 import BrandLogo from '@/components/auth/BrandLogo';
 
 interface SidebarProps {
@@ -128,12 +131,71 @@ export const sidebarSections: NavSection[] = [
   },
 ];
 
+export const adminSidebarSections: NavSection[] = [
+  {
+    items: [
+      {
+        label: 'Admin Overview',
+        href: '/dashboard/admin',
+        icon: LayoutDashboard,
+      },
+    ],
+  },
+  {
+    title: 'PLATFORM MANAGEMENT',
+    items: [
+      {
+        label: 'User Directory',
+        href: '/dashboard/admin?tab=users',
+        icon: Users,
+        badge: 'USERS',
+      },
+      {
+        label: 'Job Moderation',
+        href: '/dashboard/admin?tab=jobs',
+        icon: Briefcase,
+        badge: 'JOBS',
+      },
+      {
+        label: 'Resume Intelligence',
+        href: '/dashboard/admin?tab=resumes',
+        icon: FileText,
+        badge: 'ATS',
+      },
+    ],
+  },
+  {
+    title: 'SYSTEM & TELEMETRY',
+    items: [
+      {
+        label: 'System Telemetry',
+        href: '/dashboard/admin?tab=overview',
+        icon: ShieldCheck,
+      },
+    ],
+  },
+];
+
 export const sidebarNavItems: NavItem[] = sidebarSections.flatMap((s) => s.items);
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.role === 'admin' || session?.user?.email?.toLowerCase() === 'admin@gmail.com';
+  const isAdminRoute = pathname.startsWith('/dashboard/admin') || pathname.startsWith('/admin');
+
+  // Strict isolation: Admins see ONLY admin navigation; candidates see ONLY candidate navigation
+  const sectionsToRender = isAdmin || isAdminRoute ? adminSidebarSections : sidebarSections;
+  const currentTab = searchParams?.get('tab') || 'overview';
 
   const isLinkActive = (href: string) => {
+    if (isAdminRoute) {
+      const [targetPath, targetQuery] = href.split('?');
+      if (pathname !== targetPath) return false;
+      const targetTab = targetQuery ? new URLSearchParams(targetQuery).get('tab') : 'overview';
+      return (targetTab || 'overview') === currentTab;
+    }
     const basePath = href.split('?')[0];
     if (basePath === '/dashboard') {
       return pathname === '/dashboard';
@@ -149,7 +211,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
     >
       {/* Header / Brand */}
       <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 shrink-0">
-        {!collapsed && <BrandLogo href="/dashboard" />}
+        {!collapsed && (
+          <div className="flex items-center gap-2">
+            <BrandLogo href={isAdminRoute ? '/dashboard/admin' : '/dashboard'} />
+            {isAdminRoute && (
+              <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                Admin
+              </span>
+            )}
+          </div>
+        )}
         {collapsed && (
           <div className="w-full flex justify-center">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3D5AFE] to-[#00D9C0] flex items-center justify-center text-white font-bold text-lg shadow-lg">
@@ -169,7 +240,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
 
       {/* Navigation List */}
       <div className="flex-1 py-3 px-3 space-y-4 overflow-y-auto custom-scrollbar">
-        {sidebarSections.map((section, sIdx) => (
+        {sectionsToRender.map((section, sIdx) => (
           <div key={sIdx} className="space-y-1">
             {/* Section Category Header */}
             {section.title && !collapsed && (

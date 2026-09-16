@@ -14,6 +14,7 @@ import {
   Moon,
   Sun,
   Laptop,
+  ShieldCheck,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/dashboard/common/UserAvatar';
 import { useTheme, ThemeMode } from '@/context/ThemeContext';
@@ -132,46 +133,64 @@ export const UserMenu: React.FC = () => {
 
             {/* Section 2: Core Navigation */}
             <div className="py-1.5 space-y-0.5">
-              <Link
-                href="/dashboard/profile"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
-              >
-                <User className="w-4 h-4 text-[#3D5AFE]" />
-                <span>My Profile</span>
-              </Link>
+              {user.role?.toLowerCase() === 'admin' || user.email.toLowerCase() === 'admin@gmail.com' ? (
+                <Link
+                  href="/dashboard/admin"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <ShieldCheck className="w-4 h-4 text-amber-500" />
+                    <span>Admin Command Center</span>
+                  </div>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                    HUB
+                  </span>
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/dashboard/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+                  >
+                    <User className="w-4 h-4 text-[#3D5AFE]" />
+                    <span>My Profile</span>
+                  </Link>
 
-              <Link
-                href="/dashboard/wallet"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Wallet className="w-4 h-4 text-amber-500" />
-                  <span>Wallet & Tokens</span>
-                </div>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                  Tokens
-                </span>
-              </Link>
+                  <Link
+                    href="/dashboard/wallet"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Wallet className="w-4 h-4 text-amber-500" />
+                      <span>Wallet & Tokens</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      Tokens
+                    </span>
+                  </Link>
 
-              <Link
-                href="/dashboard/progress-analytics"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
-              >
-                <LineChart className="w-4 h-4 text-emerald-500" />
-                <span>Progress Analytics</span>
-              </Link>
+                  <Link
+                    href="/dashboard/progress-analytics"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+                  >
+                    <LineChart className="w-4 h-4 text-emerald-500" />
+                    <span>Progress Analytics</span>
+                  </Link>
 
-              <Link
-                href="/dashboard/settings"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
-              >
-                <Settings className="w-4 h-4 text-[#00D9C0]" />
-                <span>Account Settings</span>
-              </Link>
+                  <Link
+                    href="/dashboard/settings"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+                  >
+                    <Settings className="w-4 h-4 text-[#00D9C0]" />
+                    <span>Account Settings</span>
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Section 3: Appearance & Theme Selector */}

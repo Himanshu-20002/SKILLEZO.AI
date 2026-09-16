@@ -30,6 +30,7 @@ import {
   validateBuilderConfig,
 } from "@/modules/resume-intelligence/builder/builder.validator";
 import { GeminiProvider } from "@/core/ai/providers/gemini.provider";
+import { ProfileService } from "@/modules/profile/profile.service";
 import path from "path";
 import fs from "fs";
 import { Readable } from "stream";
@@ -40,15 +41,18 @@ export class ResumeService {
   private readonly resumeRepository: ResumeRepository;
   private readonly storageService: IResumeStorageService;
   private readonly parserService: ResumeParserService;
+  private readonly profileService: ProfileService;
 
   constructor(
     resumeRepository?: ResumeRepository,
     storageService?: IResumeStorageService,
-    parserService?: ResumeParserService
+    parserService?: ResumeParserService,
+    profileService?: ProfileService
   ) {
     this.resumeRepository = resumeRepository || new ResumeRepository();
     this.storageService = storageService || resumeStorageService;
     this.parserService = parserService || resumeParserService;
+    this.profileService = profileService || new ProfileService();
   }
 
   async uploadResume(
@@ -163,6 +167,15 @@ export class ResumeService {
         parsingError,
         uploadedAt: new Date(),
       } as any);
+
+      // Automatically hydrate candidate's profile from parsed resume data
+      if (extractedData || resumeDocument) {
+        try {
+          await this.profileService.hydrateFromParsedResume(userId, extractedData, resumeDocument);
+        } catch (hydrateErr) {
+          console.warn("[ResumeService] Profile hydration failed non-fatally:", hydrateErr);
+        }
+      }
 
       return newResume;
     } catch (dbErr: any) {

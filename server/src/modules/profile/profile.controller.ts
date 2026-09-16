@@ -90,5 +90,11 @@ export class ProfileController {
     const profile = await this.profileService.deleteProject(userId, projectId);
     res.status(HTTP_STATUS.OK).json(successResponse(profile));
   };
+
+  syncResume = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const profile = await this.profileService.syncResumeProfile(userId);
+    res.status(HTTP_STATUS.OK).json(successResponse(profile));
+  };
 }
 

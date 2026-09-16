@@ -14,12 +14,12 @@ interface ProfileHeaderProps {
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   profile,
-  name = 'Candidate',
-  email = 'candidate@example.com',
+  name,
+  email,
   onEditProfile,
 }) => {
   const displayName = name || 'Candidate';
-  const displayEmail = email || profile.links?.portfolio || 'candidate@example.com';
+  const displayEmail = email || '';
 
   const displayHeadline = profile.headline || 'Add your professional headline';
   const displayLocation = profile.location
@@ -56,10 +56,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 <span className="font-medium text-slate-700 dark:text-slate-300">{displayLocation}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span className="font-medium text-slate-700 dark:text-slate-300">{displayEmail}</span>
-              </div>
+              {displayEmail && (
+                <div className="flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="font-medium text-slate-700 dark:text-slate-300">{displayEmail}</span>
+                </div>
+              )}
               {displayPhone && (
                 <div className="flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />

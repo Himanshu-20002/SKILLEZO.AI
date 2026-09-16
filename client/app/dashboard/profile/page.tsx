@@ -7,18 +7,23 @@ import { ProfileHeader } from '@/components/dashboard/profile/ProfileHeader';
 import { PersonalInformation } from '@/components/dashboard/profile/PersonalInformation';
 import { SkillsSection } from '@/components/dashboard/profile/SkillsSection';
 import { ProjectsPortfolioSection } from '@/components/dashboard/profile/ProjectsPortfolioSection';
+import { EducationSection } from '@/components/dashboard/profile/EducationSection';
 import { ProfileCompletion } from '@/components/dashboard/profile/ProfileCompletion';
 import { EditProfileModal } from '@/components/dashboard/profile/EditProfileModal';
 import { AddSkillModal } from '@/components/dashboard/profile/AddSkillModal';
 import { AddProjectModal } from '@/components/dashboard/profile/AddProjectModal';
+import { AddEducationModal } from '@/components/dashboard/profile/AddEducationModal';
 import {
   profileService,
   CandidateProfile,
   CandidateSkill,
   CandidateProject,
+  CandidateEducation,
 } from '@/services/profile.service';
+import { resumeService } from '@/services/resume.service';
 import { useSession } from '@/lib/auth-client';
 import { toast } from 'sonner';
+import { Sparkles, UploadCloud, RefreshCw, Loader2 } from 'lucide-react';
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -60,6 +65,42 @@ export default function ProfilePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddSkillModalOpen, setIsAddSkillModalOpen] = useState(false);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+  const [isAddEducationModalOpen, setIsAddEducationModalOpen] = useState(false);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const [isSyncingResume, setIsSyncingResume] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingResume(true);
+      toast.loading('Analyzing and extracting profile details from resume...', { id: 'resume-upload' });
+      await resumeService.uploadResume(file);
+      await loadProfile();
+      toast.success('Profile successfully populated from resume! Any missing fields can be edited below.', { id: 'resume-upload' });
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to process resume', { id: 'resume-upload' });
+    } finally {
+      setIsUploadingResume(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleSyncResume = async () => {
+    try {
+      setIsSyncingResume(true);
+      toast.loading('Syncing profile from your default resume...', { id: 'resume-sync' });
+      await profileService.syncResume();
+      await loadProfile();
+      toast.success('Profile synchronized with your latest resume!', { id: 'resume-sync' });
+    } catch (err: any) {
+      toast.error(err?.message || 'No uploaded resume found to sync from', { id: 'resume-sync' });
+    } finally {
+      setIsSyncingResume(false);
+    }
+  };
 
   const loadProfile = useCallback(async () => {
     try {
@@ -159,6 +200,36 @@ export default function ProfilePage() {
     }
   };
 
+  const handleAddEducation = async (newEdu: CandidateEducation) => {
+    try {
+      const updatedEducation = [...(profile.education || []), newEdu];
+      const updated = await profileService.updateEducation(updatedEducation);
+      setProfile((prev) => ({
+        ...prev,
+        education: updated.education || updatedEducation,
+        completionPercentage: updated.completionPercentage || prev.completionPercentage,
+      }));
+      toast.success(`Education at "${newEdu.institution}" added!`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to add education');
+    }
+  };
+
+  const handleDeleteEducation = async (index: number) => {
+    try {
+      const updatedEducation = (profile.education || []).filter((_, i) => i !== index);
+      const updated = await profileService.updateEducation(updatedEducation);
+      setProfile((prev) => ({
+        ...prev,
+        education: updated.education || updatedEducation,
+        completionPercentage: updated.completionPercentage || prev.completionPercentage,
+      }));
+      toast.success('Education entry removed');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to delete education');
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -167,6 +238,62 @@ export default function ProfilePage() {
           description="Manage your identity, technical projects, verified skill credentials, and career readiness overview."
           badge="Verified Profile"
         />
+
+        {/* Hidden File Input for Resume Auto-Fill */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept=".pdf,.docx"
+          className="hidden"
+          onChange={handleResumeUpload}
+        />
+
+        {/* AI Resume Auto-Fill Banner */}
+        <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-indigo-950/40 via-purple-950/30 to-[#3D5AFE]/15 border border-indigo-500/20 backdrop-blur-xl shadow-lg">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#3D5AFE]/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+            <div className="space-y-1.5 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#3D5AFE]/15 text-[#3D5AFE] dark:text-[#38BDF8] border border-[#3D5AFE]/30">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>AI Profile Auto-Fill</span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                Upload your resume to instantly auto-fill your profile
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Upload your resume PDF and our AI engine will automatically extract your contact information, target role, technical skills, and portfolio links. Any missing fields can be completed manually below.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingResume}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#3D5AFE] to-[#00D9C0] hover:opacity-95 text-white text-xs font-bold shadow-md transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isUploadingResume ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <UploadCloud className="w-4 h-4" />
+                )}
+                <span>{isUploadingResume ? 'Analyzing Resume...' : 'Upload Resume PDF'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSyncResume}
+                disabled={isSyncingResume || isUploadingResume}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-all disabled:opacity-50 cursor-pointer"
+                title="Re-sync from previously uploaded resume"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncingResume ? 'animate-spin' : ''}`} />
+                <span>Re-sync</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
         {isLoading ? (
           <div className="p-12 rounded-3xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex items-center justify-center">
@@ -189,7 +316,11 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               {/* Left Column (8 cols): Personal Info, Skills Grid, and Projects Portfolio */}
               <div className="lg:col-span-8 space-y-6">
-                <PersonalInformation profile={profile} email={derivedEmail} />
+                <PersonalInformation
+                  profile={profile}
+                  email={derivedEmail}
+                  onEditProfile={() => setIsEditModalOpen(true)}
+                />
 
                 {/* Technical Skills & Competencies */}
                 <SkillsSection
@@ -204,8 +335,14 @@ export default function ProfilePage() {
                   onAddProject={() => setIsAddProjectModalOpen(true)}
                   onDeleteProject={handleDeleteProject}
                 />
-              </div>
 
+                {/* Academic Background & Education */}
+                <EducationSection
+                  education={profile.education}
+                  onAddEducation={() => setIsAddEducationModalOpen(true)}
+                  onDeleteEducation={handleDeleteEducation}
+                />
+              </div>
 
               {/* Right Column (4 cols): Profile Completion Card */}
               <div className="lg:col-span-4 space-y-6">
@@ -231,6 +368,12 @@ export default function ProfilePage() {
               isOpen={isAddProjectModalOpen}
               onClose={() => setIsAddProjectModalOpen(false)}
               onAdd={handleAddProject}
+            />
+
+            <AddEducationModal
+              isOpen={isAddEducationModalOpen}
+              onClose={() => setIsAddEducationModalOpen(false)}
+              onAdd={handleAddEducation}
             />
           </>
         )}

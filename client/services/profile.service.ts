@@ -159,5 +159,12 @@ export const profileService = {
     });
     return res.data;
   },
+
+  async syncResume(): Promise<CandidateProfile> {
+    const res = await apiFetch<{ success: boolean; data: CandidateProfile }>("/api/profile/me/sync-resume", {
+      method: "POST",
+    });
+    return res.data;
+  },
 };
 

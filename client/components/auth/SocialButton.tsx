@@ -21,13 +21,13 @@ export function SocialButton({ provider, label, className }: SocialButtonProps) 
       try {
         setIsLoading(true);
         toast.loading("Redirecting to Google Sign-In...", { id: "google-auth" });
-        const callbackURL =
-          typeof window !== "undefined"
-            ? `${window.location.origin}/dashboard`
-            : "/dashboard";
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        const callbackURL = origin ? `${origin}/dashboard` : "/dashboard";
+        const errorCallbackURL = origin ? `${origin}/account-suspended` : "/account-suspended";
         await authClient.signIn.social({
           provider: "google",
           callbackURL,
+          errorCallbackURL,
         });
       } catch (err: any) {
         toast.error(err?.message || "Google sign-in failed. Please try again.", { id: "google-auth" });

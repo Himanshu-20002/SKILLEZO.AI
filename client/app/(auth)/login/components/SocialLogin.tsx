@@ -12,13 +12,13 @@ export default function SocialLogin() {
     try {
       setIsLoadingGoogle(true);
       toast.loading("Redirecting to Google Sign-In...", { id: "google-social" });
-      const callbackURL =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/dashboard`
-          : "/dashboard";
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const callbackURL = origin ? `${origin}/dashboard` : "/dashboard";
+      const errorCallbackURL = origin ? `${origin}/account-suspended` : "/account-suspended";
       await authClient.signIn.social({
         provider: "google",
         callbackURL,
+        errorCallbackURL,
       });
     } catch (err: any) {
       toast.error(err?.message || "Failed to sign in with Google.", { id: "google-social" });

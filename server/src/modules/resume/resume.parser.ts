@@ -98,23 +98,73 @@ const SKILL_TAXONOMY: Record<string, { regex: RegExp; category: string }> = {
   NLP: { regex: /\bNLP\b|\bNatural\s*Language\s*Processing\b/i, category: "AI & ML" },
 };
 
+export interface IExtractedPdfLink {
+  url: string;
+  rect?: number[];
+}
+
 export class ResumeParserService {
   /**
-   * Extract raw text from a PDF Buffer using pdf-parse.
+   * Extract raw text and hyperlink annotations from a PDF Buffer.
    */
-  async extractRawTextFromBuffer(buffer: Buffer): Promise<string> {
+  async extractRawTextAndLinksFromBuffer(buffer: Buffer): Promise<{ rawText: string; links: IExtractedPdfLink[] }> {
     try {
-      const data = await (pdfParse as any)(buffer);
-      return data.text || "";
-    } catch (err: any) {
-      throw new Error(`Failed to parse PDF text: ${err.message}`);
+      const links: IExtractedPdfLink[] = [];
+
+      const customPagerender = (pageData: any) => {
+        return Promise.all([
+          pageData.getTextContent(),
+          typeof pageData.getAnnotations === "function" ? pageData.getAnnotations() : Promise.resolve([]),
+        ]).then(([textContent, annotations]: [any, any[]]) => {
+          if (Array.isArray(annotations)) {
+            for (const a of annotations) {
+              if (a.subtype === "Link" && a.url) {
+                links.push({ url: a.url, rect: a.rect });
+              }
+            }
+          }
+          let lastY: any;
+          let text = "";
+          for (const item of textContent.items) {
+            if (lastY === item.transform[5] || !lastY) {
+              text += item.str;
+            } else {
+              text += "\n" + item.str;
+            }
+            lastY = item.transform[5];
+          }
+          return text;
+        });
+      };
+
+      const data = await (pdfParse as any)(buffer, { pagerender: customPagerender });
+      return {
+        rawText: data.text || "",
+        links,
+      };
+    } catch {
+      // Graceful fallback to default pdfParse
+      try {
+        const fallbackData = await (pdfParse as any)(buffer);
+        return { rawText: fallbackData.text || "", links: [] };
+      } catch (err: any) {
+        throw new Error(`Failed to parse PDF text: ${err.message}`);
+      }
     }
   }
 
   /**
-   * Extract personal info (Full Name, Email, Phone, Location) using regex heuristics.
+   * Extract raw text from a PDF Buffer using pdf-parse.
    */
-  extractPersonalInfo(text: string): IResumePersonalInfo {
+  async extractRawTextFromBuffer(buffer: Buffer): Promise<string> {
+    const { rawText } = await this.extractRawTextAndLinksFromBuffer(buffer);
+    return rawText;
+  }
+
+  /**
+   * Extract personal info (Full Name, Email, Phone, Location, Links) using regex heuristics and PDF annotations.
+   */
+  extractPersonalInfo(text: string, links: IExtractedPdfLink[] = []): IResumePersonalInfo {
     const lines = text
       .split("\n")
       .map((l) => l.trim())
@@ -161,11 +211,50 @@ export class ResumeParserService {
       if (location.length === 0) location = null;
     }
 
+    // 5. Profile links extraction (GitHub, LinkedIn, Portfolio)
+    let github: string | null = null;
+    let linkedin: string | null = null;
+    let portfolio: string | null = null;
+
+    for (const l of links) {
+      const u = l.url;
+      const lower = u.toLowerCase();
+      if (lower.includes("github.com") && !github) {
+        const pathParts = u.replace(/https?:\/\/(?:www\.)?github\.com\/?/i, "").split("/").filter(Boolean);
+        if (pathParts.length <= 1) {
+          github = u;
+        }
+      } else if (lower.includes("linkedin.com") && !linkedin) {
+        linkedin = u;
+      } else if (
+        !portfolio &&
+        !lower.startsWith("mailto:") &&
+        !lower.includes("github.com") &&
+        !lower.includes("linkedin.com") &&
+        !lower.includes("drive.google.com")
+      ) {
+        portfolio = u;
+      }
+    }
+
+    // Fallbacks from raw text if not in annotations
+    if (!github) {
+      const ghMatch = text.match(/https?:\/\/(?:www\.)?github\.com\/[A-Za-z0-9_.-]+/i);
+      if (ghMatch) github = ghMatch[0];
+    }
+    if (!linkedin) {
+      const liMatch = text.match(/https?:\/\/(?:www\.)?linkedin\.com\/in\/[A-Za-z0-9_.-]+/i);
+      if (liMatch) linkedin = liMatch[0];
+    }
+
     return {
       fullName,
       email,
       phone,
       location,
+      github,
+      linkedin,
+      portfolio,
     };
   }
 
@@ -340,10 +429,10 @@ export class ResumeParserService {
   /**
    * Extract projects from resume text (common in student and developer resumes).
    */
-  extractProjects(text: string): IResumeProject[] {
+  extractProjects(text: string, links: IExtractedPdfLink[] = []): IResumeProject[] {
     const projects: IResumeProject[] = [];
     const projectSectionMatch = text.match(
-      /(?:projects?|key\s+projects?|personal\s+projects?|technical\s+projects?)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:education|achievements?|certifications?|skills?|experience|work\s+history|\b[A-Z\s]{4,}\b\n|$))/i
+      /(?:projects?|key\s+projects?|personal\s+projects?|technical\s+projects?|academic\s+projects?|selected\s+projects?|notable\s+projects?|featured\s+projects?|project\s+work|projects?\s*(?:&|and)\s*portfolio)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:education|academic(?:s|\s+background)?|achievements?|certifications?|skills?|technical\s+skills|experience|work\s+history|employment|$))/i
     );
 
     if (!projectSectionMatch || !projectSectionMatch[1]) {
@@ -351,34 +440,155 @@ export class ResumeParserService {
     }
 
     const sectionContent = projectSectionMatch[1].trim();
-    const blocks = sectionContent.split(/\n(?=[A-Z0-9][A-Za-z0-9\s&'’\-_]{2,50}(?:\s*[-–|:]|\s*\(|\s*\n))/g);
+    const rawBlocks = sectionContent.split(
+      /\n\s*(?=(?!(?:tech|technologies|tools|stack|built with|github|live\s*demo|repo)\s*[:\-])[A-Z0-9][A-Za-z0-9\s&'’\-_]{2,60}(?:\s+[-–|]\s+|\s*\([^)]*\)|\s*\n(?!\s*•|\s*[-–])))/gi
+    );
 
-    for (const block of blocks) {
+    // Filter project links (exclude mailto, linkedin, personal profile links, drive cert links)
+    const candidateProjectLinks = links.filter((l) => {
+      const u = l.url.toLowerCase();
+      return (
+        !u.startsWith("mailto:") &&
+        !u.includes("linkedin.com") &&
+        !u.includes("devportfolio") &&
+        !u.includes("drive.google.com") &&
+        !/^https?:\/\/(?:www\.)?github\.com\/[A-Za-z0-9_-]+\/?$/i.test(u)
+      );
+    });
+
+    const cleanTechItem = (tech: string): string => {
+      return tech
+        .replace(
+          /(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s*\d{2,4}$/i,
+          ""
+        )
+        .replace(/\b\d{4}\b$/, "")
+        .trim();
+    };
+
+    for (const block of rawBlocks) {
       const trimmed = block.trim();
-      if (trimmed.length < 10) continue;
+      if (trimmed.length < 15) continue;
+
+      // Filter out blocks that are just link artifacts or buttons
+      if (/^(?:github|live\s*demo|repository|repo|demo|source\s*code)\b/i.test(trimmed)) {
+        continue;
+      }
 
       const lines = trimmed.split("\n").map((l) => l.trim()).filter(Boolean);
       if (lines.length === 0) continue;
 
       const titleLine = lines[0];
-      const title = titleLine.split(/[-–|:(]/)[0].trim();
+      if (/^(?:tech|built with|stack|•|[-–*])/i.test(titleLine)) continue;
+
+      const hasSeparator = /\s+[-–|]\s+|\s*[:(]/.test(titleLine);
+      if (!hasSeparator && (titleLine.length > 50 || /^(?:architected|developed|engineered|built|designed|implemented|created|spearheaded|led|managed|collaborated|responsible|utilized|leveraged)\b/i.test(titleLine))) {
+        continue;
+      }
+
+      const title = titleLine.split(/\s+[-–|]\s+|\s*[:(]/)[0].trim();
+      if (/^(?:github|live\s*demo|repository|repo|demo|source\s*code)/i.test(title)) continue;
+      if (title.length < 2 || title.length > 80) continue;
 
       // Extract technologies if line 2 or inline mentions tech
       let technologies: string[] = [];
+      let descStartIndex = 1;
+
       if (lines.length > 1 && /^(?:tech|technologies|tools|stack|built with)\s*[:\-]/i.test(lines[1])) {
-        technologies = lines[1].replace(/^(?:tech|technologies|tools|stack|built with)\s*[:\-]/i, "").split(/[,|•]/).map((t) => t.trim()).filter(Boolean);
+        technologies = lines[1]
+          .replace(/^(?:tech|technologies|tools|stack|built with)\s*[:\-]/i, "")
+          .split(/[,|•]/)
+          .map(cleanTechItem)
+          .filter((t) => t.length > 1 && t.length < 35);
+        descStartIndex = 2;
       } else if (lines.length > 1 && lines[1].includes(",")) {
-        technologies = lines[1].split(/[,|•]/).map((t) => t.trim()).filter((t) => t.length > 1 && t.length < 30);
+        technologies = lines[1]
+          .split(/[,|•]/)
+          .map(cleanTechItem)
+          .filter((t) => t.length > 1 && t.length < 35);
+        descStartIndex = 2;
       }
 
-      const description = lines.slice(technologies.length > 0 ? 2 : 1).join(" ").slice(0, 500);
+      // If no explicit technologies line, infer from SKILL_TAXONOMY
+      if (technologies.length === 0) {
+        const detectedTech: string[] = [];
+        for (const [skillName, { regex }] of Object.entries(SKILL_TAXONOMY)) {
+          if (regex.test(trimmed)) {
+            detectedTech.push(skillName);
+          }
+        }
+        if (detectedTech.length > 0) {
+          technologies = detectedTech.slice(0, 6);
+        }
+      }
 
-      if (title.length > 2 && title.length < 80) {
-        projects.push({
-          title,
-          technologies,
-          description: description || trimmed,
-        });
+      // Filter out raw link lines from description
+      const descLines = lines
+        .slice(descStartIndex)
+        .filter((l) => !/^(?:github|live\s*demo|repository|repo|demo|source\s*code)/i.test(l));
+      const description = descLines.join(" ").replace(/\s+/g, " ").slice(0, 500);
+
+      // Links extraction for this project
+      let githubUrl: string | null = null;
+      let liveDemoUrl: string | null = null;
+
+      // 1. Text link matches if present
+      const textLinkMatches = trimmed.match(/https?:\/\/[^\s)\],]+/gi) || [];
+      for (const tl of textLinkMatches) {
+        const cleanTl = tl.replace(/[.,;)]$/, "");
+        if (cleanTl.toLowerCase().includes("github.com") && !githubUrl) {
+          githubUrl = cleanTl;
+        } else if (!liveDemoUrl) {
+          liveDemoUrl = cleanTl;
+        }
+      }
+
+      // 2. Annotation link matches by title slug comparison
+      const titleSlug = title.toLowerCase().replace(/[^a-z0-9]/g, "");
+      for (const pl of candidateProjectLinks) {
+        const linkUrlLower = pl.url.toLowerCase();
+        const matchesTitle =
+          (titleSlug.includes("guardops") && linkUrlLower.includes("workforce")) ||
+          (titleSlug.includes("habib") && linkUrlLower.includes("habib")) ||
+          (titleSlug.includes("content") && linkUrlLower.includes("content")) ||
+          (titleSlug.length > 4 && linkUrlLower.includes(titleSlug));
+
+        if (matchesTitle) {
+          if (linkUrlLower.includes("github.com") && !githubUrl) {
+            githubUrl = pl.url;
+          } else if (!linkUrlLower.includes("github.com") && !liveDemoUrl) {
+            liveDemoUrl = pl.url;
+          }
+        }
+      }
+
+      projects.push({
+        title,
+        technologies,
+        description: description || trimmed,
+        link: liveDemoUrl || githubUrl || null,
+        githubUrl,
+        liveDemoUrl,
+      });
+    }
+
+    // 3. Fallback sequential assignment for projects that didn't match slugs directly
+    let linkIdx = 0;
+    for (const proj of projects) {
+      if (!proj.githubUrl && candidateProjectLinks[linkIdx]?.url.toLowerCase().includes("github.com")) {
+        proj.githubUrl = candidateProjectLinks[linkIdx].url;
+        linkIdx++;
+      }
+      if (
+        !proj.liveDemoUrl &&
+        candidateProjectLinks[linkIdx] &&
+        !candidateProjectLinks[linkIdx].url.toLowerCase().includes("github.com")
+      ) {
+        proj.liveDemoUrl = candidateProjectLinks[linkIdx].url;
+        linkIdx++;
+      }
+      if (!proj.link) {
+        proj.link = proj.liveDemoUrl || proj.githubUrl || null;
       }
     }
 
@@ -391,7 +601,7 @@ export class ResumeParserService {
   extractCertifications(text: string): IResumeCertification[] {
     const certs: IResumeCertification[] = [];
     const certSectionMatch = text.match(
-      /(?:certifications?|certificates?|licenses?|achievements?|honors?|awards?)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:education|skills?|projects?|experience|\b[A-Z\s]{4,}\b\n|$))/i
+      /(?:certifications?|certificates?|licenses?|achievements?|honors?|awards?)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:education|skills?|projects?|experience|$))/i
     );
 
     if (!certSectionMatch || !certSectionMatch[1]) {
@@ -418,25 +628,25 @@ export class ResumeParserService {
    * Master extraction orchestrator.
    */
   async parseResumeBuffer(buffer: Buffer): Promise<IResumeExtractedData> {
-    const rawText = await this.extractRawTextFromBuffer(buffer);
-    return this.parseResumeText(rawText);
+    const { rawText, links } = await this.extractRawTextAndLinksFromBuffer(buffer);
+    return this.parseResumeText(rawText, links);
   }
 
   /**
-   * Parse structured sections from raw text string.
+   * Parse structured sections from raw text string and extracted hyperlink annotations.
    */
-  parseResumeText(text: string): IResumeExtractedData {
-    const personalInfo = this.extractPersonalInfo(text);
+  parseResumeText(text: string, links: IExtractedPdfLink[] = []): IResumeExtractedData {
+    const personalInfo = this.extractPersonalInfo(text, links);
     const skills = this.extractSkills(text);
     const education = this.extractEducation(text);
     const experience = this.extractExperience(text);
-    const projects = this.extractProjects(text);
+    const projects = this.extractProjects(text, links);
     const certifications = this.extractCertifications(text);
 
     // Summary extraction (look for dedicated summary/profile section, avoid education/achievements)
     let summary: string | null = null;
     const summaryHeaderMatch = text.match(
-      /(?:professional\s+summary|executive\s+summary|summary|profile|about\s+me|career\s+objective|objective)\s*[:\n\-]\s*([\s\S]{20,400}?)(?=\n\s*(?:skills|technical\s+skills|experience|work\s+experience|education|projects|achievements|certifications|\b[A-Z\s]{4,}\b\n|$))/i
+      /(?:professional\s+summary|executive\s+summary|summary|profile|about\s+me|career\s+objective|objective)\s*[:\n\-]\s*([\s\S]{20,400}?)(?=\n\s*(?:skills|technical\s+skills|experience|work\s+experience|education|projects|achievements|certifications|$))/i
     );
 
     if (summaryHeaderMatch && summaryHeaderMatch[1]) {

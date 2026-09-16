@@ -54,10 +54,17 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     const message = errorBody?.error?.message || errorBody?.message || `HTTP ${response.status}: ${response.statusText}`;
     const code = errorBody?.error?.code || errorBody?.code;
     const details = errorBody?.error?.details || errorBody?.details;
+
+    if (response.status === 403 && code === "ACCOUNT_SUSPENDED") {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("skillezo_token");
+        window.sessionStorage.setItem("account_suspended", "true");
+        window.dispatchEvent(new CustomEvent("account-suspended"));
+      }
+    }
     
     throw new ApiError(message, response.status, code, details);
   }
 
   return response.json();
 }
-

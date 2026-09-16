@@ -11,7 +11,8 @@ import PasswordInput from "@/components/auth/PasswordInput";
 import RememberMe from "@/components/auth/RememberMe";
 import LoadingSpinner from "@/components/auth/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { signIn } from "@/lib/auth-client";
+import { signIn, authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 
 // Login Schema with Zod validation
@@ -66,6 +67,20 @@ export default function LoginForm({ activeRole = "candidate" }: LoginFormProps) 
         setAuthError(errorMsg);
         toast.error("Authentication Failed", { description: errorMsg });
       } else {
+        const statusRes = await apiFetch<{ success: boolean; data: { isSuspended: boolean } }>("/api/user/status").catch(() => null);
+        if (statusRes?.data?.isSuspended || (res.data?.user as any)?.accountStatus === "suspended") {
+          try {
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("skillezo_token");
+              sessionStorage.setItem("account_suspended", "true");
+            }
+            await authClient.signOut();
+          } catch {}
+          toast.error("Account Suspended", { description: "Your account has been suspended by an administrator." });
+          router.push("/account-suspended");
+          return;
+        }
+
         const userRole = (res.data?.user as any)?.role || activeRole;
         if (userRole === "recruiter") {
           toast.success("Recruiter Workspace", { description: "Opening applicant management portal..." });

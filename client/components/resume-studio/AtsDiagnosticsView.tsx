@@ -15,6 +15,7 @@ import {
   GraduationCap,
   Award,
   Trash2,
+  Eye,
 } from 'lucide-react';
 import { ResumeAnalysisData, AIResumeRecommendation, ResumeRecord } from '@/types/resume';
 import { ResumeScoreResult } from '@/types/resume-scoring.types';
@@ -200,6 +201,19 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+            {(currentResume._id || currentResume.id) && (
+              <a
+                href={`/api/resumes/${currentResume._id || currentResume.id}/download?view=true`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-800/60 transition cursor-pointer"
+                title="Open and view uploaded resume in a new tab"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>View Resume</span>
+              </a>
+            )}
+
             <button
               onClick={onUploadClick}
               disabled={isUploading}

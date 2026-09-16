@@ -123,6 +123,72 @@ describe("ResumeParserService", () => {
     });
   });
 
+  describe("extractProjects", () => {
+    it("should extract project title, technologies, description and url", () => {
+      const projectText = `
+        PROJECTS
+        AI Resume Studio - Interactive Builder
+        Tech: Next.js, TypeScript, Tailwind CSS, OpenAI
+        Architected a full-featured real-time resume editor with PDF generation and ATS scoring.
+        https://github.com/alexrivera/resume-studio
+      `;
+
+      const projects = parser.extractProjects(projectText);
+      expect(projects.length).toBe(1);
+      expect(projects[0].title).toBe("AI Resume Studio");
+      expect(projects[0].technologies).toContain("Next.js");
+      expect(projects[0].technologies).toContain("TypeScript");
+      expect(projects[0].link).toBe("https://github.com/alexrivera/resume-studio");
+    });
+
+    it("should extract all 3 projects and clean dates and link annotations", () => {
+      const multiProjectText = `
+        Projects
+        GuardOps – Workforce Safety PPE Monitoring Platform
+        Next.js, TypeScript, Drizzle ORM, PostgreSQL (Neon), Better Auth, Tailwind CSSMarch 2026
+        • Built a role-based PPE Workforce Safety Platform for admin and supervisor operations.
+        GitHubRepository —LiveDemo
+        Habib’s Hair & Beauty Salon Website
+        Next.js, PostgreSQL, Admin dashboard, GA4, GTM, ZapierJune 2026
+        • Built and deployed a production-ready salon website with an admin dashboard.
+        GitHubRepositoryLiveDemo
+        ContentAI – AI-Powered Social Media Campaign Generator
+        Next.js 16, Tailwind CSS, Drizzle ORM, PostgreSQL, Auth.js (NextAuth), OpenRouter APIJan 2026
+        • Engineered a full-stack generative AI dashboard using Next.js App Router.
+        GitHubRepository —LiveDemo
+        Education
+        Bachelor of Technology
+      `;
+
+      const mockLinks = [
+        { url: "https://github.com/Himanshu-20002/Workforce-Safety-Monitoring-Platform" },
+        { url: "https://workforce-safety-monitoring-platfor.vercel.app/" },
+        { url: "https://github.com/Himanshu-20002/Habibs-Hair-Beauty-Salon" },
+        { url: "https://habibs-hair-beauty-salon.vercel.app/" },
+        { url: "https://github.com/Himanshu-20002/contentAI.git" },
+        { url: "https://content-ai-amber.vercel.app/" },
+      ];
+
+      const projects = parser.extractProjects(multiProjectText, mockLinks);
+      expect(projects.length).toBe(3);
+
+      expect(projects[0].title).toBe("GuardOps");
+      expect(projects[0].technologies).toContain("Tailwind CSS");
+      expect(projects[0].technologies).not.toContain("Tailwind CSSMarch 2026");
+      expect(projects[0].githubUrl).toBe("https://github.com/Himanshu-20002/Workforce-Safety-Monitoring-Platform");
+      expect(projects[0].liveDemoUrl).toBe("https://workforce-safety-monitoring-platfor.vercel.app/");
+
+      expect(projects[1].title).toContain("Habib");
+      expect(projects[1].technologies).toContain("Zapier");
+      expect(projects[1].githubUrl).toBe("https://github.com/Himanshu-20002/Habibs-Hair-Beauty-Salon");
+
+      expect(projects[2].title).toBe("ContentAI");
+      expect(projects[2].technologies).toContain("OpenRouter API");
+      expect(projects[2].githubUrl).toBe("https://github.com/Himanshu-20002/contentAI.git");
+      expect(projects[2].liveDemoUrl).toBe("https://content-ai-amber.vercel.app/");
+    });
+  });
+
   describe("parseResumeText", () => {
     it("should return comprehensive structured IResumeExtractedData payload", () => {
       const extracted = parser.parseResumeText(sampleResumeText);

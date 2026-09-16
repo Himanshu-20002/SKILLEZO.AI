@@ -1,6 +1,8 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
-import { authHandler } from "@/core/auth";
+import mongoose from "mongoose";
+import { fromNodeHeaders } from "better-auth/node";
+import { authHandler, auth } from "@/core/auth";
 import healthRouter from "@/routes/health.routes";
 import testAuthRouter from "@/routes/testAuth.routes";
 import { profileRouter } from "@/modules/profile";
@@ -14,6 +16,7 @@ import recruiterApplicationRouter from "@/modules/recruiter-application";
 import { skillGapRoutes } from "@/modules/career-plan/skill-gap.routes";
 import { careerPlanRoutes } from "@/modules/career-plan/employability.routes";
 import { verificationRouter } from "@/modules/verification";
+import { adminRouter } from "@/modules/admin";
 import { notFoundMiddleware } from "@/core/middleware/notFound.middleware";
 import { errorMiddleware } from "@/core/middleware/error.middleware";
 import { env } from "@/core/config/env";
@@ -70,6 +73,65 @@ app.use("/api/recruiter/applications", recruiterApplicationRouter);
 app.use("/api/skill-gap", skillGapRoutes);
 app.use("/api/career-plan", careerPlanRoutes);
 app.use("/api/verification", verificationRouter);
+app.use("/api/admin", adminRouter);
+
+// Global user real-time status & suspension health check
+app.get("/api/user/status", async (req: Request, res: Response) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+
+    if (!session || !session.user) {
+      return res.status(200).json({
+        success: true,
+        data: { authenticated: false, isSuspended: false, accountStatus: "none" },
+      });
+    }
+
+    const userId = session.user.id;
+    let accountStatus = (session.user as any).accountStatus || "active";
+
+    if (mongoose.connection.db) {
+      const queries: any[] = [{ id: userId }, { email: session.user.email?.toLowerCase() }, { _id: userId }];
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        queries.push({ _id: new mongoose.Types.ObjectId(userId) });
+      }
+      const userDoc = await mongoose.connection.db.collection("user").findOne({ $or: queries });
+      if (userDoc?.accountStatus) {
+        accountStatus = userDoc.accountStatus;
+      }
+    }
+
+    const isSuspended = accountStatus === "suspended";
+
+    if (isSuspended && mongoose.connection.db) {
+      const delQueries: any[] = [{ userId }];
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        delQueries.push({ userId: new mongoose.Types.ObjectId(userId) });
+      }
+      await mongoose.connection.db.collection("session").deleteMany({ $or: delQueries }).catch(() => {});
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        authenticated: true,
+        id: userId,
+        email: session.user.email,
+        name: session.user.name,
+        role: session.user.email?.toLowerCase() === "admin@gmail.com" ? "admin" : (session.user as any).role || "candidate",
+        accountStatus,
+        isSuspended,
+      },
+    });
+  } catch (error: any) {
+    return res.status(200).json({
+      success: true,
+      data: { authenticated: false, isSuspended: false, accountStatus: "none" },
+    });
+  }
+});
 
 
 app.get("/", (_req: Request, res: Response) => {

@@ -2,10 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { X } from 'lucide-react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { X, ShieldCheck } from 'lucide-react';
 import BrandLogo from '@/components/auth/BrandLogo';
-import { sidebarSections } from './Sidebar';
+import { useSession } from '@/lib/auth-client';
+import { sidebarSections, adminSidebarSections } from './Sidebar';
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -14,10 +15,23 @@ interface MobileSidebarProps {
 
 export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.role === 'admin' || session?.user?.email?.toLowerCase() === 'admin@gmail.com';
+  const isAdminRoute = pathname.startsWith('/dashboard/admin') || pathname.startsWith('/admin');
 
   if (!isOpen) return null;
 
+  const sectionsToRender = isAdmin || isAdminRoute ? adminSidebarSections : sidebarSections;
+  const currentTab = searchParams?.get('tab') || 'overview';
+
   const isLinkActive = (href: string) => {
+    if (isAdminRoute) {
+      const [targetPath, targetQuery] = href.split('?');
+      if (pathname !== targetPath) return false;
+      const targetTab = targetQuery ? new URLSearchParams(targetQuery).get('tab') : 'overview';
+      return (targetTab || 'overview') === currentTab;
+    }
     const basePath = href.split('?')[0];
     if (basePath === '/dashboard') {
       return pathname === '/dashboard';
@@ -36,7 +50,14 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
       {/* Drawer */}
       <div className="relative w-4/5 max-w-xs bg-white dark:bg-[#080D26] border-r border-slate-200 dark:border-slate-800 h-full flex flex-col z-10 p-4 shadow-2xl animate-in slide-in-from-left duration-300">
         <div className="flex items-center justify-between pb-4 mb-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <BrandLogo href="/dashboard" />
+          <div className="flex items-center gap-2">
+            <BrandLogo href={isAdminRoute ? '/dashboard/admin' : '/dashboard'} />
+            {isAdminRoute && (
+              <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                Admin
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
@@ -47,7 +68,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto pr-1 custom-scrollbar">
-          {sidebarSections.map((section, sIdx) => (
+          {sectionsToRender.map((section, sIdx) => (
             <div key={sIdx} className="space-y-1">
               {section.title && (
                 <div className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -88,5 +109,3 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
     </div>
   );
 };
-
-
