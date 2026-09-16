@@ -135,7 +135,7 @@ export const UserMenu: React.FC = () => {
             <div className="py-1.5 space-y-0.5">
               {user.role?.toLowerCase() === 'admin' || user.email.toLowerCase() === 'admin@gmail.com' ? (
                 <Link
-                  href="/dashboard/admin"
+                  href="/admin/dashboard"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
                 >

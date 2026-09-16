@@ -28,10 +28,9 @@ export default function AdminLoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // If already logged in as admin, redirect to admin hub
   React.useEffect(() => {
     if ((session?.user as any)?.role === 'admin' || session?.user?.email === 'admin@gmail.com') {
-      router.replace('/dashboard/admin');
+      router.replace('/admin/dashboard');
     }
   }, [session, router]);
 
@@ -70,7 +69,7 @@ export default function AdminLoginPage() {
           if (!upRes.error) {
             setSuccessMsg('Admin credentials provisioned successfully! Redirecting...');
             setTimeout(() => {
-              window.location.href = '/dashboard/admin';
+              window.location.href = '/admin/dashboard';
             }, 800);
             return;
           }
@@ -82,7 +81,7 @@ export default function AdminLoginPage() {
 
       setSuccessMsg('Authentication verified. Launching Admin Command Center...');
       setTimeout(() => {
-        window.location.href = '/dashboard/admin';
+        window.location.href = '/admin/dashboard';
       }, 700);
     } catch (err: any) {
       setErrorMsg(err.message || 'An unexpected error occurred during admin authentication.');

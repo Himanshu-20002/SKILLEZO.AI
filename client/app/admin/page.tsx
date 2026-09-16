@@ -13,7 +13,7 @@ export default function AdminRootPage() {
     if (isPending) return;
 
     if ((session?.user as any)?.role === 'admin' || session?.user?.email === 'admin@gmail.com') {
-      router.replace('/dashboard/admin');
+      router.replace('/admin/dashboard');
     } else {
       router.replace('/admin/login');
     }

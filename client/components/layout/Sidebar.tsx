@@ -136,7 +136,7 @@ export const adminSidebarSections: NavSection[] = [
     items: [
       {
         label: 'Admin Overview',
-        href: '/dashboard/admin',
+        href: '/admin/dashboard',
         icon: LayoutDashboard,
       },
     ],
@@ -146,19 +146,19 @@ export const adminSidebarSections: NavSection[] = [
     items: [
       {
         label: 'User Directory',
-        href: '/dashboard/admin?tab=users',
+        href: '/admin/dashboard?tab=users',
         icon: Users,
         badge: 'USERS',
       },
       {
         label: 'Job Moderation',
-        href: '/dashboard/admin?tab=jobs',
+        href: '/admin/dashboard?tab=jobs',
         icon: Briefcase,
         badge: 'JOBS',
       },
       {
         label: 'Resume Intelligence',
-        href: '/dashboard/admin?tab=resumes',
+        href: '/admin/dashboard?tab=resumes',
         icon: FileText,
         badge: 'ATS',
       },
@@ -169,7 +169,7 @@ export const adminSidebarSections: NavSection[] = [
     items: [
       {
         label: 'System Telemetry',
-        href: '/dashboard/admin?tab=overview',
+        href: '/admin/dashboard?tab=overview',
         icon: ShieldCheck,
       },
     ],
@@ -183,7 +183,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === 'admin' || session?.user?.email?.toLowerCase() === 'admin@gmail.com';
-  const isAdminRoute = pathname.startsWith('/dashboard/admin') || pathname.startsWith('/admin');
+  const isAdminRoute = pathname.startsWith('/admin');
 
   // Strict isolation: Admins see ONLY admin navigation; candidates see ONLY candidate navigation
   const sectionsToRender = isAdmin || isAdminRoute ? adminSidebarSections : sidebarSections;
@@ -213,7 +213,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
       <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 shrink-0">
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <BrandLogo href={isAdminRoute ? '/dashboard/admin' : '/dashboard'} />
+            <BrandLogo href={isAdminRoute ? '/admin/dashboard' : '/dashboard'} />
             {isAdminRoute && (
               <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                 Admin

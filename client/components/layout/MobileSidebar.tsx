@@ -18,7 +18,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === 'admin' || session?.user?.email?.toLowerCase() === 'admin@gmail.com';
-  const isAdminRoute = pathname.startsWith('/dashboard/admin') || pathname.startsWith('/admin');
+  const isAdminRoute = pathname.startsWith('/admin');
 
   if (!isOpen) return null;
 
@@ -51,7 +51,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
       <div className="relative w-4/5 max-w-xs bg-white dark:bg-[#080D26] border-r border-slate-200 dark:border-slate-800 h-full flex flex-col z-10 p-4 shadow-2xl animate-in slide-in-from-left duration-300">
         <div className="flex items-center justify-between pb-4 mb-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
-            <BrandLogo href={isAdminRoute ? '/dashboard/admin' : '/dashboard'} />
+            <BrandLogo href={isAdminRoute ? '/admin/dashboard' : '/dashboard'} />
             {isAdminRoute && (
               <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                 Admin

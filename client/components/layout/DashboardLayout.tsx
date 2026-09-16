@@ -49,8 +49,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       return;
     }
 
-    if (isAdmin && !pathname.startsWith('/dashboard/admin')) {
-      router.replace('/dashboard/admin');
+    if (isAdmin && !pathname.startsWith('/admin')) {
+      router.replace('/admin/dashboard');
+      return;
+    }
+
+    if (!isAdmin && pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
+      router.replace('/dashboard');
       return;
     }
 

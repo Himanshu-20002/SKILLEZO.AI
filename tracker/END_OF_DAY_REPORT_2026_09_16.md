@@ -35,7 +35,7 @@ Today marked the completion of critical foundational milestones across **real us
    - Purged redundant `Career Profile` entry from `Sidebar.tsx`; candidate profile is cleanly and permanently accessible via the topbar user avatar dropdown (`My Profile`).
 
 5. **🛡️ Native Next.js Super Admin Hub & Role-Based Access Control (`FE-ADMIN`, `BE-ADMIN`):**
-   - Built a lightweight, high-performance native Next.js Admin Dashboard at `/dashboard/admin` with zero bloated dependencies.
+   - Built a lightweight, high-performance native Next.js Admin Dashboard at `/admin/dashboard` with zero bloated dependencies.
    - Dedicated login portal at `/admin/login` specifically for Super Admin credentials (`admin@gmail.com`).
    - Clean route isolation: Admins cannot access candidate pages; candidate users cannot access admin routes.
    - Clean isolated sidebar for admin with candidate routes and workspace switchers completely removed.
@@ -77,7 +77,7 @@ Today marked the completion of critical foundational milestones across **real us
 * Created `EducationSection.tsx` and `AddEducationModal.tsx` on `/dashboard/profile` for complete degree and university tracking.
 * Implemented `hydrateFromParsedResume()` and `syncResumeProfile()` in `ProfileService` with smart merging across contact info, target role, bio, skills, education, and projects.
 
-### D. Super Admin Hub (`client/app/dashboard/admin/`, `client/app/admin/`, `server/src/modules/admin/`)
+### D. Super Admin Hub (`client/app/admin/dashboard/`, `client/app/admin/`, `server/src/modules/admin/`)
 * Built native Next.js admin portal with live metrics, user table, job catalog, and system telemetry.
 * Created `server/src/core/auth/middleware/requireRole.ts` enforcing `UserRole.ADMIN` with Super Admin email bypass (`admin@gmail.com`).
 * Created `AdminService`, `AdminController`, `admin.dto.ts`, and `admin.routes.ts` mounted at `/api/admin`.
