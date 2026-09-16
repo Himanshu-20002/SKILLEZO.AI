@@ -32,7 +32,8 @@ import {
   Palette, 
   Download,
   Menu,
-  Lock
+  Lock,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SAMPLE_RESUME_DOCUMENT_FIXTURE } from '@/types/resume-document.fixture';
@@ -205,6 +206,11 @@ export default function ResumeStudioPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState<SectionImprovementSuggestion | null>(null);
   const [scoreDeltaNotice, setScoreDeltaNotice] = useState<{ section: string; from: number; to: number } | null>(null);
+
+  // Delete Resume State & Modal
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeletingResume, setIsDeletingResume] = useState(false);
+  const [resumeToDelete, setResumeToDelete] = useState<ResumeRecord | null>(null);
 
   // Direct Upload State inside Resume Studio
   const [isUploading, setIsUploading] = useState(false);
@@ -388,6 +394,52 @@ export default function ResumeStudioPage() {
     fetchScore(resumeId);
     fetchAtsIntelligence(resumeId, targetRole);
   }, [resumes, targetRole, fetchAtsIntelligence]);
+
+  const handleDeleteClick = useCallback((resume?: ResumeRecord) => {
+    const target = resume || resumes.find((r) => r._id === selectedResumeId) || null;
+    if (target) {
+      setResumeToDelete(target);
+      setIsDeleteDialogOpen(true);
+    }
+  }, [resumes, selectedResumeId]);
+
+  const handleConfirmDeleteResume = async () => {
+    if (!resumeToDelete) return;
+    setIsDeletingResume(true);
+    const toastId = toast.loading(`Deleting ${resumeToDelete.title || resumeToDelete.originalFileName || 'resume'}...`);
+
+    try {
+      await resumeService.deleteResume(resumeToDelete._id);
+      toast.success('Resume deleted successfully!', { id: toastId });
+
+      const updated = await resumeService.getUserResumes();
+      setResumes(updated || []);
+
+      if (updated && updated.length > 0) {
+        const nextResume = updated.find((r) => r.isDefault) || updated[0];
+        handleSelectResume(nextResume._id);
+      } else {
+        setSelectedResumeId(null);
+        setResumeDoc(null);
+        setScoreResult(null);
+        setAnalysis((prev) => ({
+          ...prev,
+          atsScore: 0,
+          matchScore: 0,
+          contentScore: 0,
+          keywords: [],
+          missingSkills: [],
+          recommendations: [],
+        }));
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to delete resume', { id: toastId });
+    } finally {
+      setIsDeletingResume(false);
+      setIsDeleteDialogOpen(false);
+      setResumeToDelete(null);
+    }
+  };
 
   const handleTargetRoleChange = async (newRole: string) => {
     setTargetRole(newRole);
@@ -739,6 +791,8 @@ export default function ResumeStudioPage() {
         setViewMode('editor');
         setMobileEditorView('editor');
       }}
+      currentResume={resumes.find((r) => r._id === selectedResumeId) || null}
+      onDeleteClick={() => handleDeleteClick()}
     />
   );
 
@@ -1237,14 +1291,25 @@ export default function ResumeStudioPage() {
               )}
 
               {selectedResumeId && (
-                <button
-                  onClick={() => fetchScore(selectedResumeId)}
-                  disabled={refreshing}
-                  title="Refresh score"
-                  className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-                </button>
+                <>
+                  <button
+                    onClick={() => fetchScore(selectedResumeId)}
+                    disabled={refreshing}
+                    title="Refresh score"
+                    className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteClick()}
+                    disabled={isDeletingResume}
+                    title="Delete this resume"
+                    className="p-2 rounded-xl text-slate-400 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-800 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </>
               )}
 
               {/* Download Button in Header */}
@@ -1424,6 +1489,71 @@ export default function ResumeStudioPage() {
         onReject={handleRejectOptimization}
         onTargetChange={handleTargetChange}
       />
+
+      {/* Delete Resume Confirmation Modal */}
+      {isDeleteDialogOpen && resumeToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative max-w-md w-full rounded-3xl p-6 sm:p-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            {/* Icon & Title */}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-100 dark:border-rose-900/30">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                  Delete Resume Document?
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Are you sure you want to permanently delete <span className="font-semibold text-slate-800 dark:text-slate-200">"{resumeToDelete.title || resumeToDelete.originalFileName || 'Resume'}"</span>?
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-600 dark:text-slate-400 space-y-1.5">
+              <p className="font-medium text-slate-700 dark:text-slate-300">This will permanently remove:</p>
+              <ul className="list-disc list-inside space-y-0.5 text-slate-500 dark:text-slate-400">
+                <li>Parsed resume content & sections</li>
+                <li>Calculated ATS scores & role alignment</li>
+                <li>AI bullet suggestions & optimization drafts</li>
+              </ul>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteDialogOpen(false);
+                  setResumeToDelete(null);
+                }}
+                disabled={isDeletingResume}
+                className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmDeleteResume}
+                disabled={isDeletingResume}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 transition cursor-pointer disabled:opacity-50"
+              >
+                {isDeletingResume ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Permanently</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

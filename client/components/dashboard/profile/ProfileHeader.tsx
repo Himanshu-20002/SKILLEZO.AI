@@ -21,11 +21,11 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const displayName = name || 'Candidate';
   const displayEmail = email || profile.links?.portfolio || 'candidate@example.com';
 
-  const displayHeadline = profile.headline || 'Building AI-driven Enterprise Systems | Next.js, React & Node.js Specialist';
+  const displayHeadline = profile.headline || 'Add your professional headline';
   const displayLocation = profile.location
-    ? [profile.location.city, profile.location.state].filter(Boolean).join(', ') || 'San Francisco, California'
-    : 'San Francisco, California';
-  const displayPhone = profile.phone || '+1 (555) 234-5678';
+    ? [profile.location.city, profile.location.state].filter(Boolean).join(', ') || 'Location not specified'
+    : 'Location not specified';
+  const displayPhone = profile.phone || '';
 
   return (
     <div className="relative rounded-3xl bg-white dark:bg-[#131b2e] border border-slate-200/90 dark:border-slate-800/90 text-slate-900 dark:text-white backdrop-blur-xl p-6 sm:p-8 space-y-6 shadow-[0_10px_30px_-5px_rgba(15,23,42,0.06),0_4px_10px_-2px_rgba(15,23,42,0.04)] dark:shadow-xl overflow-hidden transition-all">
