@@ -30,6 +30,8 @@ const envSchema = z.object({
   AI_MODEL: z.string().optional().default("gemini-3.6-flash"),
   GOOGLE_CLIENT_ID: z.string().optional().default(""),
   GOOGLE_CLIENT_SECRET: z.string().optional().default(""),
+  RESEND_API_KEY: z.string().optional().default(""),
+  EMAIL_FROM: z.string().default("SKILLEZO <onboarding@resend.dev>"),
 });
 
 const parseEnv = () => {

@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import { env } from "@/core/config/env";
 import { UserRole, AccountStatus } from "@/core/constants/enums";
 import { connectDatabase } from "@/database/connection/db";
+import { sendPasswordResetEmail } from "@/core/email/email.service";
 
 let _auth: any = null;
 
@@ -157,6 +158,20 @@ export function getAuth() {
       checkOrigin: () => true,
       emailAndPassword: {
         enabled: true,
+        sendResetPassword: async ({ user, url, token }: any) => {
+          let resetUrl = url;
+          if (token) {
+            const clientBase = (env.CLIENT_URL || "http://localhost:3000").replace(/\/+$/, "");
+            resetUrl = `${clientBase}/reset-password?token=${encodeURIComponent(token)}`;
+          } else if (resetUrl && !resetUrl.startsWith("http://") && !resetUrl.startsWith("https://")) {
+            resetUrl = `${env.CLIENT_URL}${resetUrl.startsWith("/") ? "" : "/"}${resetUrl}`;
+          }
+          await sendPasswordResetEmail({
+            to: user.email,
+            name: user.name || "Candidate",
+            resetUrl,
+          });
+        },
       },
       socialProviders: {
         google: {

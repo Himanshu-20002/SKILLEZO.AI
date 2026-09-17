@@ -11,6 +11,8 @@ import AuthCard from "@/components/auth/AuthCard";
 import AuthHeader from "@/components/auth/AuthHeader";
 import LoadingSpinner from "@/components/auth/LoadingSpinner";
 import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 const forgotPasswordSchema = z.object({
   email: z
@@ -37,10 +39,25 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setSubmittedEmail(data.email);
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    try {
+      const res = await authClient.requestPasswordReset({
+        email: data.email,
+        redirectTo: "/reset-password",
+      });
+
+      if (res?.error) {
+        toast.error(res.error.message || "Failed to send reset link. Please check your email.");
+        return;
+      }
+
+      setSubmittedEmail(data.email);
+      setIsSubmitted(true);
+      toast.success("Password reset instructions sent to your email.");
+    } catch (err: any) {
+      toast.error(err?.message || "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

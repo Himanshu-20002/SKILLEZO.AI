@@ -1,7 +1,7 @@
 # 📊 SKILLEZO AI — Project Status Dashboard
 
-> **Last Updated:** September 16, 2026 (Zero-Mock Career Intelligence & Canonical Admin Hub Live)  
-> **Active Sprint:** Sprint 1 — Week 1 Candidate Loop Closure, Google OAuth, Admin Hub, Zero-Mock & Career GPS  
+> **Last Updated:** September 17, 2026 (Real Resend Password Reset Flow & Zero-Mock Intelligence Live)  
+> **Active Sprint:** Sprint 1 — Week 1 Candidate Loop Closure, Google OAuth, Resend Email Reset, Admin Hub & Zero-Mock  
 > **Target Soft MVP:** September 30, 2026  
 > **Target Release:** October 10, 2026  
 

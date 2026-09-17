@@ -22,7 +22,7 @@ export class SkillGapService {
     if (activeResume) {
       const extracted = activeResume.extractedData;
       if (extracted && Array.isArray(extracted.skills)) {
-        for (const s of extracted.skills) {
+        for (const s of extracted.skills as any[]) {
           const name = typeof s === "string" ? s.trim() : (s?.name || "").trim();
           if (name) skillSet.add(name);
         }
