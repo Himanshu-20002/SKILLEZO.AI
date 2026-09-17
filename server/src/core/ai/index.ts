@@ -9,3 +9,4 @@ export * from "./providers/openai.provider";
 export * from "./gateway";
 export * from "./evidence";
 export * from "./context";
+export * from "./tools";

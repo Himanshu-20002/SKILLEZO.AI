@@ -20,10 +20,10 @@ This document establishes the **functionality-wise delivery roadmap**, auditing 
 
 ```
 ========================================================================================
-CURRENT REPOSITORY READINESS (September 14, 2026 — Sprint Baseline)
+CURRENT REPOSITORY READINESS (September 17, 2026 — End-of-Day Status)
 ========================================================================================
-Candidate Core Experience & Auth    : [████████████████████] 100% (Working & Verified)
-Resume Parsing & Normalization      : [████████████████████] 100% (Working & Verified)
+Candidate Core Experience & Auth    : [████████████████████] 100% (Working & Verified: Google OAuth 2.0 & Resend Reset Flow)
+Resume Parsing & Normalization      : [████████████████████] 100% (Working & Verified: 3-Project Extraction & PDF Hyperlinks)
 7-Section Deterministic ATS Engine  : [████████████████████] 100% (Working & Verified)
 Evidence-Locked Section AI Editor   : [████████████████████] 100% (Working & Verified)
 Candidate Applications Tracking UI  : [████████████████████] 100% (Working & Verified: Filter Tabs, Timeline, Withdrawal & Routing)
@@ -35,12 +35,16 @@ Profile Completion & Progress Gauge : [█████████████�
 Resume Intelligence Dashboard       : [████████████████████] 100% (Working & Verified: 7-Pillar Inspection & Role Match)
 Employability Index Evaluation      : [████████████████████] 100% (Working & Verified: 5-Factor Weighted Gauge & Role Selector)
 Visual Resume Studio & Vector PDF Engine : [████████████████████] 100% (Working & Verified: Direct Vector PDF, Templates, Layout & Anti-Orphan)
+Zero-Mock Skill Gap Engine          : [████████████████████] 100% (Working & Verified: Deterministic 0% Baselines for Fresh Users)
+AI Gateway & Model Gateway (Phase 1): [████████████████████] 100% (Working & Verified: SSE Streaming, Multi-Model Fallback & Circuit Breaker)
+Evidence Layer & Cache (Phase 2)    : [████████████████████] 100% (Working & Verified: Provenance, Score Bounds, Normalizer, Snapshot Cache)
+Controlled Tool Registry (Phase 3)  : [████████████████████] 100% (Working & Verified: 7 Allowlisted Adapter Tools, Zero-Trust Identity, Ring Buffer)
 Career GPS & Skill Gap Roadmaps     : [███████████████░░░░░]  75% (Core Taxonomies Live; Deep-Links & Salary Bands in Week 1)
 Recruiter Review Portal             : [██████████████░░░░░░]  70% (Kanban, Drawer & Jobs Live; Data Hydration in Week 2)
 Cloud Infrastructure & Production   : [██████░░░░░░░░░░░░░░]  30% (Local Docker/Dev, Prod Hardening in Week 3.5)
-Automated Email & Notifications     : [████░░░░░░░░░░░░░░░░]  20% (Navbar Bell Only; Resend/SendGrid in Week 2)
+Automated Email & Notifications     : [████████████████░░░░]  80% (Resend Transactional Password Reset Engine Live; In-App Notifications)
 Public Certificate Verification URL : [████░░░░░░░░░░░░░░░░]  20% (Backend API Live; Public /verify Route in Week 1)
-AI Career Coach Assistant           : [██░░░░░░░░░░░░░░░░░░]  10% (Placeholder UI; Gemini Chat Engine in Week 1)
+AI Career Coach Assistant           : [████████████░░░░░░░░]  60% (Phases 1, 2 & 3 Live: Model Gateway + Evidence Layer + Context Cache + Tool Registry)
 Learning Hub & Progress Analytics   : [██░░░░░░░░░░░░░░░░░░]  10% (Placeholder Modules; Post-MVP)
 AI Auto-Apply Engine (Inngest)      : [░░░░░░░░░░░░░░░░░░░░]   0% (Manual Apply Only; Inngest Queue in Week 3 Priority 1)
 ========================================================================================
@@ -87,7 +91,7 @@ Direct audit of every section and route in the candidate navigation sidebar (`cl
 | **SKILLS & LEARNING** | **Skill Assessments** `[TEST]` | `/dashboard/assessments` | 🟢 **100% Built** — 29KB question banks, timed quiz runner modal, auto-scoring, credential minting. | Complete |
 | **SKILLS & LEARNING** | **Learning Hub** | `/dashboard/learning-hub` | 🔴 **10% Built** — `<ComingSoonModule moduleNumber="24" />` placeholder. | Post-MVP |
 | **SKILLS & LEARNING** | **Projects & Portfolio** | `/dashboard/projects` | 🟢 **100% Built** — Tab 1: Live portfolio project CRUD (`AddProjectModal.tsx`) synced to DB; Tab 2: Curated recommended projects. | Complete |
-| **SKILLS & LEARNING** | **AI Career Coach** `[PRO]` | `/dashboard/ai-career-coach` | 🔴 **10% Built** — Placeholder UI. Scheduled for Week 1 (Gemini Flash chat API & 4 guided pillars). | In Sprint 1 |
+| **SKILLS & LEARNING** | **AI Career Coach** `[PRO]` | `/dashboard/ai-career-coach` | 🟡 **60% Built** — Architecture Phases 1, 2 & 3 Complete (Unified Model Gateway, Streaming, Evidence Layer, Context Cache & Controlled Tool Registry). Phase 4 Orchestrator scheduled next. | In Sprint 1 |
 | **OPPORTUNITIES** | **Smart Job Center** `[JOBS]` | `/dashboard/job-center` | 🟢 **100% Built** — 103+ MongoDB jobs, cron ingestion, search, multi-filters, 1-click safe apply. | Complete |
 | **OPPORTUNITIES** | **Job Matches** `[MATCH]` | `/dashboard/job-center?tab=recommended` | 🟢 **100% Built** — Recommended job listings filtered by candidate target role and match threshold. | Complete |
 | **VERIFICATION** | **Skill Verification** `[VERIFIED]`| `/dashboard/skill-verification` | 🟢 **100% Built** — Verified skills ledger, table/grid views, search/filter, and `CertificateModal` displaying SHA-256 hash. | Complete |
