@@ -66,7 +66,7 @@ export const ActivityTimeline: React.FC = () => {
               </p>
             </div>
             <Link
-              href="/dashboard/verification"
+              href="/dashboard/assessments"
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
               <span>Take First Quiz</span>
