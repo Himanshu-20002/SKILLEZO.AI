@@ -1,6 +1,18 @@
+export interface AIProviderRequestOptions {
+  temperature?: number;
+  maxOutputTokens?: number;
+  signal?: AbortSignal;
+  systemInstruction?: string;
+}
+
 export interface AIProvider {
-  name: string;
+  readonly name: string;
   isAvailable(): boolean;
-  generateStructured<T>(prompt: string, schemaDescription: string): Promise<T | null>;
-  generateText(prompt: string): Promise<string | null>;
+  generateStructured<T>(
+    prompt: string,
+    schemaDescription: string,
+    options?: AIProviderRequestOptions
+  ): Promise<T | null>;
+  generateText(prompt: string, options?: AIProviderRequestOptions): Promise<string | null>;
+  streamText(prompt: string, options?: AIProviderRequestOptions): AsyncIterable<string>;
 }

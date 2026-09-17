@@ -13,6 +13,7 @@ import { AIGuardrails } from "./ai.guardrails";
 import { AIProvider } from "./providers/provider.interface";
 import { GeminiProvider } from "./providers/gemini.provider";
 import { OpenAIProvider } from "./providers/openai.provider";
+import { modelGateway } from "./gateway";
 
 export class AIService {
   private static instance: AIService;
@@ -76,23 +77,15 @@ export class AIService {
 
     try {
       const prompt = this.buildAnalysisPrompt(context);
-      const rawResult = await activeProvider.generateStructured<any>(prompt, "Structured Resume Analysis");
+      const structured = await modelGateway.generateStructured<any>(
+        { prompt },
+        "Structured Resume Analysis",
+        AIAnalysisOutputSchema
+      );
 
-      if (!rawResult) {
-        return fallback;
-      }
-
-      // 3. Strict Schema Validation with Zod
-      const parseResult = AIAnalysisOutputSchema.safeParse(rawResult);
-      if (!parseResult.success) {
-        console.warn("[AIService] Schema validation warning, applying partial fallback:", parseResult.error.format());
-        return fallback;
-      }
-
-      // 4. Guardrail Sanitization
       const sanitized: AIAnalysisOutput = {
-        ...parseResult.data,
-        recommendations: AIGuardrails.sanitizeRecommendations(parseResult.data.recommendations),
+        ...structured.data,
+        recommendations: AIGuardrails.sanitizeRecommendations(structured.data.recommendations),
         engineVersion: AI_ENGINE_VERSION,
         targetRole,
         createdAt: new Date().toISOString(),
@@ -101,7 +94,7 @@ export class AIService {
       this.cache.set(inputHash, { data: sanitized, timestamp: Date.now() });
       return sanitized;
     } catch (err) {
-      console.warn(`[AIService] ${activeProvider.name} analysis failed, falling back to deterministic engine:`, err);
+      console.warn(`[AIService] Model gateway analysis failed, falling back to deterministic engine:`, err);
       return fallback;
     }
   }
@@ -151,16 +144,16 @@ Return ONLY a valid JSON object matching this schema:
   "requiresUserVerification": true
 }`;
 
-      const rawResult = await activeProvider.generateStructured<any>(prompt, "Bullet Rewrite");
-      if (!rawResult) return fallback;
-
-      const parseResult = AIBulletRewriteSchema.safeParse(rawResult);
-      if (!parseResult.success) return fallback;
+      const structured = await modelGateway.generateStructured<any>(
+        { prompt },
+        "Bullet Rewrite",
+        AIBulletRewriteSchema
+      );
 
       // Validate guardrails
-      AIGuardrails.validateBulletRewrite(bulletText, parseResult.data.rewritten, evidence);
+      AIGuardrails.validateBulletRewrite(bulletText, structured.data.rewritten, evidence);
 
-      return parseResult.data;
+      return structured.data;
     } catch (err) {
       console.warn("[AIService] Bullet rewrite failed, returning safe rewrite fallback:", err);
       return fallback;
