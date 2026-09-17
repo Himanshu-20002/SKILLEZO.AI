@@ -140,10 +140,25 @@ describe("Phase 4: AI Orchestrator Unit & Integrity Test Suite", () => {
       expect(plan.stage4Tools.map((t) => t.toolName)).toEqual(["proposeCareerPlan"]);
     });
 
-    it("creates staged execution plan for SKILL_GAP_ANALYSIS", () => {
+    it("creates staged execution plan for SKILL_GAP_ANALYSIS without unnecessary resume tool", () => {
       const plan = EvidencePlanner.createPlan("SKILL_GAP_ANALYSIS", "Frontend Engineer");
-      expect(plan.stage1Tools.map((t) => t.toolName)).toContain("getCandidateProfile");
+      expect(plan.stage1Tools.map((t) => t.toolName)).toEqual(["getCandidateProfile"]);
+      expect(plan.stage1Tools.map((t) => t.toolName)).not.toContain("getActiveResume");
       expect(plan.stage3Tools.map((t) => t.toolName)).toContain("getSkillGaps");
+    });
+
+    it("creates staged execution plan for EMPLOYABILITY_ANALYSIS without unnecessary resume tool", () => {
+      const plan = EvidencePlanner.createPlan("EMPLOYABILITY_ANALYSIS", "Frontend Engineer");
+      expect(plan.stage1Tools.map((t) => t.toolName)).toEqual(["getCandidateProfile"]);
+      expect(plan.stage1Tools.map((t) => t.toolName)).not.toContain("getActiveResume");
+      expect(plan.stage3Tools.map((t) => t.toolName)).toContain("getEmployabilityMetrics");
+    });
+
+    it("creates staged execution plan for JOB_MATCHING without unnecessary resume tool", () => {
+      const plan = EvidencePlanner.createPlan("JOB_MATCHING", "Frontend Engineer");
+      expect(plan.stage1Tools.map((t) => t.toolName)).toEqual(["getCandidateProfile"]);
+      expect(plan.stage1Tools.map((t) => t.toolName)).not.toContain("getActiveResume");
+      expect(plan.stage3Tools.map((t) => t.toolName)).toContain("getMatchingJobs");
     });
 
     it("rejects unallowlisted tools through ToolSelectionGuard", () => {
@@ -450,6 +465,8 @@ describe("Phase 4: AI Orchestrator Unit & Integrity Test Suite", () => {
       expect(telemetry[0].modelProvider).toBe("MockGemini");
       expect(telemetry[0].toolsUsed).toContain("getCandidateProfile");
       expect(telemetry[0].toolsUsed).toContain("getSkillGaps");
+      expect(telemetry[0].toolsUsed).not.toContain("getActiveResume");
+      expect(customRegistry.getTool("getActiveResume")?.execute).not.toHaveBeenCalled();
     });
 
     it("handles optional tool failure gracefully with limitations note", async () => {
