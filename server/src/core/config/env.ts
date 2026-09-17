@@ -32,6 +32,7 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional().default(""),
   RESEND_API_KEY: z.string().optional().default(""),
   EMAIL_FROM: z.string().default("SKILLEZO <onboarding@resend.dev>"),
+  AI_CONTEXT_CACHE_TTL_SECONDS: z.string().optional().default("600"),
 });
 
 const parseEnv = () => {

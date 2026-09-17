@@ -7,3 +7,5 @@ export * from "./providers/provider.interface";
 export * from "./providers/gemini.provider";
 export * from "./providers/openai.provider";
 export * from "./gateway";
+export * from "./evidence";
+export * from "./context";
