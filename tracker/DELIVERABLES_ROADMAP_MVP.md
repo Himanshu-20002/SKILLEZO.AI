@@ -46,7 +46,7 @@ Recruiter Review Portal             : [█████████████�
 Cloud Infrastructure & Production   : [██████░░░░░░░░░░░░░░]  30% (Local Docker/Dev, Prod Hardening in Week 3.5)
 Automated Email & Notifications     : [████████████████░░░░]  80% (Resend Transactional Password Reset Engine Live; In-App Notifications)
 Public Certificate Verification URL : [████░░░░░░░░░░░░░░░░]  20% (Backend API Live; Public /verify Route in Week 1)
-AI Career Coach Assistant           : [██████████████████░░]  90% (Phases 1–6 Live: Gateway + Evidence + Cache + Tools + Orchestrator + Coach API + Intelligence Workbench UI; Phase 7 Mutation Safeguards Next)
+AI Career Coach Assistant           : [█████████████████░░░]  85% (Phases 1–7 Core Complete: Gateway, Evidence, Cache, Tools, Orchestrator, Coach API, Workbench UI & Safe Action Execution; E2E Testing Next)
 Learning Hub & Progress Analytics   : [██░░░░░░░░░░░░░░░░░░]  10% (Placeholder Modules; Post-MVP)
 AI Auto-Apply Engine (Inngest)      : [░░░░░░░░░░░░░░░░░░░░]   0% (Manual Apply Only; Inngest Queue in Week 3 Priority 1)
 ========================================================================================
@@ -93,7 +93,7 @@ Direct audit of every section and route in the candidate navigation sidebar (`cl
 | **SKILLS & LEARNING** | **Skill Assessments** `[TEST]` | `/dashboard/assessments` | 🟢 **100% Built** — 29KB question banks, timed quiz runner modal, auto-scoring, credential minting. | Complete |
 | **SKILLS & LEARNING** | **Learning Hub** | `/dashboard/learning-hub` | 🔴 **10% Built** — `<ComingSoonModule moduleNumber="24" />` placeholder. | Post-MVP |
 | **SKILLS & LEARNING** | **Projects & Portfolio** | `/dashboard/projects` | 🟢 **100% Built** — Tab 1: Live portfolio project CRUD (`AddProjectModal.tsx`) synced to DB; Tab 2: Curated recommended projects. | Complete |
-| **SKILLS & LEARNING** | **AI Career Coach** `[PRO]` | `/dashboard/ai-career-coach` | 🟢 **90% Built** — Architecture Phases 1–6 Complete (Unified Model Gateway, Streaming, Evidence Layer, Context Cache, Controlled Tool Registry, AI Orchestrator, Coach API, and Dual-Pane Career Intelligence Workbench UI). Phase 7 Action System & Mutation Safeguards next. | In Sprint 1 |
+| **SKILLS & LEARNING** | **AI Career Coach** `[PRO]` | `/dashboard/ai-career-coach` | 🟢 **85% Built** — All 7 Architecture Phases Built & Verified: Unified Model Gateway, Evidence Layer, Context Cache, Controlled Tool Registry, AI Orchestrator, Coach API, Workbench UI, and Safe Action Execution (`RESUME_UPDATE`, `PROFILE_UPDATE`, `CAREER_PLAN_CREATE`). In-depth user testing & hardening in progress. | In Sprint 1 |
 | **OPPORTUNITIES** | **Smart Job Center** `[JOBS]` | `/dashboard/job-center` | 🟢 **100% Built** — 103+ MongoDB jobs, cron ingestion, search, multi-filters, 1-click safe apply. | Complete |
 | **OPPORTUNITIES** | **Job Matches** `[MATCH]` | `/dashboard/job-center?tab=recommended` | 🟢 **100% Built** — Recommended job listings filtered by candidate target role and match threshold. | Complete |
 | **VERIFICATION** | **Skill Verification** `[VERIFIED]`| `/dashboard/skill-verification` | 🟢 **100% Built** — Verified skills ledger, table/grid views, search/filter, and `CertificateModal` displaying SHA-256 hash. | Complete |

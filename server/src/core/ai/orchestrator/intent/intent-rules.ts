@@ -16,63 +16,63 @@ export const INTENT_RULES: IntentRule[] = [
   {
     id: "RULE_SKILL_GAP_KEYWORDS",
     intent: "SKILL_GAP_ANALYSIS",
-    pattern: /\b(skill\s*gaps?|missing\s*skills?|skills?\s*(needed|required|missing|lacking)|gap\s*analysis|what\s*skills\s*(do\s*i\s*need|am\s*i\s*missing))\b/i,
+    pattern: /\b(skill\s*gaps?|missing\s*skills?|skills?\s*(needed|required|missing|lacking|to\s*learn)|gap\s*analysis|what\s*skills\s*(do\s*i\s*need|am\s*i\s*missing)|which\s*skills|skills?\s*comparison|tech\s*stack\s*gap)\b/i,
     weight: 0.95,
   },
   // 2. RESUME_IMPROVEMENT
   {
     id: "RULE_RESUME_IMPROVEMENT",
     intent: "RESUME_IMPROVEMENT",
-    pattern: /\b(improve\s*(my\s*)?resume|rewrite\s*(my\s*)?(bullet|bullets|resume)|optimize\s*(my\s*)?resume|make\s*(my\s*)?resume\s*better|resume\s*(feedback|suggestions|critique))\b/i,
+    pattern: /\b(improve\s*(my\s*)?resume|rewrite\s*(my\s*)?(bullet|bullets|resume)|optimize\s*(my\s*)?resume|make\s*(my\s*)?resume\s*better|resume\s*(feedback|suggestions|critique|tips|fixes?|rewrite)|fix\s*(my\s*)?resume|tailor\s*(my\s*)?resume|polish\s*(my\s*)?resume)\b/i,
     weight: 0.95,
   },
   // 3. RESUME_ANALYSIS
   {
     id: "RULE_RESUME_ANALYSIS",
     intent: "RESUME_ANALYSIS",
-    pattern: /\b(ats\s*(score|check|review|grade)|review\s*(my\s*)?resume|how\s*good\s*is\s*my\s*resume|resume\s*(score|analysis|audit|grade|evaluation))\b/i,
+    pattern: /\b(ats\b.*?(score|compatibility|check|review|grade|rating|match|audit)|(analyze|audit|evaluate|check|inspect|scan|review|grade|rate|score)\s*(my\s*)?(active\s*)?resume|how\s*good\s*is\s*my\s*resume|resume\s*(score|analysis|audit|grade|evaluation|review|breakdown|readiness)|resume\b.*?(ats|score|compatibility))\b/i,
     weight: 0.92,
   },
   // 4. EMPLOYABILITY_ANALYSIS
   {
     id: "RULE_EMPLOYABILITY_INDEX",
     intent: "EMPLOYABILITY_ANALYSIS",
-    pattern: /\b(employability(\s*index|\s*score)?|job\s*readiness(\s*score)?|how\s*employable\s*am\s*i|market\s*readiness)\b/i,
+    pattern: /\b(employability(\s*index|\s*score|\s*rating)?|job\s*readiness(\s*score)?|how\s*employable\s*am\s*i|market\s*readiness|hireability|chances\s*of\s*(getting\s*hired|a\s*job))\b/i,
     weight: 0.95,
   },
   // 5. CAREER_PLAN
   {
     id: "RULE_CAREER_PLAN",
     intent: "CAREER_PLAN",
-    pattern: /\b(career\s*(plan|roadmap|path|milestones?)|learning\s*(plan|roadmap)|create\s*(a\s*)?roadmap|steps\s*to\s*become|guide\s*me\s*to\s*become)\b/i,
+    pattern: /\b(career\s*(plan|roadmap|path|milestones?)|learning\s*(plan|roadmap|path)|create\s*(a\s*)?roadmap|steps\s*to\s*become|guide\s*me\s*to\s*become|how\s*to\s*become|roadmap\s*to)\b/i,
     weight: 0.95,
   },
   // 6. JOB_MATCHING
   {
     id: "RULE_JOB_MATCHING",
     intent: "JOB_MATCHING",
-    pattern: /\b(matching\s*jobs?|jobs?\s*(match|for\s*me)|find\s*(me\s*)?jobs?|recommended\s*jobs?|what\s*jobs\s*can\s*i\s*apply)\b/i,
+    pattern: /\b(matching\s*jobs?|jobs?\s*(match|for\s*me|matching)|find\s*(me\s*)?jobs?|recommended\s*jobs?|what\s*jobs\s*can\s*i\s*apply|jobs?\s*recommendations?|job\s*search|roles?\s*for\s*me)\b/i,
     weight: 0.92,
   },
   // 7. CAREER_READINESS
   {
     id: "RULE_CAREER_READINESS",
     intent: "CAREER_READINESS",
-    pattern: /\b(overall\s*readiness|am\s*i\s*ready|career\s*readiness|complete\s*(career\s*)?overview|holistic\s*audit)\b/i,
+    pattern: /\b(overall\s*readiness|am\s*i\s*ready|career\s*readiness|complete\s*(career\s*)?overview|holistic\s*audit|readiness\s*score)\b/i,
     weight: 0.9,
   },
   // 8. PROFILE_OVERVIEW
   {
     id: "RULE_PROFILE_OVERVIEW",
     intent: "PROFILE_OVERVIEW",
-    pattern: /\b(my\s*profile|profile\s*(summary|completion|overview|details)|who\s*am\s*i|show\s*my\s*profile)\b/i,
+    pattern: /\b(my\s*profile|profile\s*(summary|completion|overview|details|status)|who\s*am\s*i|show\s*my\s*profile|view\s*my\s*profile)\b/i,
     weight: 0.9,
   },
   // 9. GENERAL_CAREER_GUIDANCE
   {
     id: "RULE_GENERAL_CAREER_GUIDANCE",
     intent: "GENERAL_CAREER_GUIDANCE",
-    pattern: /\b(career\s*(advice|tips|help|guidance|direction)|interview\s*(prep|preparation)|advice(\s+\w+){0,4}\s+interview|how\s*to\s*switch\s*careers?)\b/i,
+    pattern: /\b(career\s*(advice|tips|help|guidance|direction)|interview\s*(prep|preparation|questions?)|advice(\s+\w+){0,4}\s+interview|how\s*to\s*switch\s*careers?|what\s*should\s*i\s*(learn|do)|salary\s*expectation|negotiat)\b/i,
     weight: 0.85,
   },
 ];

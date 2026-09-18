@@ -42,7 +42,8 @@ export class IntentClassifier {
     }
 
     // 3. Check for general career-related words before marking UNKNOWN
-    const generalCareerTerms = /\b(job|career|work|interview|hire|salary|role|promotion|tech|stack)\b/i;
+    const generalCareerTerms =
+      /\b(job|career|work|interview|hire|salary|role|promotion|tech|stack|resume|skills?|cv|ats|score|roadmap|plan|employability|portfolio|developer|engineer|software|code|learning|experience|guidance|advice|switch|help)\b/i;
     if (generalCareerTerms.test(cleanMessage)) {
       return {
         intent: "GENERAL_CAREER_GUIDANCE",

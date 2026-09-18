@@ -9,3 +9,4 @@ export * from './MetricsSummaryView';
 export * from './EvidenceLedgerView';
 export * from './InsightsRoadmapView';
 export * from './TargetRoleSelector';
+export * from './CoachFloatingWidget';

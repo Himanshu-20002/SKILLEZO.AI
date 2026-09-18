@@ -34,14 +34,20 @@ export interface UseCareerCoachOptions {
   initialTargetRole?: string;
 }
 
+const STORAGE_MESSAGES_KEY = 'skillezo_coach_chat_messages_v1';
+const STORAGE_INTEL_KEY = 'skillezo_coach_active_intel_v1';
+
 export function useCareerCoach(options?: UseCareerCoachOptions) {
   const [messages, setMessages] = useState<CoachChatMessage[]>([]);
+  const [activeIntelligence, setActiveIntelligence] =
+    useState<AIOrchestrationResult | null>(null);
+  const [hasHydrated, setHasHydrated] = useState(false);
+
   const [status, setStatus] = useState<CoachStatus>('idle');
   const [targetRole, setTargetRoleState] = useState<string | undefined>(
     options?.initialTargetRole
   );
-  const [activeIntelligence, setActiveIntelligence] =
-    useState<AIOrchestrationResult | null>(null);
+
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(
     null
   );
@@ -51,6 +57,85 @@ export function useCareerCoach(options?: UseCareerCoachOptions) {
     status === 'thinking' ||
     status === 'executing_tools' ||
     status === 'synthesizing';
+
+  // 1. Initial client-only hydration from sessionStorage to prevent SSR mismatch
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = window.sessionStorage.getItem(STORAGE_MESSAGES_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setMessages(
+            parsed.map((m: any) => ({
+              ...m,
+              timestamp: new Date(m.timestamp),
+              isStreaming: false,
+            }))
+          );
+        }
+      }
+
+      const storedIntel = window.sessionStorage.getItem(STORAGE_INTEL_KEY);
+      if (storedIntel) {
+        setActiveIntelligence(JSON.parse(storedIntel));
+      }
+    } catch {
+      // ignore
+    } finally {
+      setHasHydrated(true);
+    }
+  }, []);
+
+  // 2. Persistence effects (only active after initial hydration has completed)
+  useEffect(() => {
+    if (!hasHydrated || typeof window === 'undefined') return;
+    try {
+      if (messages.length === 0) {
+        window.sessionStorage.removeItem(STORAGE_MESSAGES_KEY);
+      } else {
+        const validMessages = messages.filter(
+          (m) => !(m.role === 'assistant' && m.isStreaming && !m.content)
+        );
+        window.sessionStorage.setItem(
+          STORAGE_MESSAGES_KEY,
+          JSON.stringify(validMessages)
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }, [messages, hasHydrated]);
+
+  useEffect(() => {
+    if (!hasHydrated || typeof window === 'undefined') return;
+    try {
+      if (activeIntelligence) {
+        window.sessionStorage.setItem(
+          STORAGE_INTEL_KEY,
+          JSON.stringify(activeIntelligence)
+        );
+      } else {
+        window.sessionStorage.removeItem(STORAGE_INTEL_KEY);
+      }
+    } catch {
+      // ignore
+    }
+  }, [activeIntelligence, hasHydrated]);
+
+  // Watchdog timer: prevents getting permanently stuck in generating status
+  useEffect(() => {
+    if (!isGenerating) return;
+    const timer = setTimeout(() => {
+      setStatus('idle');
+      setMessages((prev) =>
+        prev.map((msg) => (msg.isStreaming ? { ...msg, isStreaming: false } : msg))
+      );
+      toast.error('AI Career Coach request timed out. Please try again.');
+    }, 45000);
+
+    return () => clearTimeout(timer);
+  }, [isGenerating]);
 
   // Cleanup active request on unmount
   useEffect(() => {
@@ -80,6 +165,10 @@ export function useCareerCoach(options?: UseCareerCoachOptions) {
     setActiveIntelligence(null);
     setSelectedEvidenceId(null);
     setStatus('idle');
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(STORAGE_MESSAGES_KEY);
+      window.sessionStorage.removeItem(STORAGE_INTEL_KEY);
+    }
   }, [cancelRequest]);
 
   const setTargetRole = useCallback((role: string | undefined) => {
@@ -89,9 +178,9 @@ export function useCareerCoach(options?: UseCareerCoachOptions) {
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || isGenerating) return;
+      if (!trimmed) return;
 
-      // Abort any existing generation
+      // If already generating, gracefully cancel preceding stream and start new request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }

@@ -9,3 +9,4 @@ export * from "./Job.model";
 export * from "./CareerPlan.model";
 export * from "./Application.model";
 export * from "./Verification.model";
+export * from "./ActionProposal.model";

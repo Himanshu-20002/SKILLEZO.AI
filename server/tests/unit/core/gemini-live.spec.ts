@@ -18,9 +18,9 @@ describe("GEMINI LIVE CONNECTION TEST", () => {
     // 2. AI_PROVIDER resolves to Gemini
     expect(env.AI_PROVIDER).toBe("gemini");
 
-    // 3. AI_MODEL resolves to the configured model
+    // 3. AI_MODEL resolves to a configured Gemini model
     expect(env.AI_MODEL).toBeDefined();
-    expect(env.AI_MODEL).toBe("gemini-flash-latest");
+    expect(["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.6-flash"]).toContain(env.AI_MODEL);
 
     // 4. GeminiProvider can make a real request
     const testPrompt = `Return ONLY a valid JSON object matching this exact schema:

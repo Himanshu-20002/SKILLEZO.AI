@@ -20,6 +20,161 @@ interface MessageBubbleProps {
   onOpenWorkbenchTab?: (tab: 'metrics' | 'evidence' | 'actions') => void;
 }
 
+function renderInlineFormatting(
+  text: string,
+  onSelectEvidence?: (evidenceId: string) => void
+): React.ReactNode[] {
+  const regex = /(\[ID:\s*[a-zA-Z0-9_\-]+\]|\*\*[^*]+\*\*|`[^`]+`)/g;
+  const parts = text.split(regex);
+
+  return parts.map((part, index) => {
+    if (!part) return null;
+
+    const idMatch = part.match(/\[ID:\s*([a-zA-Z0-9_\-]+)\]/);
+    if (idMatch) {
+      const evidenceId = idMatch[1];
+      return (
+        <button
+          key={index}
+          type="button"
+          onClick={() => onSelectEvidence?.(evidenceId)}
+          className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50 transition-colors cursor-pointer align-baseline"
+          title={`Click to inspect verified evidence #${evidenceId}`}
+        >
+          <span>ID: {evidenceId}</span>
+        </button>
+      );
+    }
+
+    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+      return (
+        <strong
+          key={index}
+          className="font-semibold text-slate-900 dark:text-white"
+        >
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+
+    if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
+      return (
+        <code
+          key={index}
+          className="px-1.5 py-0.5 mx-0.5 rounded bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 font-mono text-[11px]"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+
+    return <span key={index}>{part}</span>;
+  });
+}
+
+function FormattedMessageContent({
+  content,
+  onSelectEvidence,
+}: {
+  content: string;
+  onSelectEvidence?: (evidenceId: string) => void;
+}) {
+  const lines = content.split('\n');
+  const elements: React.ReactNode[] = [];
+
+  let currentList: React.ReactNode[] = [];
+  let listKey = 0;
+
+  const flushList = () => {
+    if (currentList.length > 0) {
+      elements.push(
+        <div key={`list-${listKey++}`} className="space-y-1 my-2 pl-1">
+          {currentList}
+        </div>
+      );
+      currentList = [];
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const trimmed = rawLine.trim();
+
+    if (!trimmed) {
+      flushList();
+      continue;
+    }
+
+    // Headings: ### or ## or #
+    if (trimmed.startsWith('#')) {
+      flushList();
+      const headingText = trimmed.replace(/^#+\s*/, '');
+      elements.push(
+        <div
+          key={`h-${i}`}
+          className="flex items-center gap-2 pt-2.5 pb-1 border-b border-slate-100 dark:border-slate-800/80 text-xs sm:text-sm font-bold text-slate-900 dark:text-white mt-2 mb-1"
+        >
+          <span className="w-1.5 h-3.5 rounded-full bg-indigo-600 shrink-0" />
+          <span>{headingText}</span>
+        </div>
+      );
+      continue;
+    }
+
+    // Bullet points: - or *
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      const bulletText = trimmed.replace(/^[-*]\s+/, '');
+      currentList.push(
+        <div
+          key={`b-${i}`}
+          className="flex items-start gap-2.5 py-0.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 shrink-0" />
+          <div className="flex-1 min-w-0">
+            {renderInlineFormatting(bulletText, onSelectEvidence)}
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // Numbered items: 1. or 2.
+    const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+    if (numMatch) {
+      const num = numMatch[1];
+      const text = numMatch[2];
+      currentList.push(
+        <div
+          key={`num-${i}`}
+          className="flex items-start gap-2.5 py-0.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed"
+        >
+          <span className="w-4 h-4 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
+            {num}
+          </span>
+          <div className="flex-1 min-w-0">
+            {renderInlineFormatting(text, onSelectEvidence)}
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // Regular paragraph
+    flushList();
+    elements.push(
+      <p
+        key={`p-${i}`}
+        className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed my-1"
+      >
+        {renderInlineFormatting(trimmed, onSelectEvidence)}
+      </p>
+    );
+  }
+
+  flushList();
+  return <div className="space-y-1">{elements}</div>;
+}
+
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   onRetry,
@@ -35,7 +190,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <div className="px-4 py-2.5 rounded-2xl rounded-tr-xs bg-gradient-to-tr from-indigo-600 to-indigo-700 text-white text-xs sm:text-sm leading-relaxed shadow-sm">
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           </div>
-          <span className="text-[10px] text-slate-400 mt-1 px-1">
+          <span suppressHydrationWarning className="text-[10px] text-slate-400 mt-1 px-1">
             {new Date(message.timestamp).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
@@ -104,9 +259,63 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             )}
           </div>
         ) : (
-          /* Natural Language Reasoning */
-          <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed space-y-2 whitespace-pre-wrap break-words">
-            {message.content}
+          /* Rich Structured Natural Language Reasoning */
+          <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+            <FormattedMessageContent
+              content={message.content}
+              onSelectEvidence={onSelectEvidence}
+            />
+          </div>
+        )}
+
+        {/* Action Items Cards Preview */}
+        {recommendations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                <FileCheck className="w-3.5 h-3.5 text-indigo-500" />
+                Top Priority Action Items ({recommendations.length})
+              </span>
+              <button
+                type="button"
+                onClick={() => onOpenWorkbenchTab?.('actions')}
+                className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium cursor-pointer"
+              >
+                View Full Roadmap →
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {recommendations.slice(0, 2).map((rec, idx) => {
+                const priorityStyles =
+                  rec.priority === 'HIGH'
+                    ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40'
+                    : rec.priority === 'MEDIUM'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/40'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+
+                return (
+                  <div
+                    key={idx}
+                    className="p-2.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 space-y-1"
+                  >
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                        {rec.title}
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border ${priorityStyles}`}
+                      >
+                        {rec.priority}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                      {rec.explanation}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

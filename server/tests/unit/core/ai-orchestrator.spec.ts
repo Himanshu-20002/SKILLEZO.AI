@@ -52,6 +52,10 @@ describe("Phase 4: AI Orchestrator Unit & Integrity Test Suite", () => {
       expect(res.intent).toBe("RESUME_ANALYSIS");
       expect(res.matchedRule).toBe("RULE_RESUME_ANALYSIS");
       expect(res.confidence).toBeGreaterThanOrEqual(0.9);
+
+      const res2 = IntentClassifier.classify("Can you analyze my active resume and give me my ATS compatibility score?");
+      expect(res2.intent).toBe("RESUME_ANALYSIS");
+      expect(res2.matchedRule).toBe("RULE_RESUME_ANALYSIS");
     });
 
     it("classifies RESUME_IMPROVEMENT with matchedRule", () => {

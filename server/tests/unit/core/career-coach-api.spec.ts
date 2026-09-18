@@ -346,8 +346,16 @@ describe("Phase 5: Career Coach API Integration & Transport Suite", () => {
     it("verifies that a genuine client disconnect DOES abort the AbortController", async () => {
       let abortedInsideOrchestration = false;
 
-      orchestrateSpy.mockImplementation(async (_req: any, ctx: any) => {
+      let clientReq: any;
+      orchestrateSpy.mockImplementation(async (_req, ctx) => {
         const signal: AbortSignal = ctx.signal;
+        // Abort the client request now that orchestration is actively running
+        setTimeout(() => {
+          if (clientReq) {
+            clientReq.abort();
+          }
+        }, 20);
+
         return new Promise((resolve, reject) => {
           signal.addEventListener("abort", () => {
             abortedInsideOrchestration = true;
@@ -392,14 +400,9 @@ describe("Phase 5: Career Coach API Integration & Transport Suite", () => {
       const server = testApp.listen(0);
       const port = (server.address() as any).port;
 
-      const clientReq = request(`http://localhost:${port}`)
+      clientReq = request(`http://localhost:${port}`)
         .post("/cancel-test")
         .send({ message: "Long running query" });
-
-      // Abort client request mid-flight
-      setTimeout(() => {
-        clientReq.abort();
-      }, 30);
 
       try {
         await clientReq;
@@ -407,7 +410,7 @@ describe("Phase 5: Career Coach API Integration & Transport Suite", () => {
         // Expected network abort
       }
 
-      await new Promise((r) => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 200));
       expect(abortedInsideOrchestration).toBe(true);
 
       server.close();

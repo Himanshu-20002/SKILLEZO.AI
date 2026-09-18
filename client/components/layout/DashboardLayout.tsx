@@ -9,6 +9,7 @@ import { MobileSidebar } from './MobileSidebar';
 import { useSession, authClient } from '@/lib/auth-client';
 import { apiFetch } from '@/lib/api';
 import { Lock, LogOut } from 'lucide-react';
+import { CoachFloatingWidget } from '@/components/dashboard/ai-career-coach';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -157,6 +158,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         >
           <div className="max-w-7xl mx-auto space-y-6">{children}</div>
         </main>
+
+        {/* Global Floating AI Career Coach Assistant Widget */}
+        {!isAdmin && !isSuspended && <CoachFloatingWidget />}
       </div>
 
       {/* Centered Glassmorphism Lock Screen Overlay when user is suspended */}

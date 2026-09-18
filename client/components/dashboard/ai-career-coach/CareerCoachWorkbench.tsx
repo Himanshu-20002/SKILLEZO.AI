@@ -36,7 +36,7 @@ export const CareerCoachWorkbench: React.FC = () => {
     (activeIntelligence?.recommendations?.length || 0);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] max-w-7xl mx-auto">
+    <div className="flex flex-col h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6rem)] max-h-[calc(100dvh-5rem)] sm:max-h-[calc(100dvh-6rem)] max-w-7xl mx-auto min-h-0 overflow-hidden">
       {/* Mobile / Tablet Tab Switcher (< 1024px) */}
       <div className="flex lg:hidden items-center justify-center p-1 mb-3 rounded-xl bg-slate-200/60 dark:bg-slate-800/60 border border-slate-300/60 dark:border-slate-700/60 shrink-0">
         <button
@@ -49,7 +49,7 @@ export const CareerCoachWorkbench: React.FC = () => {
           }`}
         >
           <MessageSquare className="w-3.5 h-3.5" />
-          <span>Conversation ({messages.length})</span>
+          <span suppressHydrationWarning>Conversation ({messages.length})</span>
         </button>
 
         <button
@@ -62,7 +62,9 @@ export const CareerCoachWorkbench: React.FC = () => {
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Intelligence {totalIntelligenceCount > 0 && `(${totalIntelligenceCount})`}</span>
+          <span suppressHydrationWarning>
+            Intelligence {totalIntelligenceCount > 0 && `(${totalIntelligenceCount})`}
+          </span>
         </button>
       </div>
 

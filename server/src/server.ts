@@ -18,6 +18,7 @@ import { careerPlanRoutes } from "@/modules/career-plan/employability.routes";
 import { verificationRouter } from "@/modules/verification";
 import { adminRouter } from "@/modules/admin";
 import { careerCoachRouter } from "@/core/ai/api";
+import { actionRouter } from "@/core/ai/actions/api/action.routes";
 import { notFoundMiddleware } from "@/core/middleware/notFound.middleware";
 import { errorMiddleware } from "@/core/middleware/error.middleware";
 import { env } from "@/core/config/env";
@@ -76,6 +77,7 @@ app.use("/api/career-plan", careerPlanRoutes);
 app.use("/api/verification", verificationRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/ai/coach", careerCoachRouter);
+app.use("/api/ai/actions", actionRouter);
 
 // Global user real-time status & suspension health check
 app.get("/api/user/status", async (req: Request, res: Response) => {
