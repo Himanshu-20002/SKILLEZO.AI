@@ -1,6 +1,6 @@
 # 📊 SKILLEZO AI — Project Status Dashboard
 
-> **Last Updated:** September 17, 2026 (Phase 1, 2, 3, & 4: Model Gateway, Evidence Layer, Context Cache, Controlled Tool Registry & AI Orchestrator Complete)  
+> **Last Updated:** September 18, 2026 (Phase 1, 2, 3, 4, & 5: Model Gateway, Evidence Layer, Context Cache, Controlled Tool Registry, AI Orchestrator & Career Coach API Complete)  
 > **Active Sprint:** Sprint 1 — Week 1 Candidate Loop Closure, Google OAuth, Resend Email Reset, AI Career Intelligence Platform  
 > **Target Soft MVP:** September 30, 2026  
 > **Target Release:** October 10, 2026  
@@ -11,11 +11,11 @@
 
 ```text
 ========================================================================================
-OVERALL MVP PLATFORM PROGRESS: [███████████████░░░░░] 78% (Core AI Backend Complete)
+OVERALL MVP PLATFORM PROGRESS: [████████████████░░░░] 82% (Career Coach API Transport Complete)
 ========================================================================================
 Candidate Core Experience & Auth    : [████████████████████] 100% (Working & Verified)
 Resume Studio & Deterministic ATS   : [████████████████████] 100% (Working & Verified)
-AI Career Coach (Phases 1 to 4)     : [██████████████░░░░░░]  70% (Backend Orchestrator Live, Chat API & UI Next)
+AI Career Coach (Phases 1 to 5)     : [█████████████████░░░]  85% (Backend Orchestrator & HTTP API Live; UI Next)
 Recruiter Review Portal             : [██████████████░░░░░░]  70% (Kanban & Jobs Live, Data Hydration Next)
 Career GPS & Roadmaps               : [███████████████░░░░░]  75% (Core Taxonomies Live, Salary Bands Next)
 Cloud Infrastructure & Prod Hardening: [██████░░░░░░░░░░░░░░]  30% (Dev/Docker Live, Prod Hardening Next)
