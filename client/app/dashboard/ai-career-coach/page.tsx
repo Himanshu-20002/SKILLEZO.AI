@@ -1,13 +1,13 @@
 'use client';
 
-import { ComingSoonModule } from '@/components/dashboard/common/ComingSoonModule';
+import React from 'react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { CareerCoachWorkbench } from '@/components/dashboard/ai-career-coach';
 
 export default function AICareerCoachPage() {
   return (
-    <ComingSoonModule
-      title="AI Career Coach Assistant"
-      moduleNumber="27"
-      description="24/7 AI career mentor for mock interviews, resume critique, and salary negotiation advice."
-    />
+    <DashboardLayout>
+      <CareerCoachWorkbench />
+    </DashboardLayout>
   );
 }
