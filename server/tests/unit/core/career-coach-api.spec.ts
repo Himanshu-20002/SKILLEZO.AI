@@ -347,7 +347,7 @@ describe("Phase 5: Career Coach API Integration & Transport Suite", () => {
       let abortedInsideOrchestration = false;
 
       let clientReq: any;
-      orchestrateSpy.mockImplementation(async (_req, ctx) => {
+      orchestrateSpy.mockImplementation(async (_req: any, ctx: any) => {
         const signal: AbortSignal = ctx.signal;
         // Abort the client request now that orchestration is actively running
         setTimeout(() => {

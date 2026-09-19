@@ -115,6 +115,43 @@ html.dark .signature-gradient {
   will-change: transform;
 }
 
+@keyframes ai-breathe {
+  0%, 100% {
+    transform: scale3d(1, 1, 1);
+    opacity: 0.88;
+  }
+  50% {
+    transform: scale3d(1.06, 1.06, 1);
+    opacity: 1;
+  }
+}
+
+@keyframes ai-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ai-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-ai-breathe {
+  animation: ai-breathe 4s ease-in-out infinite;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.animate-ai-spin-slow {
+  animation: ai-spin-slow 35s linear infinite;
+  will-change: transform;
+}
+
+.animate-ai-shimmer {
+  animation: ai-shimmer 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }

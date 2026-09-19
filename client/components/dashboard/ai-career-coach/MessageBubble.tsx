@@ -175,7 +175,7 @@ function FormattedMessageContent({
   return <div className="space-y-1">{elements}</div>;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({
+export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
   message,
   onRetry,
   onSelectEvidence,
@@ -187,10 +187,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     return (
       <div className="flex justify-end gap-2.5 max-w-2xl ml-auto mb-4">
         <div className="flex flex-col items-end">
-          <div className="px-4 py-2.5 rounded-2xl rounded-tr-xs bg-gradient-to-tr from-indigo-600 to-indigo-700 text-white text-xs sm:text-sm leading-relaxed shadow-sm">
+          <div className="px-4 py-2.5 rounded-2xl rounded-tr-xs bg-gradient-to-tr from-[#3D5AFE] to-indigo-700 text-white text-xs sm:text-sm leading-relaxed shadow-sm">
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           </div>
-          <span suppressHydrationWarning className="text-[10px] text-slate-400 mt-1 px-1">
+          <span suppressHydrationWarning className="text-[10px] text-slate-400 mt-1 px-1 font-mono">
             {new Date(message.timestamp).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
@@ -212,16 +212,16 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const limitations = result?.limitations || [];
 
   return (
-    <div className="flex justify-start gap-3 max-w-3xl mr-auto mb-5 w-full">
-      <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shrink-0 shadow-sm shadow-indigo-500/20">
+    <div className="flex justify-start gap-3 max-w-3xl mr-auto mb-5 w-full will-change-transform">
+      <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#3D5AFE] via-indigo-600 to-[#00D9C0] flex items-center justify-center text-white shrink-0 shadow-sm shadow-indigo-500/20">
         <Sparkles className="w-4 h-4" />
       </div>
 
-      <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/90 rounded-2xl rounded-tl-xs p-4 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-3.5">
+      <div className="flex-1 min-w-0 bg-white dark:bg-[#0c1236]/90 rounded-2xl rounded-tl-xs p-4 sm:p-5 border border-slate-200/90 dark:border-indigo-500/30 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(61,90,254,0.08)] space-y-3.5">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-2">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-xs text-slate-900 dark:text-white">
+            <span className="font-bold text-xs text-slate-900 dark:text-white">
               SKILLEZO AI Coach
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
@@ -375,4 +375,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       </div>
     </div>
   );
-};
+});
+
+MessageBubble.displayName = 'MessageBubble';
