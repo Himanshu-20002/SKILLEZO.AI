@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,14 @@ interface HeroProps {
 
 export function Hero({ onGetScore }: HeroProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const { data: session } = useSession();
-  const isLoggedIn = !!session?.user;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isLoggedIn = mounted && !!session?.user;
 
   const handlePrimaryClick = () => {
     if (isLoggedIn) {

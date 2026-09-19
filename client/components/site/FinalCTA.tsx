@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Reveal } from "@/components/site/Reveal";
@@ -13,8 +14,14 @@ interface FinalCTAProps {
 
 export function FinalCTA({ onGetScore }: FinalCTAProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const { data: session } = useSession();
-  const isLoggedIn = !!session?.user;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isLoggedIn = mounted && !!session?.user;
 
   const handleClick = () => {
     if (isLoggedIn) {

@@ -23,15 +23,18 @@ const LINKS = [
 export function Navbar({ onGetScore }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const { data: session, isPending } = useSession();
-  const isLoggedIn = !!session?.user;
 
   useEffect(() => {
+    setMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 24);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const isLoggedIn = mounted && !!session?.user;
 
   return (
     <motion.header
