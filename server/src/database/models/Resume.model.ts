@@ -42,6 +42,7 @@ export interface IResumeProject {
   link?: string | null;
   githubUrl?: string | null;
   liveDemoUrl?: string | null;
+  bullets?: string[];
 }
 
 export interface IResumeCertification {
@@ -66,15 +67,21 @@ export interface IResume extends Document {
   _id: Types.ObjectId;
   userId: string;
   title: string;
-  originalFileName: string;
-  fileName: string;
-  storageKey: string;
-  fileUrl: string;
-  mimeType: string;
-  fileSize: number;
+  originalFileName?: string;
+  fileName?: string;
+  storageKey?: string;
+  fileUrl?: string;
+  mimeType?: string;
+  fileSize?: number;
   isDefault: boolean;
   status: ResumeStatus;
   version: number;
+  variantType?: "MASTER" | "TAILORED";
+  sourceProfileVersion?: number | null;
+  parentResumeId?: Types.ObjectId | null;
+  targetJobId?: Types.ObjectId | null;
+  targetJobTitle?: string | null;
+  targetCompany?: string | null;
   extractedData?: IResumeExtractedData | null;
   resumeDocument?: ResumeDocument | null;
   builderConfig?: ResumeBuilderConfig | null;
@@ -137,6 +144,7 @@ const resumeProjectSchema = new Schema<IResumeProject>(
     link: { type: String, default: null, trim: true },
     githubUrl: { type: String, default: null, trim: true },
     liveDemoUrl: { type: String, default: null, trim: true },
+    bullets: [{ type: String, trim: true }],
   },
   { _id: false }
 );
@@ -179,32 +187,31 @@ const resumeSchema = new Schema<IResume>(
     },
     originalFileName: {
       type: String,
-      required: true,
+      default: "master-resume",
       trim: true,
     },
     fileName: {
       type: String,
-      required: true,
+      default: "master-resume",
       trim: true,
     },
     storageKey: {
       type: String,
-      required: true,
+      default: "profile-generated",
       trim: true,
     },
     fileUrl: {
       type: String,
-      required: true,
+      default: "",
       trim: true,
     },
     mimeType: {
       type: String,
-      required: true,
+      default: "application/json",
       trim: true,
     },
     fileSize: {
       type: Number,
-      required: true,
       default: 0,
     },
     isDefault: {
@@ -222,6 +229,36 @@ const resumeSchema = new Schema<IResume>(
     version: {
       type: Number,
       default: 1,
+    },
+    variantType: {
+      type: String,
+      enum: ["MASTER", "TAILORED"],
+      default: "MASTER",
+      index: true,
+    },
+    sourceProfileVersion: {
+      type: Number,
+      default: null,
+    },
+    parentResumeId: {
+      type: Schema.Types.ObjectId,
+      ref: "Resume",
+      default: null,
+    },
+    targetJobId: {
+      type: Schema.Types.ObjectId,
+      ref: "Job",
+      default: null,
+    },
+    targetJobTitle: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    targetCompany: {
+      type: String,
+      default: null,
+      trim: true,
     },
     extractedData: {
       type: extractedDataSchema,
@@ -256,6 +293,10 @@ const resumeSchema = new Schema<IResume>(
 );
 
 resumeSchema.index({ userId: 1, isDefault: 1 }, { unique: true, partialFilterExpression: { isDefault: true } });
+resumeSchema.index(
+  { userId: 1, variantType: 1 },
+  { unique: true, partialFilterExpression: { variantType: "MASTER" } }
+);
 resumeSchema.index({ userId: 1, createdAt: -1 });
 
 export const ResumeModel = model<IResume>("Resume", resumeSchema);

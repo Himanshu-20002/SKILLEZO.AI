@@ -64,11 +64,11 @@ export class ProjectsAnalyzer {
     projList.forEach((proj, idx) => {
       const prefix = `projects[${idx}]`;
       const title = (proj.title || "").trim();
-      const description = (proj.description || "").trim();
       const tech = Array.isArray(proj.technologies) ? proj.technologies : [];
       const bullets = Array.isArray(proj.bullets) ? proj.bullets : [];
       const link = (proj.link || "").trim();
       const repoUrl = (proj.repoUrl || "").trim();
+      const effectiveDescription = (proj.description || bullets.join(" ")).trim();
 
       if (title.length >= 2) {
         // Valid title
@@ -78,7 +78,7 @@ export class ProjectsAnalyzer {
         warnings.push(`Project #${idx + 1} lacks a title.`);
       }
 
-      if (description.length >= 10) {
+      if (effectiveDescription.length >= 10) {
         projectsWithDescription++;
       } else {
         projectsMissingDescription++;

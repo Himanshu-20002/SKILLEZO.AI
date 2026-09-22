@@ -526,7 +526,8 @@ export class ResumeParserService {
       const descLines = lines
         .slice(descStartIndex)
         .filter((l) => !/^(?:github|live\s*demo|repository|repo|demo|source\s*code)/i.test(l));
-      const description = descLines.join(" ").replace(/\s+/g, " ").slice(0, 500);
+      
+      const { description: parsedDesc, bullets: parsedBullets } = this.parseProjectContent(descLines);
 
       // Links extraction for this project
       let githubUrl: string | null = null;
@@ -565,7 +566,8 @@ export class ResumeParserService {
       projects.push({
         title,
         technologies,
-        description: description || trimmed,
+        description: parsedDesc || (parsedBullets.length === 0 ? trimmed.slice(0, 250) : null),
+        bullets: parsedBullets,
         link: liveDemoUrl || githubUrl || null,
         githubUrl,
         liveDemoUrl,
@@ -593,6 +595,73 @@ export class ResumeParserService {
     }
 
     return projects;
+  }
+
+  /**
+   * Parses project content lines into a distinct short summary (max 2 lines) and up to 4 clean bullet points.
+   * Eliminates duplicate bullet markers (• •) and prevents duplication between summary and bullets.
+   */
+  private parseProjectContent(descLines: string[]): {
+    description: string | null;
+    bullets: string[];
+  } {
+    if (!descLines || descLines.length === 0) {
+      return { description: null, bullets: [] };
+    }
+
+    const rawJoined = descLines.join("\n").trim();
+    if (!rawJoined) {
+      return { description: null, bullets: [] };
+    }
+
+    const hasBulletSymbols =
+      /[•\u2022\u25E6\u25AA]/.test(rawJoined) ||
+      descLines.some((l) => /^[-*]\s+/.test(l.trim()));
+
+    if (hasBulletSymbols) {
+      const rawSegments = rawJoined
+        .split(/(?:^|\n|\s+)[•\u2022\u25E6\u25AA]\s*|(?:\n\s*[-*]\s+)/)
+        .map((s) => s.replace(/^[•\u2022\u25E6\u25AA\*\-]\s*/, "").trim())
+        .filter((s) => s.length > 0);
+
+      const startsWithBullet = /^[•\u2022\u25E6\u25AA\*\-]/.test(rawJoined.trim());
+      let summary: string | null = null;
+      let bulletItems: string[] = [];
+
+      // If text doesn't start with bullet, first segment is a clean introductory summary (<= 2 lines)
+      if (!startsWithBullet && rawSegments.length > 1) {
+        summary = rawSegments[0].replace(/\s+/g, " ").slice(0, 250);
+        bulletItems = rawSegments.slice(1);
+      } else {
+        bulletItems = rawSegments;
+      }
+
+      const cleanBullets = bulletItems
+        .map((b) => b.replace(/^[•\u2022\u25E6\u25AA\*\-]\s*/, "").replace(/\s+/g, " ").trim())
+        .filter((b) => b.length > 0)
+        .slice(0, 4);
+
+      return {
+        description: summary,
+        bullets: cleanBullets,
+      };
+    }
+
+    // If no bullet symbols present:
+    // If multiple short lines starting with capital letters, treat as bullet points (max 4)
+    if (descLines.length > 1 && descLines.length <= 4 && descLines.every((l) => /^[A-Z]/.test(l.trim()))) {
+      return {
+        description: null,
+        bullets: descLines.map((l) => l.replace(/\s+/g, " ").trim()).slice(0, 4),
+      };
+    }
+
+    // Otherwise, treat as a short 1-2 line summary
+    const summary = descLines.join(" ").replace(/\s+/g, " ").trim().slice(0, 250);
+    return {
+      description: summary || null,
+      bullets: [],
+    };
   }
 
   /**

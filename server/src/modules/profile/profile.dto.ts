@@ -8,6 +8,7 @@ export interface ProfileSkillDTO {
   score?: number | null;
   source?: SkillSource;
   verified?: boolean;
+  evidenceIds?: string[];
 }
 
 export interface ProfileEducationDTO {
@@ -16,16 +17,20 @@ export interface ProfileEducationDTO {
   fieldOfStudy?: string | null;
   startYear?: number | null;
   endYear?: number | null;
+  evidenceIds?: string[];
 }
 
 export interface ProfileExperienceDTO {
-  companyName: string;
-  jobTitle: string;
+  companyName?: string | null;
+  jobTitle?: string | null;
   employmentType?: EmploymentType | null;
   startDate?: string | Date | null;
   endDate?: string | Date | null;
   isCurrent?: boolean;
   description?: string | null;
+  bullets?: string[];
+  technologiesUsed?: string[];
+  evidenceIds?: string[];
 }
 
 export interface ProfileLinksDTO {
@@ -50,6 +55,7 @@ export interface ProfileProjectDTO {
   featured?: boolean;
   startDate?: string | Date | null;
   endDate?: string | Date | null;
+  evidenceIds?: string[];
 }
 
 export interface AddProjectDTO {
@@ -61,6 +67,7 @@ export interface AddProjectDTO {
   featured?: boolean;
   startDate?: string | Date | null;
   endDate?: string | Date | null;
+  evidenceIds?: string[];
 }
 
 export interface CreateProfileDTO {

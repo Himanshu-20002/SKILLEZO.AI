@@ -3,9 +3,38 @@ export interface UploadResumeDTO {
   isDefault?: boolean;
 }
 
+export interface CreateVariantDTO {
+  displayName: string;
+  targetJobTitle?: string | null;
+  targetCompany?: string | null;
+  targetJobId?: string | null;
+}
+
 export interface UpdateResumeDTO {
   title?: string;
+  displayName?: string;
   isDefault?: boolean;
+  targetJobTitle?: string | null;
+  targetCompany?: string | null;
+}
+
+export interface ResumePortfolioItemDTO {
+  id: string;
+  displayName: string;
+  variantType: "MASTER" | "TAILORED";
+  targetJobTitle?: string | null;
+  targetCompany?: string | null;
+  parentResumeId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  sourceProfileVersion?: number | null;
+  isMasterStale?: boolean;
+  isDefault: boolean;
+}
+
+export interface ResumePortfolioResponseDTO {
+  master: ResumePortfolioItemDTO;
+  variants: ResumePortfolioItemDTO[];
 }
 
 export interface ResumeResponseDTO {

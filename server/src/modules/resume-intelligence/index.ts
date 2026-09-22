@@ -30,3 +30,6 @@ export * from "./scoring";
 
 // Section AI Editor Domain (Phase 5)
 export * from "./editor";
+
+// Master Resume Domain (Phase 3)
+export * from "./master-resume/master-resume.builder";

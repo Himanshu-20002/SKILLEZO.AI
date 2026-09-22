@@ -9,6 +9,7 @@ describe("ResumeService Unit Tests", () => {
   let resumeService: ResumeService;
   let mockRepository: any;
   let mockStorage: any;
+  let mockProfileService: any;
 
   beforeEach(() => {
     mockRepository = {
@@ -31,7 +32,11 @@ describe("ResumeService Unit Tests", () => {
       getAbsolutePath: vi.fn(),
     };
 
-    resumeService = new ResumeService(mockRepository, mockStorage);
+    mockProfileService = {
+      hydrateFromParsedResume: vi.fn().mockResolvedValue({}),
+    };
+
+    resumeService = new ResumeService(mockRepository, mockStorage, undefined, mockProfileService);
   });
 
   describe("uploadResume", () => {
@@ -85,7 +90,7 @@ describe("ResumeService Unit Tests", () => {
         }),
       };
 
-      const customService = new ResumeService(mockRepository, mockStorage, mockParser);
+      const customService = new ResumeService(mockRepository, mockStorage, mockParser, mockProfileService);
 
       mockRepository.countUserResumes.mockResolvedValue(1);
       mockRepository.findByUserId.mockResolvedValue([{ _id: "res_old" }]);
@@ -119,7 +124,7 @@ describe("ResumeService Unit Tests", () => {
         parseResumeBuffer: vi.fn().mockRejectedValue(new Error("Corrupted PDF")),
       };
 
-      const customService = new ResumeService(mockRepository, mockStorage, mockParser);
+      const customService = new ResumeService(mockRepository, mockStorage, mockParser, mockProfileService);
 
       mockRepository.countUserResumes.mockResolvedValue(1);
       mockRepository.findByUserId.mockResolvedValue([{ _id: "res_old" }]);

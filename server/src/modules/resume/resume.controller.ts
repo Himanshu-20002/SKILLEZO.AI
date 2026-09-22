@@ -60,6 +60,18 @@ export class ResumeController {
     res.status(HTTP_STATUS.OK).json(successResponse(resume));
   };
 
+  getPortfolio = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const portfolio = await this.resumeService.getResumePortfolio(userId);
+    res.status(HTTP_STATUS.OK).json(successResponse(portfolio));
+  };
+
+  createVariant = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const variant = await this.resumeService.createResumeVariant(userId, req.body);
+    res.status(HTTP_STATUS.CREATED).json(successResponse(variant));
+  };
+
   deleteResume = async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const resumeId = req.params.resumeId as string;
@@ -168,5 +180,18 @@ export class ResumeController {
     const savedConfig = await this.resumeService.saveBuilderConfig(userId, resumeId, req.body);
     res.status(HTTP_STATUS.OK).json(successResponse(savedConfig));
   };
+
+  getMasterResume = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const result = await this.resumeService.getOrCreateMasterResume(userId);
+    res.status(HTTP_STATUS.OK).json(successResponse(result));
+  };
+
+  syncMasterResume = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const result = await this.resumeService.syncMasterResume(userId);
+    res.status(HTTP_STATUS.OK).json(successResponse(result));
+  };
 }
+
 

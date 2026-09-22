@@ -20,10 +20,11 @@ export const ResumeEvidenceSchema = z.object({
   type: ResumeEvidenceTypeSchema,
   source: ResumeEvidenceSourceSchema,
   value: z.string().min(1),
-  confidence: z.number().min(0).max(1),
+  confidence: z.number().min(0).max(1).optional().nullable(),
   verified: z.boolean(),
   sectionId: z.string().optional(),
   itemId: z.string().optional(),
+  sourceDocumentId: z.string().optional(),
   createdAt: z.string(),
 });
 
@@ -34,7 +35,7 @@ export const ResumeLinkSchema = z.object({
 
 export const ResumeContactSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
-  email: z.string().email("Valid email is required"),
+  email: z.string().email("Valid email is required").optional().or(z.literal("")),
   phone: z.string().optional(),
   location: z.string().optional(),
   links: z.array(ResumeLinkSchema).default([]),
@@ -76,8 +77,8 @@ export const ResumeExperienceBulletSchema = z.object({
 
 export const ResumeExperienceItemSchema = z.object({
   id: z.string().min(1),
-  companyName: z.string().min(1),
-  jobTitle: z.string().min(1),
+  companyName: z.string().optional(),
+  jobTitle: z.string().optional(),
   location: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),

@@ -232,6 +232,61 @@ export const resumeService = {
     );
     return res.data;
   },
+
+  /**
+   * Fetch or lazily generate the candidate's Master Resume (Phase 3).
+   */
+  async getMasterResume(): Promise<import("@/types/resume").MasterResumeResponse> {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume").MasterResumeResponse }>(
+      "/api/resumes/master"
+    );
+    return res.data;
+  },
+
+  /**
+   * Synchronize the candidate's Master Resume with their Career Profile (Phase 3).
+   */
+  async syncMasterResume(): Promise<import("@/types/resume").MasterResumeResponse> {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume").MasterResumeResponse }>(
+      "/api/resumes/master/sync",
+      {
+        method: "POST",
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * Fetch lightweight Resume Portfolio metadata (Phase 5).
+   */
+  async getResumePortfolio(): Promise<import("@/types/resume").ResumePortfolioResponse> {
+    const res = await apiFetch<{ success: boolean; data: import("@/types/resume").ResumePortfolioResponse }>(
+      "/api/resumes/portfolio"
+    );
+    return res.data;
+  },
+
+  /**
+   * Create an independent TAILORED resume variant derived from Master Resume (Phase 5).
+   */
+  async createResumeVariant(data: import("@/types/resume").CreateVariantInput): Promise<ResumeRecord> {
+    const res = await apiFetch<{ success: boolean; data: ResumeRecord }>(
+      "/api/resumes/variants",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * Rename a resume variant (Phase 5: reuses existing PATCH /api/resumes/:resumeId).
+   */
+  async renameResume(resumeId: string, displayName: string): Promise<ResumeRecord> {
+    return this.updateResume(resumeId, { title: displayName.trim() });
+  },
 };
+
 
 

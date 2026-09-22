@@ -3,7 +3,12 @@ import { ResumeController } from "./resume.controller";
 import { requireAuth } from "@/core/auth/middleware/requireAuth";
 import { resumeUploadMiddleware } from "@/core/middleware/upload.middleware";
 import { validate } from "@/core/middleware/validate.middleware";
-import { uploadResumeValidator, updateResumeValidator, resumeIdParamValidator } from "./resume.validator";
+import {
+  uploadResumeValidator,
+  updateResumeValidator,
+  resumeIdParamValidator,
+  createVariantValidator,
+} from "./resume.validator";
 import { asyncHandler } from "@/core/utils/asyncHandler";
 
 const router = Router();
@@ -24,8 +29,29 @@ router.get(
 );
 
 router.get(
+  "/portfolio",
+  asyncHandler(controller.getPortfolio)
+);
+
+router.post(
+  "/variants",
+  validate({ body: createVariantValidator }),
+  asyncHandler(controller.createVariant)
+);
+
+router.get(
   "/me/ats-score",
   asyncHandler(controller.getMyAtsScore)
+);
+
+router.get(
+  "/master",
+  asyncHandler(controller.getMasterResume)
+);
+
+router.post(
+  "/master/sync",
+  asyncHandler(controller.syncMasterResume)
 );
 
 router.get(

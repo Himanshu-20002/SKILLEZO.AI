@@ -186,6 +186,43 @@ describe("ResumeParserService", () => {
       expect(projects[2].technologies).toContain("OpenRouter API");
       expect(projects[2].githubUrl).toBe("https://github.com/Himanshu-20002/contentAI.git");
       expect(projects[2].liveDemoUrl).toBe("https://content-ai-amber.vercel.app/");
+
+      // Check that bullets were extracted cleanly without raw bullet markers
+      expect(projects[0].bullets).toBeDefined();
+      expect(projects[0].bullets?.length).toBe(1);
+      expect(projects[0].bullets?.[0]).toBe("Built a role-based PPE Workforce Safety Platform for admin and supervisor operations.");
+      expect(projects[0].bullets?.[0]).not.toContain("•");
+    });
+
+    it("should cleanly separate short summary and max 4 bullets without duplication", () => {
+      const complexProjectText = `
+        PROJECTS
+        WorkPulse Pro - Team Analytics
+        Tech: React, Node.js, PostgreSQL
+        An enterprise collaboration analytics tool providing real-time performance insights.
+        • Developed high-throughput metric aggregation service handling 50k events/sec.
+        • Implemented Redis caching layer reducing database read load by 60%.
+        • Designed customizable executive dashboards with Tailwind CSS and Chart.js.
+        • Integrated automated Slack alert webhooks for team incident escalations.
+        • Extra bullet point beyond the four allowed to verify truncation limit.
+        https://github.com/acme/workpulse
+      `;
+
+      const projects = parser.extractProjects(complexProjectText);
+      expect(projects.length).toBe(1);
+      const proj = projects[0];
+      expect(proj.title).toBe("WorkPulse Pro");
+      expect(proj.technologies).toContain("React");
+      // Summary should be the intro line, max 2 lines
+      expect(proj.description).toBe("An enterprise collaboration analytics tool providing real-time performance insights.");
+      // Bullets should be capped at max 4
+      expect(proj.bullets?.length).toBe(4);
+      expect(proj.bullets?.[0]).toBe("Developed high-throughput metric aggregation service handling 50k events/sec.");
+      expect(proj.bullets?.[3]).toBe("Integrated automated Slack alert webhooks for team incident escalations.");
+      // No bullets should contain raw bullet characters
+      expect(proj.bullets?.every((b) => !b.startsWith("•") && !b.startsWith("-"))).toBe(true);
+      // Summary should not be identical to any bullet
+      expect(proj.bullets?.includes(proj.description!)).toBe(false);
     });
   });
 

@@ -20,6 +20,7 @@ export interface NormalizationOptions {
   resumeId?: string;
   title?: string;
   fileName?: string;
+  timestamp?: string;
 }
 
 const ACTION_VERBS = [
@@ -90,6 +91,101 @@ export function normalizeSkillCategory(
 }
 
 /**
+ * Generates a deterministic, collision-resistant identifier from input parts
+ */
+export function generateDeterministicId(prefix: string, ...parts: (string | number | undefined | null)[]): string {
+  const payload = parts
+    .filter((p) => p !== undefined && p !== null && String(p).trim() !== "")
+    .map((p) => String(p).trim().toLowerCase())
+    .join("::");
+  const hash = crypto.createHash("sha256").update(payload || "empty").digest("hex").slice(0, 16);
+  return `${prefix}_${hash}`;
+}
+
+/**
+ * Normalizes date strings while strictly preserving source temporal precision.
+ * Never invents month or day when only year or month-year is provided.
+ */
+export function normalizeDatePrecision(raw: string | Date | undefined | null): string | undefined {
+  if (!raw) return undefined;
+  if (raw instanceof Date) {
+    if (isNaN(raw.getTime())) return undefined;
+    return raw.toISOString().slice(0, 10);
+  }
+
+  const str = String(raw).trim();
+  if (!str) return undefined;
+
+  if (/^(present|current|now|ongoing)$/i.test(str)) {
+    return "Present";
+  }
+
+  // Exact Year only: e.g. "2022"
+  const yearMatch = str.match(/^(\d{4})$/);
+  if (yearMatch) {
+    return yearMatch[1];
+  }
+
+  // Month-Year formats: e.g. "2022-01", "2022/01"
+  const isoMonthMatch = str.match(/^(\d{4})[-/](\d{1,2})$/);
+  if (isoMonthMatch) {
+    const month = isoMonthMatch[2].padStart(2, "0");
+    return `${isoMonthMatch[1]}-${month}`;
+  }
+
+  // Slash or Dash Month-Year: e.g. "01/2022", "01-2022"
+  const slashMonthMatch = str.match(/^(\d{1,2})[-/](\d{4})$/);
+  if (slashMonthMatch) {
+    const month = slashMonthMatch[1].padStart(2, "0");
+    return `${slashMonthMatch[2]}-${month}`;
+  }
+
+  const textMonthMap: Record<string, string> = {
+    jan: "01", january: "01",
+    feb: "02", february: "02",
+    mar: "03", march: "03",
+    apr: "04", april: "04",
+    may: "05",
+    jun: "06", june: "06",
+    jul: "07", july: "07",
+    aug: "08", august: "08",
+    sep: "09", september: "09",
+    oct: "10", october: "10",
+    nov: "11", november: "11",
+    dec: "12", december: "12",
+  };
+
+  // Full date: e.g. "Jan 15, 2022" or "15 Jan 2022"
+  const fullTextMatch = str.match(/^([a-z]+)\s+(\d{1,2}),?\s+(\d{4})$/i);
+  if (fullTextMatch) {
+    const month = textMonthMap[fullTextMatch[1].toLowerCase()];
+    if (month) {
+      const day = fullTextMatch[2].padStart(2, "0");
+      return `${fullTextMatch[3]}-${month}-${day}`;
+    }
+  }
+
+  // Month Year: e.g. "Jan 2022" or "January 2022"
+  const monthTextMatch = str.match(/^([a-z]+)[,\s]+(\d{4})$/i);
+  if (monthTextMatch) {
+    const month = textMonthMap[monthTextMatch[1].toLowerCase()];
+    if (month) {
+      return `${monthTextMatch[2]}-${month}`;
+    }
+  }
+
+  // ISO full date: e.g. "2022-01-15"
+  const isoFullMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (isoFullMatch) {
+    const month = isoFullMatch[2].padStart(2, "0");
+    const day = isoFullMatch[3].padStart(2, "0");
+    return `${isoFullMatch[1]}-${month}-${day}`;
+  }
+
+  return str;
+}
+
+/**
  * Ensures URL has valid protocol
  */
 export function canonicalizeUrl(rawUrl: string): string {
@@ -111,31 +207,33 @@ export class ResumeDocumentNormalizer {
     options: NormalizationOptions = {}
   ): ResumeDocument {
     const evidenceLedger: ResumeEvidence[] = [];
-    const timestamp = new Date().toISOString();
-    const docId = options.resumeId || `doc_${crypto.randomUUID()}`;
+    const timestamp = options.timestamp || new Date().toISOString();
     const userId = options.userId || "usr_anonymous";
     const title = options.title || options.fileName || "Canonical Resume";
+    const docId = options.resumeId || generateDeterministicId("doc", userId, title);
 
     // 1. Contact Normalization
-    const contact = this.normalizeContact(raw?.personalInfo, rawText, evidenceLedger, timestamp);
+    const contact = this.normalizeContact(raw?.personalInfo, rawText, evidenceLedger, docId, timestamp);
 
     // 2. Summary Normalization
-    const summary = this.normalizeSummary(raw?.summary, raw?.totalExperienceYears, evidenceLedger, timestamp);
+    const summary = this.normalizeSummary(raw?.summary, raw?.totalExperienceYears, evidenceLedger, docId, timestamp);
 
     // 3. Skills Normalization & Deduplication
-    const skills = this.normalizeSkills(raw?.skills, rawText, evidenceLedger, timestamp);
+    const skills = this.normalizeSkills(raw?.skills, rawText, evidenceLedger, docId, timestamp);
 
-    // 4. Experience Normalization & Bullet Tokenization
-    const experience = this.normalizeExperience(raw?.experience, evidenceLedger, timestamp);
+    // 4. Experience Normalization & Bullet Tokenization (preserves partial entries)
+    const experience = this.normalizeExperience(raw?.experience, evidenceLedger, docId, timestamp);
 
     // 5. Projects Normalization
-    const projects = this.normalizeProjects(raw?.projects, evidenceLedger, timestamp);
+    const projects = this.normalizeProjects(raw?.projects, evidenceLedger, docId, timestamp);
 
     // 6. Education Normalization
-    const education = this.normalizeEducation(raw?.education, evidenceLedger, timestamp);
+    const education = this.normalizeEducation(raw?.education, evidenceLedger, docId, timestamp);
 
     // 7. Achievements / Certifications Normalization
-    const achievements = this.normalizeAchievements(raw?.certifications, evidenceLedger, timestamp);
+    const achievements = this.normalizeAchievements(raw?.certifications, evidenceLedger, docId, timestamp);
+
+    const versionId = generateDeterministicId("v", docId, 1);
 
     // Build candidate document
     const candidateDoc: ResumeDocument = {
@@ -157,7 +255,7 @@ export class ResumeDocumentNormalizer {
         margins: "normal",
       },
       currentVersion: {
-        versionId: `v_${crypto.randomUUID()}`,
+        versionId,
         versionNumber: 1,
         name: "Initial Ingestion",
         createdAt: timestamp,
@@ -174,19 +272,20 @@ export class ResumeDocumentNormalizer {
     const validationResult = ResumeDocumentSchema.safeParse(candidateDoc);
     if (!validationResult.success) {
       // Graceful repair to maintain contract integrity
-      return this.repairDocument(candidateDoc);
+      return this.repairDocument(candidateDoc, docId, timestamp);
     }
 
     return validationResult.data as ResumeDocument;
   }
 
   /**
-   * Normalizes Personal Contact Info and Extracts Canonical Links
+   * Normalizes Personal Contact Info and Extracts Canonical Links (No Fabricated Fallbacks)
    */
   private normalizeContact(
     personalInfo?: any,
     rawText?: string | null,
     evidenceLedger?: ResumeEvidence[],
+    sourceDocId?: string,
     timestamp = new Date().toISOString()
   ): ResumeContact {
     const rawName = personalInfo?.fullName || "";
@@ -195,20 +294,18 @@ export class ResumeDocumentNormalizer {
       .replace(/[\r\n\t]+/g, " ")
       .trim();
 
-    const fullName = cleanName && cleanName.length >= 2 ? cleanName : "Candidate";
+    const fullName = cleanName || "Resume";
 
-    let email = (personalInfo?.email || "").trim().toLowerCase();
+    let email: string | undefined = undefined;
+    const rawEmail = (personalInfo?.email || "").trim().toLowerCase();
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!email || !emailRegex.test(email)) {
-      if (rawText) {
-        const textEmailMatch = rawText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-        if (textEmailMatch) {
-          email = textEmailMatch[0].toLowerCase().trim();
-        }
+    if (rawEmail && emailRegex.test(rawEmail)) {
+      email = rawEmail;
+    } else if (rawText) {
+      const textEmailMatch = rawText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      if (textEmailMatch && emailRegex.test(textEmailMatch[0])) {
+        email = textEmailMatch[0].toLowerCase().trim();
       }
-    }
-    if (!email || !emailRegex.test(email)) {
-      email = "candidate@example.com";
     }
 
     let phone: string | undefined = undefined;
@@ -243,12 +340,13 @@ export class ResumeDocumentNormalizer {
 
           if (evidenceLedger) {
             evidenceLedger.push({
-              id: `ev_link_${crypto.randomUUID()}`,
+              id: generateDeterministicId("ev", "link", canonical),
               type: "LINK",
               source: "PARSED",
               value: canonical,
-              confidence: 0.95,
+              confidence: undefined,
               verified: false,
+              sourceDocumentId: sourceDocId,
               createdAt: timestamp,
             });
           }
@@ -298,6 +396,7 @@ export class ResumeDocumentNormalizer {
     rawSummary?: string | null,
     totalExperienceYears?: number | null,
     evidenceLedger?: ResumeEvidence[],
+    sourceDocId?: string,
     timestamp = new Date().toISOString()
   ): ResumeSummary {
     let cleanText = "";
@@ -312,6 +411,19 @@ export class ResumeDocumentNormalizer {
       ? totalExperienceYears
       : undefined;
 
+    if (evidenceLedger && cleanText) {
+      evidenceLedger.push({
+        id: generateDeterministicId("ev", "summary", cleanText),
+        type: "PROJECT_CLAIM",
+        source: "PARSED",
+        value: cleanText,
+        confidence: undefined,
+        verified: false,
+        sourceDocumentId: sourceDocId,
+        createdAt: timestamp,
+      });
+    }
+
     return {
       text: cleanText,
       yearsOfExperience: years,
@@ -325,6 +437,7 @@ export class ResumeDocumentNormalizer {
     rawSkills?: IResumeSkill[] | null,
     rawText?: string | null,
     evidenceLedger?: ResumeEvidence[],
+    sourceDocId?: string,
     timestamp = new Date().toISOString()
   ): ResumeSkillItem[] {
     const result: ResumeSkillItem[] = [];
@@ -334,12 +447,12 @@ export class ResumeDocumentNormalizer {
       for (const item of rawSkills) {
         if (!item || !item.name) continue;
         const rawName = item.name.replace(/\s+/g, " ").trim();
-        if (!rawName || rawName.length < 2) continue;
+        if (!rawName || rawName.length < 1) continue;
 
         const normalizedKey = rawName.toLowerCase();
         if (!seenSkillMap.has(normalizedKey)) {
-          const evidenceId = `ev_skill_${crypto.randomUUID()}`;
-          const skillId = `sk_${crypto.randomUUID()}`;
+          const evidenceId = generateDeterministicId("ev", "skill", rawName);
+          const skillId = generateDeterministicId("sk", rawName);
           const category = normalizeSkillCategory(rawName, item.category);
 
           const skillItem: ResumeSkillItem = {
@@ -359,9 +472,10 @@ export class ResumeDocumentNormalizer {
               type: "SKILL",
               source: "PARSED",
               value: rawName,
-              confidence: 0.9,
+              confidence: undefined,
               verified: false,
               itemId: skillId,
+              sourceDocumentId: sourceDocId,
               createdAt: timestamp,
             });
           }
@@ -373,51 +487,49 @@ export class ResumeDocumentNormalizer {
   }
 
   /**
-   * Normalizes Experience Items and Tokenizes Bullets
+   * Normalizes Experience Items and Tokenizes Bullets.
+   * DO NOT DROP PARTIAL ENTRIES: Entries with valid bullets are preserved even if company or title is undefined.
    */
   private normalizeExperience(
     rawExp?: IResumeExperience[] | null,
     evidenceLedger?: ResumeEvidence[],
+    sourceDocId?: string,
     timestamp = new Date().toISOString()
   ): ResumeExperienceItem[] {
     const result: ResumeExperienceItem[] = [];
     if (!Array.isArray(rawExp)) return result;
 
-    for (const exp of rawExp) {
-      if (!exp || (!exp.companyName && !exp.jobTitle)) continue;
+    for (let i = 0; i < rawExp.length; i++) {
+      const exp = rawExp[i];
+      if (!exp) continue;
 
-      const expId = `exp_${crypto.randomUUID()}`;
-      const companyName = (exp.companyName || "Organization").replace(/\s+/g, " ").trim();
-      const jobTitle = (exp.jobTitle || "Software Engineer").replace(/\s+/g, " ").trim();
+      const rawCompany = (exp.companyName || "").replace(/\s+/g, " ").trim();
+      const rawTitle = (exp.jobTitle || "").replace(/\s+/g, " ").trim();
+      const rawDesc = exp.description || "";
+
+      // If there is no company, no job title, and no description, skip empty entry
+      if (!rawCompany && !rawTitle && !rawDesc.trim()) continue;
+
+      const companyName = rawCompany || undefined;
+      const jobTitle = rawTitle || undefined;
       const isCurrent = Boolean(exp.isCurrent);
 
-      let startDateStr: string | undefined = undefined;
-      if (exp.startDate) {
-        startDateStr = exp.startDate instanceof Date
-          ? exp.startDate.toISOString().slice(0, 7)
-          : String(exp.startDate).slice(0, 10);
-      }
+      const expId = generateDeterministicId("exp", companyName, jobTitle, i);
 
-      let endDateStr: string | undefined = undefined;
-      if (exp.endDate && !isCurrent) {
-        endDateStr = exp.endDate instanceof Date
-          ? exp.endDate.toISOString().slice(0, 7)
-          : String(exp.endDate).slice(0, 10);
-      } else if (isCurrent) {
-        endDateStr = "Present";
-      }
+      const startDateStr = normalizeDatePrecision(exp.startDate);
+      const endDateStr = isCurrent ? "Present" : normalizeDatePrecision(exp.endDate);
 
       // Tokenize bullets from description
       const bullets: ResumeExperienceBullet[] = [];
-      const rawDesc = exp.description || "";
       const rawLines = rawDesc
         .split(/\n|•|\*|(?<=[.!?])\s+(?=[A-Z])/)
-        .map((l) => l.replace(/^[-•*]\s*/, "").replace(/\s+/g, " ").trim())
-        .filter((l) => l.length >= 10);
+        .map((l) => l.replace(/^[-•*▪]\s*/, "").replace(/\s+/g, " ").trim())
+        .filter((l) => l.length >= 8);
 
-      for (const line of rawLines) {
-        const bulletId = `blt_${crypto.randomUUID()}`;
-        const evidenceId = `ev_bullet_${crypto.randomUUID()}`;
+      for (let b = 0; b < rawLines.length; b++) {
+        const line = rawLines[b];
+        const bulletId = generateDeterministicId("blt", expId, b, line);
+        const evidenceId = generateDeterministicId("ev", "bullet", line);
 
         // Detect action verbs
         const words = line.toLowerCase().split(/\W+/);
@@ -440,10 +552,11 @@ export class ResumeDocumentNormalizer {
             type: metrics && metrics.length > 0 ? "METRIC" : "PROJECT_CLAIM",
             source: "PARSED",
             value: line,
-            confidence: 0.85,
+            confidence: undefined,
             verified: false,
             sectionId: expId,
             itemId: bulletId,
+            sourceDocumentId: sourceDocId,
             createdAt: timestamp,
           });
         }
@@ -469,43 +582,73 @@ export class ResumeDocumentNormalizer {
   private normalizeProjects(
     rawProjects?: IResumeProject[] | null,
     evidenceLedger?: ResumeEvidence[],
+    sourceDocId?: string,
     timestamp = new Date().toISOString()
   ): ResumeProjectItem[] {
     const result: ResumeProjectItem[] = [];
     if (!Array.isArray(rawProjects)) return result;
 
-    for (const proj of rawProjects) {
+    for (let i = 0; i < rawProjects.length; i++) {
+      const proj = rawProjects[i];
       if (!proj || !proj.title) continue;
 
-      const projId = `proj_${crypto.randomUUID()}`;
       const title = proj.title.replace(/\s+/g, " ").trim();
-      const description = proj.description ? proj.description.replace(/\s+/g, " ").trim() : undefined;
+      const projId = generateDeterministicId("proj", title, i);
       const technologies = Array.isArray(proj.technologies)
         ? proj.technologies.map((t) => t.trim()).filter(Boolean)
         : [];
 
-      let link: string | undefined = undefined;
-      if (proj.link && typeof proj.link === "string") {
-        const canonicalLink = canonicalizeUrl(proj.link);
-        try {
-          new URL(canonicalLink);
-          link = canonicalLink;
-        } catch {
-          // Ignore invalid URL
-        }
-      }
+      // Extract and deduplicate bullets and description
+      let bullets: string[] = [];
+      let description: string | undefined = undefined;
 
-      // Generate bullets from description lines if multiline
-      const bullets: string[] = [];
-      if (description) {
-        const lines = description
-          .split(/\n|•|\*/)
-          .map((l) => l.replace(/^[-•*]\s*/, "").replace(/\s+/g, " ").trim())
-          .filter((l) => l.length >= 10);
-        if (lines.length > 1) {
-          bullets.push(...lines);
+      const splitBullets = (text: string): string[] => {
+        return text
+          .split(/(?:^|\n|\s+)[•\u2022\u25E6\u25AA]\s*|(?:\n\s*[-*]\s+)/)
+          .map((s) => s.replace(/^[•\u2022\u25E6\u25AA\*\-]\s*/, "").replace(/\s+/g, " ").trim())
+          .filter((s) => s.length > 0);
+      };
+
+      if (Array.isArray(proj.bullets) && proj.bullets.length > 0) {
+        // Bullets were explicitly provided
+        bullets = proj.bullets
+          .flatMap((b) => splitBullets(b))
+          .map((b) => b.replace(/^[•\u2022\u25E6\u25AA\*\-]\s*/, "").trim())
+          .filter(Boolean)
+          .slice(0, 4);
+
+        // Check if proj.description is a distinct short summary or a duplicate of bullets
+        if (proj.description) {
+          const rawDescTrimmed = proj.description.replace(/\s+/g, " ").trim();
+          const descNorm = rawDescTrimmed.replace(/^[•\u2022\u25E6\u25AA\*\-]\s*/, "").toLowerCase();
+          const isBullet = /^[•\u2022\u25E6\u25AA\*\-]/.test(rawDescTrimmed);
+          const isDuplicate = bullets.some((b) => b.toLowerCase() === descNorm);
+
+          if (!isBullet && !isDuplicate) {
+            description = rawDescTrimmed.slice(0, 250);
+          }
+        }
+      } else if (proj.description) {
+        // No explicit bullets, parse description
+        const rawDesc = proj.description.trim();
+        const hasBulletSymbols =
+          /[•\u2022\u25E6\u25AA]/.test(rawDesc) ||
+          /(?:^|\n)\s*[-*]\s+/.test(rawDesc);
+
+        if (hasBulletSymbols) {
+          const segments = splitBullets(rawDesc);
+          const startsWithBullet = /^[•\u2022\u25E6\u25AA\*\-]/.test(rawDesc);
+
+          if (!startsWithBullet && segments.length > 1) {
+            description = segments[0].slice(0, 250);
+            bullets = segments.slice(1, 5);
+          } else {
+            bullets = segments.slice(0, 4);
+          }
         } else {
-          bullets.push(description);
+          // Plain short summary (max ~2 lines)
+          description = rawDesc.replace(/\s+/g, " ").slice(0, 250);
+          bullets = [];
         }
       }
 
@@ -514,19 +657,22 @@ export class ResumeDocumentNormalizer {
         title,
         description,
         technologies,
-        link,
+        link: proj.link ? canonicalizeUrl(proj.link) : undefined,
+        repoUrl: proj.githubUrl ? canonicalizeUrl(proj.githubUrl) : undefined,
         bullets,
       });
 
       if (evidenceLedger) {
+        const evidenceClaim = description || (bullets.length > 0 ? bullets[0] : "Project");
         evidenceLedger.push({
-          id: `ev_proj_${crypto.randomUUID()}`,
+          id: generateDeterministicId("ev", "proj", title),
           type: "PROJECT_CLAIM",
           source: "PARSED",
-          value: title,
-          confidence: 0.9,
+          value: `${title}: ${evidenceClaim}`,
+          confidence: undefined,
           verified: false,
           itemId: projId,
+          sourceDocumentId: sourceDocId,
           createdAt: timestamp,
         });
       }
@@ -541,20 +687,22 @@ export class ResumeDocumentNormalizer {
   private normalizeEducation(
     rawEdu?: IResumeEducation[] | null,
     evidenceLedger?: ResumeEvidence[],
+    sourceDocId?: string,
     timestamp = new Date().toISOString()
   ): ResumeEducationItem[] {
     const result: ResumeEducationItem[] = [];
     if (!Array.isArray(rawEdu)) return result;
 
-    for (const edu of rawEdu) {
+    for (let i = 0; i < rawEdu.length; i++) {
+      const edu = rawEdu[i];
       if (!edu || !edu.institution) continue;
 
-      const eduId = `edu_${crypto.randomUUID()}`;
       const institution = edu.institution.replace(/\s+/g, " ").trim();
+      const eduId = generateDeterministicId("edu", institution, i);
       const degree = edu.degree ? edu.degree.replace(/\s+/g, " ").trim() : undefined;
       const fieldOfStudy = edu.fieldOfStudy ? edu.fieldOfStudy.replace(/\s+/g, " ").trim() : undefined;
-      const startDate = edu.startYear ? String(edu.startYear) : undefined;
-      const endDate = edu.endYear ? String(edu.endYear) : undefined;
+      const startDate = normalizeDatePrecision(edu.startYear ? String(edu.startYear) : undefined);
+      const endDate = normalizeDatePrecision(edu.endYear ? String(edu.endYear) : undefined);
 
       result.push({
         id: eduId,
@@ -567,13 +715,14 @@ export class ResumeDocumentNormalizer {
 
       if (evidenceLedger) {
         evidenceLedger.push({
-          id: `ev_edu_${crypto.randomUUID()}`,
+          id: generateDeterministicId("ev", "edu", institution, degree),
           type: "DEGREE",
           source: "PARSED",
           value: `${degree || "Degree"} at ${institution}`,
-          confidence: 0.95,
+          confidence: undefined,
           verified: false,
           itemId: eduId,
+          sourceDocumentId: sourceDocId,
           createdAt: timestamp,
         });
       }
@@ -588,23 +737,20 @@ export class ResumeDocumentNormalizer {
   private normalizeAchievements(
     rawCerts?: IResumeCertification[] | null,
     evidenceLedger?: ResumeEvidence[],
+    sourceDocId?: string,
     timestamp = new Date().toISOString()
   ): ResumeAchievementItem[] {
     const result: ResumeAchievementItem[] = [];
     if (!Array.isArray(rawCerts)) return result;
 
-    for (const cert of rawCerts) {
+    for (let i = 0; i < rawCerts.length; i++) {
+      const cert = rawCerts[i];
       if (!cert || !cert.name) continue;
 
-      const achId = `ach_${crypto.randomUUID()}`;
       const title = cert.name.replace(/\s+/g, " ").trim();
+      const achId = generateDeterministicId("ach", title, i);
       const issuer = cert.issuer ? cert.issuer.replace(/\s+/g, " ").trim() : undefined;
-      let date: string | undefined = undefined;
-      if (cert.issueDate) {
-        date = cert.issueDate instanceof Date
-          ? cert.issueDate.toISOString().slice(0, 10)
-          : String(cert.issueDate).slice(0, 10);
-      }
+      const date = normalizeDatePrecision(cert.issueDate);
 
       result.push({
         id: achId,
@@ -615,13 +761,14 @@ export class ResumeDocumentNormalizer {
 
       if (evidenceLedger) {
         evidenceLedger.push({
-          id: `ev_ach_${crypto.randomUUID()}`,
+          id: generateDeterministicId("ev", "ach", title, issuer),
           type: "CERTIFICATION",
           source: "PARSED",
           value: title,
-          confidence: 0.9,
+          confidence: undefined,
           verified: false,
           itemId: achId,
+          sourceDocumentId: sourceDocId,
           createdAt: timestamp,
         });
       }
@@ -631,14 +778,14 @@ export class ResumeDocumentNormalizer {
   }
 
   /**
-   * Graceful repair in case of minor validation constraints
+   * Graceful repair without inventing fake candidate data
    */
-  private repairDocument(doc: ResumeDocument): ResumeDocument {
+  private repairDocument(doc: ResumeDocument, docId: string, timestamp: string): ResumeDocument {
     return {
       ...doc,
       contact: {
-        fullName: doc.contact?.fullName || "Candidate",
-        email: doc.contact?.email && doc.contact.email.includes("@") ? doc.contact.email : "candidate@example.com",
+        fullName: doc.contact?.fullName || "Resume",
+        email: doc.contact?.email && doc.contact.email.includes("@") ? doc.contact.email : undefined,
         phone: doc.contact?.phone,
         location: doc.contact?.location,
         links: Array.isArray(doc.contact?.links) ? doc.contact.links : [],
@@ -662,14 +809,14 @@ export class ResumeDocumentNormalizer {
       schemaVersion: "1.0.0",
       isMaster: true,
       currentVersion: doc.currentVersion || {
-        versionId: `v_${crypto.randomUUID()}`,
+        versionId: generateDeterministicId("v", docId, 1),
         versionNumber: 1,
         name: "Initial Ingestion",
-        createdAt: new Date().toISOString(),
+        createdAt: timestamp,
       },
       versions: Array.isArray(doc.versions) ? doc.versions : [],
-      createdAt: doc.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: doc.createdAt || timestamp,
+      updatedAt: timestamp,
     };
   }
 }

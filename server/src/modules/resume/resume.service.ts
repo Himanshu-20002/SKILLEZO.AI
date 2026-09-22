@@ -1,6 +1,13 @@
+import { Types } from "mongoose";
 import { ResumeRepository } from "@/database/repositories/resume/ResumeRepository";
 import { IResume, IResumeExtractedData } from "@/database/models/Resume.model";
-import { UpdateResumeDTO, ResumeAtsResponseDTO } from "./resume.dto";
+import {
+  UpdateResumeDTO,
+  ResumeAtsResponseDTO,
+  CreateVariantDTO,
+  ResumePortfolioResponseDTO,
+  ResumePortfolioItemDTO,
+} from "./resume.dto";
 import { AppError } from "@/core/utils/AppError";
 import { HTTP_STATUS } from "@/core/constants/http-status";
 import { ERROR_CODES } from "@/core/constants/error-codes";
@@ -13,6 +20,7 @@ import {
   optimizationIntelligenceService,
   jobIntelligenceService,
   resumeDocumentNormalizer,
+  ResumeDocumentSchema,
   resumeSectionEngine,
   ResumeSectionAnalysisResult,
   resumeScoringEngine,
@@ -23,6 +31,9 @@ import {
   SectionImprovementSuggestion,
   ApplyImprovementPayload,
   ApplyImprovementResult,
+  MasterResumeBuilder,
+  cloneResumeDocument,
+  cloneBuilderConfig,
 } from "@/modules/resume-intelligence";
 import {
   ResumeBuilderConfig,
@@ -31,6 +42,7 @@ import {
 } from "@/modules/resume-intelligence/builder/builder.validator";
 import { GeminiProvider } from "@/core/ai/providers/gemini.provider";
 import { ProfileService } from "@/modules/profile/profile.service";
+import { UserModel } from "@/database/models/User.model";
 import path from "path";
 import fs from "fs";
 import { Readable } from "stream";
@@ -88,6 +100,8 @@ export class ResumeService {
     const storageKey = `resumes/${userId}/${uniqueId}${ext}`;
     const title = titleRequested || file.originalname;
 
+    console.log("[ResumeService] Ingestion started for file:", file.originalname);
+
     let savedStorageKey: string;
     try {
       savedStorageKey = await this.storageService.save(file, storageKey);
@@ -99,13 +113,13 @@ export class ResumeService {
       );
     }
 
-    // Extract structured data from uploaded resume buffer
-    let extractedData: IResumeExtractedData | null = null;
-    let rawText: string | null = null;
-    let status: ResumeStatus = ResumeStatus.UPLOADED;
-    let parsingError: string | null = null;
-
     try {
+      // Extract structured data from uploaded resume buffer
+      let extractedData: IResumeExtractedData | null = null;
+      let rawText: string | null = null;
+      let status: ResumeStatus = ResumeStatus.UPLOADED;
+      let parsingError: string | null = null;
+
       let fileBuffer: Buffer | null = file.buffer || null;
       if (!fileBuffer && savedStorageKey) {
         const absPath = this.storageService.getAbsolutePath(savedStorageKey);
@@ -119,30 +133,40 @@ export class ResumeService {
         file.originalname.toLowerCase().endsWith(".pdf");
 
       if (fileBuffer && isPdf) {
-        rawText = await this.parserService.extractRawTextFromBuffer(fileBuffer);
-        extractedData = await this.parserService.parseResumeBuffer(fileBuffer);
-        status = ResumeStatus.PARSED;
+        try {
+          rawText = await this.parserService.extractRawTextFromBuffer(fileBuffer);
+          extractedData = await this.parserService.parseResumeBuffer(fileBuffer);
+          status = ResumeStatus.PARSED;
+          console.log("[ResumeService] PDF parse succeeded. Text length:", rawText?.length);
+        } catch (parseErr: any) {
+          parsingError = parseErr?.message || "Failed to parse resume text";
+          status = ResumeStatus.UPLOADED;
+          console.warn("[ResumeService] PDF parsing failed non-fatally:", parsingError);
+        }
       }
-    } catch (parseErr: any) {
-      parsingError = parseErr?.message || "Failed to parse resume text";
-      status = ResumeStatus.UPLOADED;
-    }
 
-    // Phase 1: Normalize into Canonical ResumeDocument
-    let resumeDocument = null;
-    if (extractedData) {
-      try {
-        resumeDocument = resumeDocumentNormalizer.normalize(extractedData, rawText, {
-          userId,
-          title,
-          fileName: file.originalname,
-        });
-      } catch (normErr: any) {
-        // Fallback safely if normalization catches an unhandled edge case
+      // Phase 1: Normalize into Canonical ResumeDocument
+      let resumeDocument = null;
+      if (extractedData) {
+        try {
+          const rawDoc = resumeDocumentNormalizer.normalize(extractedData, rawText, {
+            userId,
+            title,
+            fileName: file.originalname,
+          });
+          const valResult = ResumeDocumentSchema.safeParse(rawDoc);
+          if (valResult.success) {
+            resumeDocument = valResult.data;
+            console.log("[ResumeService] Normalization succeeded. Sections:", Object.keys(resumeDocument));
+          } else {
+            console.warn("[ResumeService] Normalization schema validation warning:", valResult.error.issues);
+            resumeDocument = rawDoc;
+          }
+        } catch (normErr: any) {
+          console.warn("[ResumeService] Normalization failed non-fatally:", normErr?.message);
+        }
       }
-    }
 
-    try {
       if (makeDefault) {
         await this.resumeRepository.clearDefaultFlag(userId);
       }
@@ -168,6 +192,8 @@ export class ResumeService {
         uploadedAt: new Date(),
       } as any);
 
+      console.log("[ResumeService] Resume document persisted successfully. ID:", newResume._id);
+
       // Automatically hydrate candidate's profile from parsed resume data
       if (extractedData || resumeDocument) {
         try {
@@ -178,9 +204,12 @@ export class ResumeService {
       }
 
       return newResume;
-    } catch (dbErr: any) {
-      // Clean up orphan file if DB creation fails
+    } catch (err: any) {
+      // Clean up orphan file if DB creation or processing fails
       await this.storageService.delete(savedStorageKey);
+      if (err instanceof AppError) {
+        throw err;
+      }
       throw new AppError(
         "Failed to record resume in database",
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -346,6 +375,13 @@ export class ResumeService {
 
   async getResumeStream(userId: string, resumeId: string): Promise<{ stream: Readable; fileName: string; mimeType: string; fileSize: number }> {
     const resume = await this.getResumeById(userId, resumeId);
+    if (!resume.storageKey) {
+      throw new AppError(
+        "Resume file not found on storage",
+        HTTP_STATUS.NOT_FOUND,
+        ERROR_CODES.RESUME_FILE_NOT_FOUND
+      );
+    }
     const exists = await this.storageService.exists(resume.storageKey);
 
     if (!exists) {
@@ -359,9 +395,9 @@ export class ResumeService {
     const stream = await this.storageService.getStream(resume.storageKey);
     return {
       stream,
-      fileName: resume.originalFileName || resume.fileName,
-      mimeType: resume.mimeType,
-      fileSize: resume.fileSize,
+      fileName: resume.originalFileName || resume.fileName || "resume.pdf",
+      mimeType: resume.mimeType || "application/pdf",
+      fileSize: resume.fileSize || 0,
     };
   }
 
@@ -386,8 +422,14 @@ export class ResumeService {
     }
 
     const updatePayload: Partial<IResume> = {};
-    if (updateDTO.title !== undefined) updatePayload.title = updateDTO.title;
+    if (updateDTO.title !== undefined) {
+      updatePayload.title = updateDTO.title;
+    } else if (updateDTO.displayName !== undefined) {
+      updatePayload.title = updateDTO.displayName;
+    }
     if (updateDTO.isDefault !== undefined) updatePayload.isDefault = updateDTO.isDefault;
+    if (updateDTO.targetJobTitle !== undefined) updatePayload.targetJobTitle = updateDTO.targetJobTitle;
+    if (updateDTO.targetCompany !== undefined) updatePayload.targetCompany = updateDTO.targetCompany;
 
     const updated = await this.resumeRepository.updateById(resume._id.toString(), updatePayload);
     if (!updated) {
@@ -403,7 +445,18 @@ export class ResumeService {
   async deleteResume(userId: string, resumeId: string): Promise<void> {
     const resume = await this.getResumeById(userId, resumeId);
 
-    await this.storageService.delete(resume.storageKey);
+    // Invariant: Master Resume cannot be deleted via variant deletion
+    if (resume.variantType === "MASTER") {
+      throw new AppError(
+        "Cannot delete Master Resume",
+        HTTP_STATUS.BAD_REQUEST,
+        ERROR_CODES.VALIDATION_ERROR
+      );
+    }
+
+    if (resume.storageKey) {
+      await this.storageService.delete(resume.storageKey);
+    }
     await this.resumeRepository.deleteUserResume(userId, resume._id.toString());
 
     // If deleted resume was default, set newest remaining resume as default
@@ -696,5 +749,285 @@ export class ResumeService {
 
     return validConfig;
   }
+
+  /**
+   * Lazily retrieves or generates the Master Resume for a user from their Career Profile.
+   * Concurrency-safe: handles duplicate key races if multiple creation calls occur simultaneously.
+   */
+  async getOrCreateMasterResume(userId: string): Promise<{
+    resume: IResume;
+    isStale: boolean;
+    profileVersion: number;
+  }> {
+    const profile = await this.profileService.getMyProfile(userId);
+    const profileVersion = profile.profileVersion || 1;
+
+    const existingMaster = await this.resumeRepository.findMasterByUserId(userId);
+    if (existingMaster) {
+      const isStale = (existingMaster.sourceProfileVersion ?? 0) < profileVersion;
+      return {
+        resume: existingMaster,
+        isStale,
+        profileVersion,
+      };
+    }
+
+    // Attempt lazy creation
+    let candidateEmail: string | undefined;
+    try {
+      const user = (await UserModel.findById(userId).lean()) as any;
+      if (user?.email) {
+        candidateEmail = user.email;
+      }
+    } catch (e) {
+      // Safe fallback if user record is unavailable
+    }
+
+    const ast = MasterResumeBuilder.buildFromProfile(profile, {
+      email: candidateEmail,
+    });
+
+    const existingDefault =
+      typeof this.resumeRepository.findDefaultByUserId === "function"
+        ? await this.resumeRepository.findDefaultByUserId(userId)
+        : null;
+    const shouldBeDefault = !existingDefault;
+
+    try {
+      const created = await this.resumeRepository.create({
+        userId,
+        title: "Master Resume",
+        storageKey: "profile-generated",
+        originalFileName: "master-resume",
+        mimeType: "application/json",
+        fileSize: 0,
+        status: ResumeStatus.PARSED,
+        variantType: "MASTER",
+        isDefault: shouldBeDefault,
+        sourceProfileVersion: profileVersion,
+        resumeDocument: ast,
+        builderConfig: DEFAULT_BUILDER_CONFIG,
+      });
+
+      return {
+        resume: created,
+        isStale: false,
+        profileVersion,
+      };
+    } catch (err: any) {
+      // Concurrency race: another parallel request created the Master Resume first
+      const winningMaster = await this.resumeRepository.findMasterByUserId(userId);
+      if (winningMaster) {
+        const isStale = (winningMaster.sourceProfileVersion ?? 0) < profileVersion;
+        return {
+          resume: winningMaster,
+          isStale,
+          profileVersion,
+        };
+      }
+
+      // If collision occurred due to isDefault index with another resume, retry with isDefault: false
+      if (shouldBeDefault) {
+        try {
+          const createdNonDefault = await this.resumeRepository.create({
+            userId,
+            title: "Master Resume",
+            storageKey: "profile-generated",
+            originalFileName: "master-resume",
+            mimeType: "application/json",
+            fileSize: 0,
+            status: ResumeStatus.PARSED,
+            variantType: "MASTER",
+            isDefault: false,
+            sourceProfileVersion: profileVersion,
+            resumeDocument: ast,
+            builderConfig: DEFAULT_BUILDER_CONFIG,
+          });
+
+          return {
+            resume: createdNonDefault,
+            isStale: false,
+            profileVersion,
+          };
+        } catch (retryErr: any) {
+          const secondMasterCheck = await this.resumeRepository.findMasterByUserId(userId);
+          if (secondMasterCheck) {
+            return {
+              resume: secondMasterCheck,
+              isStale: (secondMasterCheck.sourceProfileVersion ?? 0) < profileVersion,
+              profileVersion,
+            };
+          }
+        }
+      }
+
+      throw err;
+    }
+  }
+
+  /**
+   * Synchronizes the user's Master Resume with the latest canonical facts from ProfileModel.
+   * Strictly preserves presentation customizations (templateConfig, layout, styling, builderConfig).
+   */
+  async syncMasterResume(userId: string): Promise<{
+    resume: IResume;
+    isStale: boolean;
+    profileVersion: number;
+  }> {
+    const profile = await this.profileService.getMyProfile(userId);
+    const profileVersion = profile.profileVersion || 1;
+
+    const existingMaster = await this.resumeRepository.findMasterByUserId(userId);
+    if (!existingMaster) {
+      return this.getOrCreateMasterResume(userId);
+    }
+
+    // Preserve presentation customizations
+    const existingBuilderConfig = existingMaster.builderConfig;
+
+    let candidateEmail: string | undefined;
+    try {
+      const user = (await UserModel.findById(userId).lean()) as any;
+      if (user?.email) {
+        candidateEmail = user.email;
+      }
+    } catch (e) {
+      // Safe fallback
+    }
+
+    const updatedAst = MasterResumeBuilder.buildFromProfile(profile, {
+      email: candidateEmail,
+      existingDoc: existingMaster.resumeDocument,
+      builderConfig: existingBuilderConfig,
+    });
+
+    const updated = await this.resumeRepository.updateById(existingMaster._id.toString(), {
+      resumeDocument: updatedAst,
+      sourceProfileVersion: profileVersion,
+      builderConfig: existingBuilderConfig || DEFAULT_BUILDER_CONFIG,
+      $inc: { version: 1 },
+    });
+
+    return {
+      resume: updated || existingMaster,
+      isStale: false,
+      profileVersion,
+    };
+  }
+
+  /**
+   * Fetches lightweight portfolio items for the candidate.
+   * Returns metadata only (0 full ASTs or builder configurations).
+   */
+  async getResumePortfolio(userId: string): Promise<ResumePortfolioResponseDTO> {
+    const masterData = await this.getOrCreateMasterResume(userId);
+    const masterResume = masterData.resume;
+
+    const userResumes = await this.resumeRepository.findPortfolioItemsByUserId(userId);
+
+    const profile = await this.profileService.getMyProfile(userId);
+    const currentProfileVersion = profile.profileVersion || 1;
+
+    let masterItem: ResumePortfolioItemDTO = {
+      id: masterResume._id.toString(),
+      displayName: masterResume.title || "Master Resume",
+      variantType: "MASTER",
+      targetJobTitle: masterResume.targetJobTitle || null,
+      targetCompany: masterResume.targetCompany || null,
+      parentResumeId: null,
+      updatedAt: (masterResume.updatedAt || masterResume.createdAt || new Date()).toISOString(),
+      createdAt: (masterResume.createdAt || new Date()).toISOString(),
+      sourceProfileVersion: masterResume.sourceProfileVersion ?? null,
+      isMasterStale: (masterResume.sourceProfileVersion ?? 0) < currentProfileVersion,
+      isDefault: true,
+    };
+
+    const variants: ResumePortfolioItemDTO[] = [];
+
+    for (const res of userResumes) {
+      if (res.variantType === "MASTER" || res._id.toString() === masterResume._id.toString()) {
+        masterItem = {
+          id: res._id.toString(),
+          displayName: res.title || "Master Resume",
+          variantType: "MASTER",
+          targetJobTitle: res.targetJobTitle || null,
+          targetCompany: res.targetCompany || null,
+          parentResumeId: null,
+          updatedAt: (res.updatedAt || res.createdAt || new Date()).toISOString(),
+          createdAt: (res.createdAt || new Date()).toISOString(),
+          sourceProfileVersion: res.sourceProfileVersion ?? null,
+          isMasterStale: (res.sourceProfileVersion ?? 0) < currentProfileVersion,
+          isDefault: Boolean(res.isDefault),
+        };
+      } else {
+        variants.push({
+          id: res._id.toString(),
+          displayName: res.title || "Resume Variant",
+          variantType: "TAILORED",
+          targetJobTitle: res.targetJobTitle || null,
+          targetCompany: res.targetCompany || null,
+          parentResumeId: res.parentResumeId ? res.parentResumeId.toString() : masterResume._id.toString(),
+          updatedAt: (res.updatedAt || res.createdAt || new Date()).toISOString(),
+          createdAt: (res.createdAt || new Date()).toISOString(),
+          sourceProfileVersion: res.sourceProfileVersion ?? null,
+          isDefault: Boolean(res.isDefault),
+        });
+      }
+    }
+
+    return {
+      master: masterItem,
+      variants,
+    };
+  }
+
+  /**
+   * Creates an independent TAILORED resume variant derived from the user's Master Resume.
+   * Deep-copies the presentation state immutably using typed cloning without mutating Master or ProfileModel.
+   */
+  async createResumeVariant(userId: string, input: CreateVariantDTO): Promise<IResume> {
+    const masterData = await this.getOrCreateMasterResume(userId);
+    const master = masterData.resume;
+
+    if (!master.resumeDocument) {
+      throw new AppError(
+        "Master Resume presentation document is not initialized",
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        ERROR_CODES.INTERNAL_SERVER_ERROR
+      );
+    }
+
+    // Typed deep copy of ResumeDocument AST
+    const clonedDoc = cloneResumeDocument(master.resumeDocument, {
+      title: input.displayName.trim(),
+      targetRole: input.targetJobTitle?.trim() || master.resumeDocument.targetRole,
+      isMaster: false,
+    });
+
+    // Typed deep copy of ResumeBuilderConfig
+    const clonedBuilderConfig = cloneBuilderConfig(master.builderConfig);
+
+    const variant = await this.resumeRepository.create({
+      userId,
+      title: input.displayName.trim(),
+      variantType: "TAILORED",
+      parentResumeId: master._id,
+      targetJobTitle: input.targetJobTitle?.trim() || null,
+      targetCompany: input.targetCompany?.trim() || null,
+      targetJobId: input.targetJobId ? new Types.ObjectId(input.targetJobId) : null,
+      storageKey: "profile-generated",
+      originalFileName: input.displayName.trim(),
+      mimeType: "application/json",
+      fileSize: 0,
+      status: ResumeStatus.PARSED,
+      isDefault: false,
+      sourceProfileVersion: master.sourceProfileVersion ?? null,
+      resumeDocument: clonedDoc,
+      builderConfig: clonedBuilderConfig,
+    });
+
+    return variant;
+  }
 }
+
 

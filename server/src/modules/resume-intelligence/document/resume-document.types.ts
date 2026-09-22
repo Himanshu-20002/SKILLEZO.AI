@@ -22,10 +22,11 @@ export interface ResumeEvidence {
   type: ResumeEvidenceType;
   source: ResumeEvidenceSource;
   value: string;
-  confidence: number;
+  confidence?: number | null;
   verified: boolean;
   sectionId?: string;
   itemId?: string;
+  sourceDocumentId?: string;
   createdAt: string;
 }
 
@@ -36,7 +37,7 @@ export interface ResumeLink {
 
 export interface ResumeContact {
   fullName: string;
-  email: string;
+  email?: string;
   phone?: string;
   location?: string;
   links: ResumeLink[];
@@ -66,8 +67,8 @@ export interface ResumeExperienceBullet {
 
 export interface ResumeExperienceItem {
   id: string;
-  companyName: string;
-  jobTitle: string;
+  companyName?: string;
+  jobTitle?: string;
   location?: string;
   startDate?: string;
   endDate?: string;

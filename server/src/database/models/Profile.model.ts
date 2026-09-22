@@ -9,6 +9,7 @@ export interface IProfileSkill {
   score?: number | null;
   source: SkillSource;
   verified: boolean;
+  evidenceIds?: string[];
 }
 
 export interface IProfileEducation {
@@ -17,16 +18,20 @@ export interface IProfileEducation {
   fieldOfStudy?: string | null;
   startYear?: number | null;
   endYear?: number | null;
+  evidenceIds?: string[];
 }
 
 export interface IProfileExperience {
-  companyName: string;
-  jobTitle: string;
+  companyName?: string | null;
+  jobTitle?: string | null;
   employmentType?: EmploymentType | null;
   startDate?: Date | null;
   endDate?: Date | null;
   isCurrent?: boolean;
   description?: string | null;
+  bullets?: string[];
+  technologiesUsed?: string[];
+  evidenceIds?: string[];
 }
 
 export interface IProfileLinks {
@@ -51,6 +56,30 @@ export interface IProfileProject {
   featured?: boolean;
   startDate?: Date | null;
   endDate?: Date | null;
+  evidenceIds?: string[];
+}
+
+export interface IProfileCompletenessSection {
+  status: "COMPLETE" | "INCOMPLETE" | "EMPTY";
+  score: number;
+  weight: number;
+  missingFields: string[];
+}
+
+export interface IProfileCompleteness {
+  score: number;
+  missingFields: string[];
+  sections: {
+    identity: IProfileCompletenessSection;
+    contact: IProfileCompletenessSection;
+    summary: IProfileCompletenessSection;
+    skills: IProfileCompletenessSection;
+    experience: IProfileCompletenessSection;
+    projects: IProfileCompletenessSection;
+    education: IProfileCompletenessSection;
+    links: IProfileCompletenessSection;
+  };
+  lastCalculatedAt: Date;
 }
 
 export interface IProfile extends Document {
@@ -67,6 +96,8 @@ export interface IProfile extends Document {
   projects: IProfileProject[];
   links?: IProfileLinks | null;
   location?: IProfileLocation | null;
+  profileVersion: number;
+  completeness?: IProfileCompleteness | null;
   completionPercentage?: number;
   createdAt: Date;
   updatedAt: Date;
@@ -86,6 +117,7 @@ const profileSkillSchema = new Schema<IProfileSkill>(
       default: SkillSource.PROFILE,
     },
     verified: { type: Boolean, required: true, default: false },
+    evidenceIds: [{ type: String, trim: true }],
   },
   { _id: false }
 );
@@ -97,14 +129,15 @@ const profileEducationSchema = new Schema<IProfileEducation>(
     fieldOfStudy: { type: String, default: null, trim: true },
     startYear: { type: Number, default: null },
     endYear: { type: Number, default: null },
+    evidenceIds: [{ type: String, trim: true }],
   },
   { _id: false }
 );
 
 const profileExperienceSchema = new Schema<IProfileExperience>(
   {
-    companyName: { type: String, required: true, trim: true },
-    jobTitle: { type: String, required: true, trim: true },
+    companyName: { type: String, default: null, trim: true },
+    jobTitle: { type: String, default: null, trim: true },
     employmentType: {
       type: String,
       enum: Object.values(EmploymentType),
@@ -114,6 +147,9 @@ const profileExperienceSchema = new Schema<IProfileExperience>(
     endDate: { type: Date, default: null },
     isCurrent: { type: Boolean, default: false },
     description: { type: String, default: null, trim: true },
+    bullets: [{ type: String, trim: true }],
+    technologiesUsed: [{ type: String, trim: true }],
+    evidenceIds: [{ type: String, trim: true }],
   },
   { _id: false }
 );
@@ -146,6 +182,7 @@ const profileProjectSchema = new Schema<IProfileProject>(
     featured: { type: Boolean, default: false },
     startDate: { type: Date, default: null },
     endDate: { type: Date, default: null },
+    evidenceIds: [{ type: String, trim: true }],
   },
   { timestamps: true }
 );
@@ -195,6 +232,21 @@ const profileSchema = new Schema<IProfile>(
     location: {
       type: profileLocationSchema,
       default: null,
+    },
+    profileVersion: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    completeness: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    completionPercentage: {
+      type: Number,
+      default: 10,
+      min: 0,
+      max: 100,
     },
   },
   {

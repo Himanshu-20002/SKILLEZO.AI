@@ -32,6 +32,9 @@ export interface ResumeProject {
   description?: string | null;
   technologies?: string[];
   link?: string | null;
+  githubUrl?: string | null;
+  liveDemoUrl?: string | null;
+  bullets?: string[];
 }
 
 export interface ResumeCertification {
@@ -270,7 +273,12 @@ export interface ResumeRecord {
   fileUrl?: string;
   isDefault: boolean;
   version?: number;
-  status: "pending" | "processing" | "completed" | "failed" | "uploaded";
+  status?: string;
+  variantType?: "MASTER" | "TAILORED";
+  targetJobTitle?: string | null;
+  targetCompany?: string | null;
+  parentResumeId?: string | null;
+  sourceProfileVersion?: number | null;
   extractedData?: ResumeExtractedData;
   resumeDocument?: import("./resume-document").ResumeDocument | null;
   builderConfig?: import("./resume-builder.types").ResumeBuilderConfig | null;
@@ -279,3 +287,35 @@ export interface ResumeRecord {
   updatedAt: string;
 }
 
+export interface MasterResumeResponse {
+  resume: ResumeRecord;
+  isStale: boolean;
+  profileVersion: number;
+}
+
+export type ResumeVariantType = "MASTER" | "TAILORED";
+
+export interface ResumePortfolioItem {
+  id: string;
+  displayName: string;
+  variantType: ResumeVariantType;
+  targetJobTitle?: string | null;
+  targetCompany?: string | null;
+  parentResumeId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  sourceProfileVersion?: number | null;
+  isMasterStale?: boolean;
+  isDefault?: boolean;
+}
+
+export interface ResumePortfolioResponse {
+  master: ResumePortfolioItem;
+  variants: ResumePortfolioItem[];
+}
+
+export interface CreateVariantInput {
+  displayName: string;
+  targetJobTitle?: string;
+  targetCompany?: string;
+}

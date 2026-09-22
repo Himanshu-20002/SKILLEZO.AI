@@ -13,6 +13,7 @@ interface LiveResumeCanvasProps {
   highlightSectionId?: string | null;
   onSectionClick?: (sectionId: string) => void;
   isVisibleOnMobile?: boolean;
+  className?: string;
 }
 
 export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
@@ -21,6 +22,7 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
   highlightSectionId,
   onSectionClick,
   isVisibleOnMobile = false,
+  className = '',
 }) => {
   // Concurrently defer heavy A4 DOM re-renders so builder controls & typing run at 60-120 FPS
   const deferredConfig = useDeferredValue(config);
@@ -47,12 +49,10 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
 
       setContentHeight(naturalHeight);
 
-      if (containerHeight > 0 && naturalHeight > 0) {
-        // Leave comfortable padding for margins and borders
-        const scaleH = (containerHeight - 24) / naturalHeight;
-        const scaleW = (containerWidth - 24) / standardWidth;
-        const optimal = Math.min(scaleH, scaleW);
-        setFitScale(Math.max(0.45, Math.min(optimal, 1)));
+      if (containerWidth > 0) {
+        // Fit width of resume to container with comfortable padding while allowing full vertical scrolling
+        const scaleW = (containerWidth - 48) / standardWidth;
+        setFitScale(Math.max(0.45, Math.min(scaleW, 1)));
       }
     };
 
@@ -91,9 +91,9 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
 
   return (
     <div
-      className={`lg:col-span-6 lg:sticky lg:top-24 space-y-3 ${
+      className={`w-full space-y-3 ${
         isVisibleOnMobile ? 'block' : 'hidden lg:block'
-      }`}
+      } ${className || ''}`}
     >
       {/* Canvas Header & Interactive Zoom Controller */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-1">
@@ -163,18 +163,16 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
       {/* Main Canvas Viewport Container */}
       <div
         ref={containerRef}
-        className={`h-[calc(100vh-140px)] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-100/70 dark:bg-slate-950/60 p-3 overscroll-contain will-change-scroll transform-gpu flex justify-center ${
-          zoomMode === 'fit' ? 'overflow-hidden items-center' : 'overflow-y-auto items-start'
-        }`}
+        className="min-h-[calc(100vh-140px)] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-100/70 dark:bg-slate-950/60 p-4 flex justify-center items-start overflow-x-auto will-change-scroll"
       >
         {/* Scaled A4 Sheet Wrapper */}
         <div
           style={{
             width: `${850 * activeScale}px`,
+            minHeight: `${contentHeight * activeScale}px`,
             height: `${contentHeight * activeScale}px`,
-            transition: 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
-          className="relative shrink-0 flex justify-center"
+          className="relative shrink-0 flex justify-center py-2 pointer-events-auto"
         >
           <div
             ref={contentWrapperRef}
@@ -182,9 +180,9 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
               width: '850px',
               transform: `scale(${activeScale})`,
               transformOrigin: 'top center',
-              transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              transition: 'transform 0.15s ease-out',
             }}
-            className="absolute top-0 shadow-2xl rounded-2xl"
+            className="absolute top-2 shadow-2xl rounded-2xl pointer-events-auto select-text"
           >
             {deferredDoc ? (
               <ResumeRenderer

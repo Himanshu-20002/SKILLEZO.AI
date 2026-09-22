@@ -115,7 +115,8 @@ export class SkillDetector {
 
     // 4. Scan Projects section
     (extractedData?.projects || []).forEach((proj: any, pIdx: number) => {
-      const projText = `${proj.title || ""}: ${proj.description || ""} ${(proj.technologies || []).join(" ")}`;
+      const bulletText = Array.isArray(proj.bullets) ? proj.bullets.join(" ") : "";
+      const projText = `${proj.title || ""}: ${proj.description || ""} ${bulletText} ${(proj.technologies || []).join(" ")}`;
       scanSection(projText, "projects", `project_${pIdx}`, pIdx);
     });
 
