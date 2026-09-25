@@ -148,6 +148,35 @@ describe("ResumeService Unit Tests", () => {
       );
       expect(result.status).toBe("uploaded");
     });
+
+    it("should set variantType: TAILORED and isUploaded: true when uploaded as variant", async () => {
+      mockRepository.countUserResumes.mockResolvedValue(1);
+      mockRepository.findByUserId.mockResolvedValue([{ _id: "res_master", variantType: "MASTER" }]);
+      mockStorage.save.mockResolvedValue("resumes/usr_123/uuid2.pdf");
+      mockRepository.create.mockImplementation((dto: any) => Promise.resolve({ _id: "res_var_1", ...dto }));
+
+      const fakeFile = {
+        originalname: "frontend_resume.pdf",
+        mimetype: "application/pdf",
+        buffer: Buffer.from("pdf content"),
+        size: 1024,
+      } as any;
+
+      const result = await resumeService.uploadResume("usr_123", fakeFile, "Frontend Resume", false, {
+        asVariant: true,
+      });
+
+      expect(mockRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variantType: "TAILORED",
+          isMaster: false,
+          isUploaded: true,
+          title: "Frontend Resume",
+        })
+      );
+      expect(result.variantType).toBe("TAILORED");
+      expect(result.isUploaded).toBe(true);
+    });
   });
 
   describe("getResumeStream", () => {

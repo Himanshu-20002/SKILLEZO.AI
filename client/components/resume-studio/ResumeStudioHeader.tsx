@@ -4,12 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import {
   Menu,
-  ChevronDown,
   Sparkles,
   RefreshCw,
-  Eye,
-  Trash2,
-  Download,
   ArrowLeft,
   Check,
   AlertCircle,
@@ -28,20 +24,20 @@ interface ResumeStudioHeaderProps {
   saveStatus: SaveStatus;
   viewMode: StudioViewMode;
   onViewModeChange?: (mode: StudioViewMode) => void;
-  refreshing: boolean;
-  isDeletingResume: boolean;
-  isDownloadingPdf: boolean;
+  refreshing?: boolean;
+  isDeletingResume?: boolean;
+  isDownloadingPdf?: boolean;
   onSelectResume: (id: string) => void;
   onSyncMasterResume: () => void;
-  onRefreshScore: () => void;
-  onDeleteClick: () => void;
-  onDownloadPdf: () => void;
+  onRefreshScore?: () => void;
+  onDeleteClick?: () => void;
+  onDownloadPdf?: () => void;
   onOpenMobileSidebar: () => void;
 }
 
 export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
-  resumes,
-  selectedResumeId,
+  resumes: _resumes,
+  selectedResumeId: _selectedResumeId,
   currentResume,
   isCurrentResumeMaster,
   isMasterStale,
@@ -49,14 +45,7 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
   saveStatus,
   viewMode,
   onViewModeChange,
-  refreshing,
-  isDeletingResume,
-  isDownloadingPdf,
-  onSelectResume,
   onSyncMasterResume,
-  onRefreshScore,
-  onDeleteClick,
-  onDownloadPdf,
   onOpenMobileSidebar,
 }) => {
   const isAudit = viewMode === 'audit' || viewMode === 'analysis';
@@ -187,7 +176,7 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Master Sync Alert, Export PDF, Raw View, Delete */}
+      {/* Right: Master Sync Alert */}
       <div className="flex items-center gap-2">
         {/* Stale Master Sync Notification Button */}
         {isCurrentResumeMaster && isMasterStale && (
@@ -199,55 +188,6 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncingMaster ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isSyncingMaster ? 'Syncing...' : 'Sync Profile'}</span>
-          </button>
-        )}
-
-        {/* Primary Action: Download PDF */}
-        <button
-          onClick={onDownloadPdf}
-          disabled={isDownloadingPdf}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-all cursor-pointer shadow-xs disabled:opacity-50"
-        >
-          <Download className={`w-3.5 h-3.5 ${isDownloadingPdf ? 'animate-bounce' : ''}`} />
-          <span className="hidden sm:inline">{isDownloadingPdf ? 'Exporting...' : 'Export PDF'}</span>
-          <span className="sm:hidden">PDF</span>
-        </button>
-
-        {/* Secondary: Raw View (Variants with uploaded origin only) */}
-        {!isCurrentResumeMaster && selectedResumeId && (
-          <a
-            href={`/api/resumes/${selectedResumeId}/download?view=true`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="View original uploaded file"
-            aria-label="View original file"
-            className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
-          >
-            <Eye className="w-3.5 h-3.5" />
-          </a>
-        )}
-
-        {/* Refresh Score Action */}
-        <button
-          onClick={onRefreshScore}
-          disabled={refreshing}
-          title="Refresh ATS score"
-          aria-label="Refresh ATS score"
-          className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-        </button>
-
-        {/* Delete (Variants Only - Master Protected) */}
-        {!isCurrentResumeMaster && (
-          <button
-            onClick={onDeleteClick}
-            disabled={isDeletingResume}
-            className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer disabled:opacity-50"
-            title="Delete this variant"
-            aria-label="Delete variant"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
           </button>
         )}
       </div>

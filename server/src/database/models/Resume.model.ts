@@ -77,7 +77,10 @@ export interface IResume extends Document {
   status: ResumeStatus;
   version: number;
   variantType?: "MASTER" | "TAILORED";
+  isUploaded?: boolean;
   sourceProfileVersion?: number | null;
+  sourceTailoringPlanId?: Types.ObjectId | null;
+  sourceTailoringPlanVersion?: number | null;
   parentResumeId?: Types.ObjectId | null;
   targetJobId?: Types.ObjectId | null;
   targetJobTitle?: string | null;
@@ -236,7 +239,21 @@ const resumeSchema = new Schema<IResume>(
       default: "MASTER",
       index: true,
     },
+    isUploaded: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     sourceProfileVersion: {
+      type: Number,
+      default: null,
+    },
+    sourceTailoringPlanId: {
+      type: Schema.Types.ObjectId,
+      ref: "TailoringPlan",
+      default: null,
+    },
+    sourceTailoringPlanVersion: {
       type: Number,
       default: null,
     },

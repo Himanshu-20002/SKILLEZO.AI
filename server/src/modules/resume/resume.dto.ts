@@ -30,6 +30,7 @@ export interface ResumePortfolioItemDTO {
   sourceProfileVersion?: number | null;
   isMasterStale?: boolean;
   isDefault: boolean;
+  isUploaded?: boolean;
 }
 
 export interface ResumePortfolioResponseDTO {

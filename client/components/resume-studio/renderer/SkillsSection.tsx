@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { ResumeSkillItem } from '@/types/resume-document';
 import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { resolveConfigClasses } from './templates';
+import { groupAndFormatSkills } from '../utils/resume-content.util';
 
 interface SkillsSectionProps {
   skills?: ResumeSkillItem[];
@@ -10,42 +11,17 @@ interface SkillsSectionProps {
   config?: ResumeBuilderConfig | null;
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  LANGUAGE: 'Languages',
-  FRONTEND: 'Frontend',
-  BACKEND: 'Backend',
-  DATABASE: 'Databases & Storage',
-  CLOUD: 'Cloud & Infrastructure',
-  DEVOPS: 'DevOps & CI/CD',
-  AI_ML: 'AI & Machine Learning',
-  TESTING: 'Testing & QA',
-  MOBILE: 'Mobile Development',
-  TOOLS: 'Tools & Platforms',
-  OTHER: 'Other Skills',
-};
-
 export const SkillsSection: React.FC<SkillsSectionProps> = React.memo(({
   skills,
   isHighlighted,
   onClick,
   config,
 }) => {
-  const groupedSkills = useMemo(() => {
-    if (!skills || skills.length === 0) return {};
-
-    const groups: Record<string, string[]> = {};
-    for (const skill of skills) {
-      if (!skill.name) continue;
-      const cat = skill.category || 'OTHER';
-      if (!groups[cat]) {
-        groups[cat] = [];
-      }
-      groups[cat].push(skill.name);
-    }
-    return groups;
+  const formattedGroups = useMemo(() => {
+    return groupAndFormatSkills(skills);
   }, [skills]);
 
-  if (!skills || skills.length === 0) return null;
+  if (!formattedGroups || formattedGroups.length === 0) return null;
 
   const { template, sectionSpacingClass, lineHeightClass } = resolveConfigClasses(config);
   const isCompact = config?.templateId === 'compact';
@@ -67,13 +43,13 @@ export const SkillsSection: React.FC<SkillsSectionProps> = React.memo(({
       </h2>
 
       <div className={`${isCompact ? 'space-y-1 text-xs' : 'space-y-1.5'} ${lineHeightClass}`}>
-        {Object.entries(groupedSkills).map(([catKey, skillNames]) => (
-          <div key={catKey} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-            <span className="font-semibold text-slate-900 dark:text-slate-100 shrink-0 min-w-[125px]">
-              {CATEGORY_LABELS[catKey] || catKey}:
+        {formattedGroups.map((group) => (
+          <div key={group.label} className="grid grid-cols-[130px_1fr] items-baseline gap-x-3 py-0.5">
+            <span className="font-semibold text-slate-900 dark:text-slate-100 text-left shrink-0">
+              {group.label}:
             </span>
-            <span className="text-slate-700 dark:text-slate-300">
-              {skillNames.join(' · ')}
+            <span className="text-slate-700 dark:text-slate-300 truncate sm:overflow-visible">
+              {group.formattedLine}
             </span>
           </div>
         ))}

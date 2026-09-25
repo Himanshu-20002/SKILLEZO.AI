@@ -132,4 +132,32 @@ describe('Phase 5: Resume Portfolio & Variant Service Client Contracts', () => {
       })
     );
   });
+
+  it('uploadResume appends asVariant and syncProfile to FormData', async () => {
+    const mockFile = new File(['dummy content'], 'software_engineer.pdf', {
+      type: 'application/pdf',
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: { _id: 'res_uploaded_variant', title: 'Software Engineer' },
+      }),
+    });
+
+    const result = await resumeService.uploadResume(mockFile, 'Software Engineer', {
+      asVariant: true,
+      syncProfile: false,
+    });
+
+    expect(result._id).toBe('res_uploaded_variant');
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/resumes/upload'),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(FormData),
+      })
+    );
+  });
 });

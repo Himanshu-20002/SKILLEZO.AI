@@ -119,11 +119,11 @@ export function useResumeStudio(initialResumeId?: string | null) {
   const [optimizingRecId, setOptimizingRecId] = useState<string | null>(null);
   const [isApplyingOptimization, setIsApplyingOptimization] = useState(false);
 
-  // File Upload & Deletion State
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeletingResume, setIsDeletingResume] = useState(false);
   const [resumeToDelete, setResumeToDelete] = useState<ResumeRecord | null>(null);
+  const [portfolioVersion, setPortfolioVersion] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -249,37 +249,70 @@ export function useResumeStudio(initialResumeId?: string | null) {
   }, [targetRole, fetchScore, fetchAtsIntelligence]);
 
   // Select Resume Handler
-  const handleSelectResume = useCallback((resumeId: string) => {
+  const handleSelectResume = useCallback((resumeId: string, directResume?: ResumeRecord, andOpenEditor = false) => {
     setSelectedResumeId(resumeId);
     setActiveView('overview');
     setCurrentSuggestion(null);
     setScoreDeltaNotice(null);
 
-    const resume = resumes.find((r) => r._id === resumeId);
+    if (andOpenEditor) {
+      setViewMode('editor');
+      setMobileEditorView('editor');
+    }
+
+    const resume = directResume || resumes.find((r) => r._id === resumeId);
     if (resume?.variantType === 'MASTER') {
       resumeService.getMasterResume().then((mr) => {
         if (mr) setIsMasterStale(mr.isStale);
       }).catch(() => {});
     }
-    if (resume?.resumeDocument) {
-      setResumeDoc(resume.resumeDocument as any);
-    }
-    if (resume?.extractedData) {
-      setAnalysis((prev) => ({
-        ...prev,
-        extractedData: mapResumeToExtractedData(resume),
-      }));
-    }
-    if (resume?.builderConfig) {
-      setBuilderConfig(resume.builderConfig);
+
+    if (resume) {
+      if (resume.resumeDocument) {
+        setResumeDoc(resume.resumeDocument as any);
+      }
+      if (resume.extractedData) {
+        setAnalysis((prev) => ({
+          ...prev,
+          extractedData: mapResumeToExtractedData(resume),
+        }));
+      }
+      if (resume.builderConfig) {
+        setBuilderConfig(resume.builderConfig);
+      } else {
+        resumeService.getBuilderConfig(resumeId).then((cfg) => {
+          if (cfg) setBuilderConfig(cfg);
+        }).catch(() => {});
+      }
     } else {
-      resumeService.getBuilderConfig(resumeId).then((cfg) => {
-        if (cfg) setBuilderConfig(cfg);
-      }).catch(() => {});
+      // Fallback: Fetch complete resume document from server if missing in local state
+      resumeService.getResumeById(resumeId).then((fetched) => {
+        if (fetched) {
+          setResumes((prev) => {
+            const exists = prev.some((r) => r._id === fetched._id);
+            return exists ? prev.map((r) => (r._id === fetched._id ? fetched : r)) : [fetched, ...prev];
+          });
+          if (fetched.resumeDocument) {
+            setResumeDoc(fetched.resumeDocument as any);
+          }
+          if (fetched.extractedData) {
+            setAnalysis((prev) => ({
+              ...prev,
+              extractedData: mapResumeToExtractedData(fetched),
+            }));
+          }
+          if (fetched.builderConfig) {
+            setBuilderConfig(fetched.builderConfig);
+          }
+        }
+      }).catch((fetchErr) => {
+        console.warn("Failed to fetch resume by id:", fetchErr);
+      });
     }
+
     fetchScore(resumeId);
     fetchAtsIntelligence(resumeId, targetRole);
-  }, [resumes, targetRole, fetchScore, fetchAtsIntelligence]);
+  }, [resumes, targetRole, fetchScore, fetchAtsIntelligence, setViewMode, setMobileEditorView]);
 
   // Master Resume Synchronize Handler
   const handleSyncMasterResume = useCallback(async () => {
@@ -358,16 +391,14 @@ export function useResumeStudio(initialResumeId?: string | null) {
     }
   }, [resumeDoc, builderConfig]);
 
-  // Direct File Upload Handler
+  // Direct File Upload Handler (Option 1: Safe Upload to Portfolio as Variant)
   const handleFileUpload = useCallback(async (file: File) => {
-    const isAllowed =
+    const isPdf =
       file.name.toLowerCase().endsWith('.pdf') ||
-      file.name.toLowerCase().endsWith('.docx') ||
-      file.type === 'application/pdf' ||
-      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      file.type === 'application/pdf';
 
-    if (!isAllowed) {
-      toast.error('Please upload a .PDF or .DOCX document.');
+    if (!isPdf) {
+      toast.error('Only PDF documents are supported. Please upload a .pdf file.');
       return;
     }
 
@@ -380,11 +411,14 @@ export function useResumeStudio(initialResumeId?: string | null) {
     const toastId = toast.loading(`Uploading and analyzing ${file.name}...`);
 
     try {
-      const newResume = await resumeService.uploadResume(file);
-      toast.success('Resume analyzed and added!', { id: toastId });
+      // Safe upload as a new portfolio variant (preserves Master Resume & Profile)
+      const cleanTitle = file.name.replace(/\.pdf$/i, '').trim();
+      const newResume = await resumeService.uploadResume(file, cleanTitle, { asVariant: true });
+      toast.success('Resume added to your Portfolio as a new variant!', { id: toastId });
 
       setResumes((prev) => [newResume, ...prev]);
-      handleSelectResume(newResume._id);
+      handleSelectResume(newResume._id, newResume);
+      setPortfolioVersion((v) => v + 1);
     } catch (err: any) {
       toast.error(err.message || 'Upload failed. Please check the file and try again.', { id: toastId });
     } finally {
@@ -619,6 +653,7 @@ export function useResumeStudio(initialResumeId?: string | null) {
     isDeletingResume,
     resumeToDelete,
     fileInputRef,
+    portfolioVersion,
 
     // Setters
     setViewMode,

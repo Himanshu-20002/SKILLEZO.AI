@@ -307,6 +307,7 @@ export interface ResumePortfolioItem {
   sourceProfileVersion?: number | null;
   isMasterStale?: boolean;
   isDefault?: boolean;
+  isUploaded?: boolean;
 }
 
 export interface ResumePortfolioResponse {

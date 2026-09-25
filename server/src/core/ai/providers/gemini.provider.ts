@@ -5,10 +5,8 @@ export class GeminiProvider implements AIProvider {
   public readonly name = "Google Gemini";
   private static readonly STABLE_FALLBACK_MODELS = [
     "gemini-flash-lite-latest",
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-    "gemini-flash-latest",
-    "gemini-2.5-pro",
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash",
   ];
 
   public isAvailable(): boolean {
@@ -24,7 +22,7 @@ export class GeminiProvider implements AIProvider {
     const apiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) return null;
 
-    const primaryModel = env.AI_MODEL || "gemini-flash-latest";
+    const primaryModel = env.AI_MODEL || "gemini-flash-lite-latest";
     const modelsToTry = Array.from(new Set([primaryModel, ...GeminiProvider.STABLE_FALLBACK_MODELS]));
 
     const bodyPayload: any = {
@@ -90,7 +88,7 @@ export class GeminiProvider implements AIProvider {
     const apiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) return null;
 
-    const primaryModel = env.AI_MODEL || "gemini-flash-latest";
+    const primaryModel = env.AI_MODEL || "gemini-flash-lite-latest";
     const modelsToTry = Array.from(new Set([primaryModel, ...GeminiProvider.STABLE_FALLBACK_MODELS]));
 
     const bodyPayload: any = {
@@ -146,7 +144,7 @@ export class GeminiProvider implements AIProvider {
     const apiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) return;
 
-    const primaryModel = env.AI_MODEL || "gemini-flash-latest";
+    const primaryModel = env.AI_MODEL || "gemini-flash-lite-latest";
     const modelsToTry = Array.from(new Set([primaryModel, ...GeminiProvider.STABLE_FALLBACK_MODELS]));
 
     const bodyPayload: any = {

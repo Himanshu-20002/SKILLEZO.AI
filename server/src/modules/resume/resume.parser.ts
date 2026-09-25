@@ -304,49 +304,58 @@ export class ResumeParserService {
    */
   extractEducation(text: string): IResumeEducation[] {
     const educationList: IResumeEducation[] = [];
-    const lines = text.split("\n");
+    const eduSectionMatch = text.match(
+      /(?:education|academic\s+background|academics?|qualifications?)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:achievements?|certifications?|skills?|technical\s+skills|projects?|experience|work\s+experience)\s*[:\n\-]|$)/i
+    );
+
+    const targetText = eduSectionMatch && eduSectionMatch[1] ? eduSectionMatch[1] : text;
+    const lines = targetText.split("\n").map((l) => l.trim()).filter(Boolean);
 
     const degreePatterns = [
-      /\b(B\.?Tech|Bachelor\s+of\s+Technology|B\.?S\.?|Bachelor\s+of\s+Science|B\.?E\.?|Bachelor\s+of\s+Engineering)\b/i,
+      /\b(B\.?Tech(?:\s*\([A-Za-z\s.]+\))?|Bachelor\s+of\s+Technology(?:\s*\([A-Za-z\s.]+\))?|B\.?S\.?|Bachelor\s+of\s+Science|B\.?E\.?|Bachelor\s+of\s+Engineering|BCA|Bachelor\s+of\s+Computer\s+Applications)\b/i,
       /\b(M\.?Tech|Master\s+of\s+Technology|M\.?S\.?|Master\s+of\s+Science|M\.?C\.?A\.?|MBA|Master\s+of\s+Business\s+Administration)\b/i,
       /\b(Ph\.?D\.?|Doctor\s+of\s+Philosophy)\b/i,
-      /\b(Diploma|Associate\s+Degree)\b/i,
+      /\b(Diploma|Associate\s+Degree|High\s+School|Secondary\s+School)\b/i,
     ];
 
-    const yearPattern = /\b(19\d{2}|20\d{2})\s*(?:-|–|to)\s*(19\d{2}|20\d{2}|present)\b/i;
+    const yearPattern = /\b(19\d{2}|20\d{2})\s*(?:[-–—]|to)\s*(19\d{2}|20\d{2}|present)\b/i;
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+      const line = lines[i];
       for (const pattern of degreePatterns) {
         const degreeMatch = line.match(pattern);
         if (degreeMatch) {
-          const degree = degreeMatch[0];
-          // Look around 2 lines before/after for institution and year
-          const contextBlock = lines.slice(Math.max(0, i - 1), Math.min(lines.length, i + 3)).join(" ");
-          const yearMatch = contextBlock.match(yearPattern);
+          let degree = degreeMatch[0].trim();
+          let fieldOfStudy: string | null = null;
 
-          // Institution inference
-          let institution = "University / Institution";
-          const instMatch = contextBlock.match(
-            /(?:at|from|university|institute|college|school)\s+([A-Za-z\s&.-]+(?:University|Institute|College|Academy|School))/i
-          );
-          if (instMatch) {
-            institution = instMatch[1].trim();
+          // Check if field is in same line after dash: e.g. "Bachelor of Technology (B.Tech) - Automation and Robotics"
+          const dashSplit = line.split(/\s*[-–—]\s*/);
+          if (dashSplit.length > 1) {
+            degree = dashSplit[0].trim();
+            fieldOfStudy = dashSplit.slice(1).join(" - ").trim();
           }
 
-          // Field of study inference
-          let fieldOfStudy = "Computer Science";
-          const fieldMatch = contextBlock.match(
-            /(?:in|of)\s+([A-Za-z\s]+(?:Engineering|Science|Technology|Information|Mathematics|Business))/i
-          );
-          if (fieldMatch) {
-            fieldOfStudy = fieldMatch[1].trim();
+          const contextLines = lines.slice(Math.max(0, i - 1), Math.min(lines.length, i + 3));
+          const contextBlock = contextLines.join(" ");
+          const yearMatch = contextBlock.match(yearPattern);
+
+          // Institution inference: look for lines mentioning University, School, College, Institute
+          let institution: string | null = null;
+          for (const cLine of contextLines) {
+            if (/university|institute|college|school|academy/i.test(cLine) && !degreePatterns.some((p) => p.test(cLine))) {
+              institution = cLine.replace(/(?:\b|\B)(?:19\d{2}|20\d{2})\s*[-–—].*$/, "").trim();
+              break;
+            }
+          }
+
+          if (!institution && lines[i + 1] && !degreePatterns.some((p) => p.test(lines[i + 1]))) {
+            institution = lines[i + 1].replace(/(?:\b|\B)(?:19\d{2}|20\d{2})\s*[-–—].*$/, "").trim();
           }
 
           educationList.push({
-            institution,
+            institution: institution || "University / College",
             degree,
-            fieldOfStudy,
+            fieldOfStudy: fieldOfStudy || null,
             startYear: yearMatch ? parseInt(yearMatch[1], 10) : null,
             endYear: yearMatch && yearMatch[2].toLowerCase() !== "present" ? parseInt(yearMatch[2], 10) : null,
           });
@@ -366,10 +375,16 @@ export class ResumeParserService {
     
     // Check if there is an explicit Experience section
     const expSectionMatch = text.match(
-      /(?:work\s+experience|professional\s+experience|experience|employment\s+history)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:projects?|key\s+projects?|personal\s+projects?|technical\s+projects?|education|skills?|technical\s+skills|certifications?|achievements?|\b[A-Z\s]{4,}\b\n|$))/i
+      /(?:work\s+experience|professional\s+experience|experience|employment\s+history|internships?)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:projects?|key\s+projects?|personal\s+projects?|technical\s+projects?|education|academic(?:s|\s+background)?|skills?|technical\s+skills|certifications?|achievements?|\b[A-Z\s]{4,}\b\n|$))/i
     );
 
-    const targetText = expSectionMatch && expSectionMatch[1] ? expSectionMatch[1] : text;
+    // CRITICAL: If there is no explicit work experience section (e.g. for freshers/students),
+    // NEVER search the entire resume text and hallucinate jobs from summary or project text!
+    if (!expSectionMatch || !expSectionMatch[1] || expSectionMatch[1].trim().length < 10) {
+      return experienceList;
+    }
+
+    const targetText = expSectionMatch[1];
     const lines = targetText.split("\n");
 
     const titleKeywords = [
@@ -486,7 +501,8 @@ export class ResumeParserService {
         continue;
       }
 
-      const title = titleLine.split(/\s+[-–|]\s+|\s*[:(]/)[0].trim();
+      let title = titleLine.split(/\s+[-–|]\s+|\s*[:(]/)[0].trim();
+      title = title.replace(/(?:\b|\B)(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[a-z]*\s*\d{4}.*$/i, "").trim();
       if (/^(?:github|live\s*demo|repository|repo|demo|source\s*code)/i.test(title)) continue;
       if (title.length < 2 || title.length > 80) continue;
 
@@ -670,23 +686,51 @@ export class ResumeParserService {
   extractCertifications(text: string): IResumeCertification[] {
     const certs: IResumeCertification[] = [];
     const certSectionMatch = text.match(
-      /(?:certifications?|certificates?|licenses?|achievements?|honors?|awards?)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:education|skills?|projects?|experience|$))/i
+      /(?:certifications?\s*(?:&|and)\s*achievements?|achievements?\s*(?:&|and)\s*certifications?|certifications?|certificates?|licenses?|achievements?|honors?\s*(?:&|and)\s*awards?|honors?|awards?|key\s+achievements?|extracurricular\s+activities?)\s*[:\n\-]([\s\S]*?)(?=\n\s*(?:education|skills?|technical\s+skills|projects?|experience|work\s+experience)\s*[:\n\-]|$)/i
     );
 
     if (!certSectionMatch || !certSectionMatch[1]) {
       return certs;
     }
 
-    const lines = certSectionMatch[1]
-      .split("\n")
-      .map((l) => l.replace(/^[-•*]\s*/, "").trim())
-      .filter((l) => l.length > 4 && l.length < 120);
+    const cleanBlock = certSectionMatch[1].replace(/\s*\b\d+\s*$/, "").trim();
+    const rawItems = cleanBlock.includes("•") || cleanBlock.includes("*") || cleanBlock.includes("-")
+      ? cleanBlock.split(/(?:^|\n)\s*[•\u2022\u25E6\u25AA\*\-·]\s+/)
+      : cleanBlock.split("\n");
 
-    for (const line of lines) {
-      const parts = line.split(/[-–|:,]/);
+    const items = rawItems
+      .map((s) => s.replace(/\n+/g, " ").replace(/\s+/g, " ").trim())
+      .filter((s) => s.length > 5);
+
+    for (const item of items) {
+      let name = item;
+      let issuer: string | null = null;
+      let date: Date | undefined = undefined;
+
+      const dateMatch = item.match(
+        /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{4})(?:\s*[-–]\s*\d{4})?\s*$/i
+      );
+      if (dateMatch) {
+        try {
+          date = new Date(dateMatch[0]);
+        } catch {
+          date = undefined;
+        }
+      }
+
+      // Split by dash/hyphen or pipe (avoid splitting on commas as commas appear within sentences)
+      const dashParts = item.split(/\s+[-–—|]\s+/);
+      if (dashParts.length > 1) {
+        name = dashParts[0].trim();
+        issuer = dashParts.slice(1).join(" - ").trim();
+      } else {
+        name = item;
+      }
+
       certs.push({
-        name: parts[0].trim(),
-        issuer: parts.length > 1 ? parts[1].trim() : null,
+        name,
+        issuer,
+        issueDate: date,
       });
     }
 

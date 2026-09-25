@@ -269,7 +269,10 @@ export default function ResumeStudioPage() {
                   analysis={studio.analysis}
                   activePillar={studio.activePillar}
                   onSelectPillar={studio.setActivePillar}
-                  onOpenEditor={() => {
+                  onOpenEditor={(resumeId?: string) => {
+                    if (resumeId && resumeId !== studio.selectedResumeId) {
+                      studio.handleSelectResume(resumeId);
+                    }
                     studio.setViewMode('editor');
                     studio.setMobileEditorView('editor');
                   }}
@@ -291,6 +294,9 @@ export default function ResumeStudioPage() {
                   onDeleteClick={() => studio.handleDeleteClick()}
                   selectedResumeId={studio.selectedResumeId}
                   onSelectResume={studio.handleSelectResume}
+                  onDownloadPdf={studio.handleDownloadPDF}
+                  isDownloadingPdf={studio.isDownloadingPdf}
+                  portfolioVersion={studio.portfolioVersion}
                 />
               }
             />
@@ -346,7 +352,7 @@ export default function ResumeStudioPage() {
                   {studio.isUploading ? 'Analyzing and parsing resume...' : 'Click to upload or drag & drop'}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                  Supports PDF or DOCX (Max 5MB)
+                  Supports PDF (Max 5MB)
                 </p>
               </div>
             </div>
@@ -461,6 +467,22 @@ export default function ResumeStudioPage() {
           </div>
         </div>
       )}
+
+      {/* Global Hidden PDF File Input for Studio (Works in all view modes: Audit / Editor) */}
+      <input
+        type="file"
+        ref={studio.fileInputRef}
+        accept=".pdf,application/pdf"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            studio.handleFileUpload(file);
+          }
+          // Reset so selecting the same file triggers onChange
+          e.target.value = '';
+        }}
+      />
     </div>
   );
 }

@@ -15,7 +15,13 @@ export class ResumeController {
     const file = req.file as Express.Multer.File;
     const title = req.body.title as string | undefined;
     const isDefault = req.body.isDefault === "true" || req.body.isDefault === true;
-    const resume = await this.resumeService.uploadResume(userId, file, title, isDefault);
+    const asVariant = req.body.asVariant === "true" || req.body.asVariant === true;
+    const syncProfile = req.body.syncProfile === "true" || req.body.syncProfile === true;
+
+    const resume = await this.resumeService.uploadResume(userId, file, title, isDefault, {
+      asVariant,
+      syncProfile,
+    });
     res.status(HTTP_STATUS.CREATED).json(successResponse(resume));
   };
 

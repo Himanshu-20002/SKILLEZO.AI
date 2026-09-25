@@ -7,6 +7,14 @@ import {
   ReorderableSectionId,
 } from '@/types/resume-builder.types';
 import { resolvePdfTheme, createPdfStyles } from './pdf-styles';
+import {
+  CATEGORY_LABELS,
+  getCategoryLabel,
+  groupAndFormatSkills,
+  cleanBulletText,
+  cleanProjectContent,
+  formatAchievementItem,
+} from '../utils/resume-content.util';
 
 interface ResumePdfDocumentProps {
   document: ResumeDocument;
@@ -31,32 +39,55 @@ export const ResumePdfDocument: React.FC<ResumePdfDocumentProps> = ({
     const contact = document.contact;
     if (!contact) return null;
 
+    const contactParts: React.ReactNode[] = [];
+
+    if (contact.location) {
+      contactParts.push(
+        <Text key="loc" style={styles.contactItem}>
+          {contact.location}
+        </Text>
+      );
+    }
+    if (contact.phone) {
+      contactParts.push(
+        <Text key="phone" style={styles.contactItem}>
+          {contactParts.length > 0 ? '· ' : ''}{contact.phone}
+        </Text>
+      );
+    }
+    if (contact.email) {
+      contactParts.push(
+        <Text key="email" style={styles.contactItem}>
+          {contactParts.length > 0 ? '· ' : ''}{contact.email}
+        </Text>
+      );
+    }
+    contact.links?.forEach((link, idx) => {
+      if (!link.url) return;
+      contactParts.push(
+        <Link key={`link-${idx}`} src={link.url} style={styles.linkItem}>
+          {contactParts.length > 0 ? '· ' : ''}{link.label || 'Link'}
+        </Link>
+      );
+    });
+
+    const displayName =
+      contact.fullName && contact.fullName.trim().toLowerCase() !== 'resume'
+        ? contact.fullName.trim()
+        : 'Candidate Name';
+
     return (
       <View style={styles.headerContainer}>
-        <Text style={styles.candidateName}>{contact.fullName || 'Candidate Name'}</Text>
+        <View style={{ marginBottom: 4 }}>
+          <Text style={styles.candidateName}>{displayName}</Text>
 
-        {document.summary?.targetRole ? (
-          <Text style={styles.targetRoleText}>{document.summary.targetRole}</Text>
-        ) : null}
+          {document.summary?.targetRole ? (
+            <Text style={styles.targetRoleText}>{document.summary.targetRole}</Text>
+          ) : null}
+        </View>
 
         <View style={styles.contactRow}>
-          {contact.email ? (
-            <Text style={styles.contactItem}>{contact.email}</Text>
-          ) : null}
-          {contact.phone ? (
-            <Text style={styles.contactItem}>• {contact.phone}</Text>
-          ) : null}
-          {contact.location ? (
-            <Text style={styles.contactItem}>• {contact.location}</Text>
-          ) : null}
-          {contact.links?.map((link, idx) => {
-            if (!link.url) return null;
-            return (
-              <Link key={idx} src={link.url} style={styles.linkItem}>
-                • {link.label || 'Link'}
-              </Link>
-            );
-          })}
+          {contactParts}
         </View>
       </View>
     );
@@ -78,10 +109,11 @@ export const ResumePdfDocument: React.FC<ResumePdfDocumentProps> = ({
   // Summary Section
   const renderSummary = () => {
     if (!document.summary?.text) return null;
+    const cleanText = cleanBulletText(document.summary.text);
     return (
       <View style={styles.sectionContainer}>
         {renderSectionHeader('Professional Summary')}
-        <Text style={styles.summaryParagraph}>{document.summary.text}</Text>
+        <Text style={styles.summaryParagraph}>{cleanText}</Text>
       </View>
     );
   };
@@ -90,23 +122,18 @@ export const ResumePdfDocument: React.FC<ResumePdfDocumentProps> = ({
   const renderSkills = () => {
     if (!document.skills || document.skills.length === 0) return null;
 
-    // Group skills by category
-    const grouped: Record<string, string[]> = {};
-    document.skills.forEach((s) => {
-      const cat = s.category || 'TECHNICAL';
-      if (!grouped[cat]) grouped[cat] = [];
-      grouped[cat].push(s.name);
-    });
+    const formattedGroups = groupAndFormatSkills(document.skills);
+    if (!formattedGroups || formattedGroups.length === 0) return null;
 
     return (
       <View style={styles.sectionContainer} wrap={false} minPresenceAhead={25}>
         {renderSectionHeader('Technical Skills')}
-        {Object.entries(grouped).map(([category, skillList]) => (
-          <View key={category} style={styles.skillsCategoryRow}>
+        {formattedGroups.map((group) => (
+          <View key={group.label} style={styles.skillsCategoryRow}>
             <Text style={styles.skillCategoryLabel}>
-              {category.charAt(0) + category.slice(1).toLowerCase()}:
+              {group.label}:
             </Text>
-            <Text style={styles.skillCategoryValues}>{skillList.join(', ')}</Text>
+            <Text style={styles.skillCategoryValues}>{group.formattedLine}</Text>
           </View>
         ))}
       </View>
@@ -121,31 +148,46 @@ export const ResumePdfDocument: React.FC<ResumePdfDocumentProps> = ({
       <View style={styles.sectionContainer}>
         {renderSectionHeader('Work Experience')}
         {document.experience.map((item) => {
+          const hasDate = Boolean(item.startDate || item.endDate || item.isCurrent);
           const dateRange = item.isCurrent
-            ? `${item.startDate || ''} – Present`
-            : `${item.startDate || ''} – ${item.endDate || ''}`;
+            ? `${item.startDate || ''} – Present`.trim()
+            : hasDate
+            ? `${item.startDate || ''} – ${item.endDate || ''}`.trim()
+            : '';
 
           return (
             <View key={item.id} style={styles.itemBlock} wrap={false}>
               <View style={styles.itemHeaderRow}>
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
                   <Text style={styles.itemTitle}>{item.jobTitle}</Text>
-                  <Text style={styles.itemSubtitle}>{item.companyName}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.itemDateText}>{dateRange}</Text>
+                  {item.companyName ? (
+                    <Text style={[styles.itemSubtitle, { marginLeft: 4 }]}>
+                      | {item.companyName}
+                    </Text>
+                  ) : null}
                   {item.location ? (
-                    <Text style={styles.itemLocationText}>{item.location}</Text>
+                    <Text style={[styles.itemLocationText, { marginLeft: 4 }]}>
+                      ({item.location})
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
+                  {dateRange && dateRange !== '–' ? (
+                    <Text style={styles.itemDateText}>{dateRange}</Text>
                   ) : null}
                 </View>
               </View>
 
-              {item.bullets?.map((bullet, idx) => (
-                <View key={bullet.id || idx} style={styles.bulletRow}>
-                  <Text style={styles.bulletSymbol}>•</Text>
-                  <Text style={styles.bulletText}>{bullet.text}</Text>
-                </View>
-              ))}
+              {item.bullets?.map((bullet, idx) => {
+                const text = cleanBulletText(bullet.text);
+                if (!text) return null;
+                return (
+                  <View key={bullet.id || idx} style={styles.bulletRow}>
+                    <Text style={styles.bulletSymbol}>•</Text>
+                    <Text style={styles.bulletText}>{text}</Text>
+                  </View>
+                );
+              })}
             </View>
           );
         })}
@@ -160,41 +202,54 @@ export const ResumePdfDocument: React.FC<ResumePdfDocumentProps> = ({
     return (
       <View style={styles.sectionContainer}>
         {renderSectionHeader('Projects')}
-        {document.projects.map((proj) => (
-          <View key={proj.id} style={styles.itemBlock} wrap={false}>
-            <View style={styles.itemHeaderRow}>
-              <Text style={styles.itemTitle}>{proj.title}</Text>
-              {proj.link ? (
-                <Link src={proj.link} style={styles.linkItem}>
-                  Live Demo
-                </Link>
-              ) : proj.repoUrl ? (
-                <Link src={proj.repoUrl} style={styles.linkItem}>
-                  Repository
-                </Link>
-              ) : null}
-            </View>
+        {document.projects.map((proj) => {
+          const { cleanSummary, cleanBullets } = cleanProjectContent(proj);
 
-            {proj.technologies?.length ? (
-              <Text style={styles.itemSubtitle}>
-                Stack: {proj.technologies.join(', ')}
-              </Text>
-            ) : null}
-
-            {proj.description ? (
-              <Text style={[styles.summaryParagraph, { marginTop: 2 }]}>
-                {proj.description}
-              </Text>
-            ) : null}
-
-            {proj.bullets?.map((b, idx) => (
-              <View key={idx} style={styles.bulletRow}>
-                <Text style={styles.bulletSymbol}>•</Text>
-                <Text style={styles.bulletText}>{b}</Text>
+          return (
+            <View key={proj.id} style={styles.itemBlock} wrap={false}>
+              <View style={styles.itemHeaderRow}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Text style={styles.itemTitle}>{proj.title}</Text>
+                  {proj.subtitle ? (
+                    <Text style={[styles.itemSubtitle, { marginLeft: 4 }]}>
+                      — {proj.subtitle}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
+                  {proj.link ? (
+                    <Link src={proj.link} style={styles.linkItem}>
+                      Live Demo
+                    </Link>
+                  ) : proj.repoUrl ? (
+                    <Link src={proj.repoUrl} style={styles.linkItem}>
+                      Code
+                    </Link>
+                  ) : null}
+                </View>
               </View>
-            ))}
-          </View>
-        ))}
+
+              {proj.technologies?.length ? (
+                <Text style={[styles.itemSubtitle, { marginTop: 1, marginBottom: 2 }]}>
+                  Stack: {proj.technologies.join(' · ')}
+                </Text>
+              ) : null}
+
+              {cleanSummary ? (
+                <Text style={[styles.summaryParagraph, { marginTop: 1, marginBottom: 2 }]}>
+                  {cleanSummary}
+                </Text>
+              ) : null}
+
+              {cleanBullets.map((b, idx) => (
+                <View key={idx} style={styles.bulletRow}>
+                  <Text style={styles.bulletSymbol}>•</Text>
+                  <Text style={styles.bulletText}>{b}</Text>
+                </View>
+              ))}
+            </View>
+          );
+        })}
       </View>
     );
   };
@@ -207,8 +262,23 @@ export const ResumePdfDocument: React.FC<ResumePdfDocumentProps> = ({
       <View style={styles.sectionContainer}>
         {renderSectionHeader('Education')}
         {document.education.map((edu) => {
-          const dateRange = `${edu.startDate || ''} – ${edu.endDate || ''}`.trim();
-          const degreeText = [edu.degree, edu.fieldOfStudy].filter(Boolean).join(' in ');
+          const hasDate = Boolean(edu.startDate || edu.endDate);
+          const dateRange = hasDate
+            ? `${edu.startDate || ''} – ${edu.endDate || ''}`.trim()
+            : '';
+
+          let degreeText = '';
+          if (edu.degree && edu.fieldOfStudy) {
+            if (edu.fieldOfStudy.toLowerCase().includes(edu.degree.toLowerCase())) {
+              degreeText = edu.fieldOfStudy;
+            } else if (edu.degree.toLowerCase().includes(edu.fieldOfStudy.toLowerCase())) {
+              degreeText = edu.degree;
+            } else {
+              degreeText = `${edu.degree} in ${edu.fieldOfStudy}`;
+            }
+          } else {
+            degreeText = edu.degree || edu.fieldOfStudy || '';
+          }
 
           return (
             <View key={edu.id} style={styles.itemBlock} wrap={false}>
@@ -220,7 +290,7 @@ export const ResumePdfDocument: React.FC<ResumePdfDocumentProps> = ({
                   ) : null}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  {dateRange !== '–' ? (
+                  {dateRange && dateRange !== '–' ? (
                     <Text style={styles.itemDateText}>{dateRange}</Text>
                   ) : null}
                   {edu.gradeOrGpa ? (
@@ -240,31 +310,37 @@ export const ResumePdfDocument: React.FC<ResumePdfDocumentProps> = ({
     if (!document.achievements || document.achievements.length === 0) return null;
 
     return (
-      <View style={styles.sectionContainer}>
-        {renderSectionHeader('Certifications & Achievements')}
-        {document.achievements.map((item) => (
-          <View key={item.id} style={styles.itemBlock} wrap={false}>
-            <View style={styles.itemHeaderRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.itemTitle}>{item.title}</Text>
-                {item.issuer ? (
-                  <Text style={styles.itemSubtitle}>{item.issuer}</Text>
+      <View style={styles.sectionContainer} wrap={false}>
+        {renderSectionHeader('Achievements and Certifications')}
+        {document.achievements.map((item) => {
+          const formatted = formatAchievementItem(item);
+          return (
+            <View key={item.id} style={styles.bulletRow}>
+              <Text style={styles.bulletSymbol}>•</Text>
+              <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}>
+                  <Text style={styles.bulletText}>
+                    {formatted.boldPrefix ? (
+                      <Text style={{ fontFamily: theme.fontFamilyBold, color: '#0F172A' }}>
+                        {formatted.boldPrefix}{' '}
+                      </Text>
+                    ) : null}
+                    {formatted.normalText ? (
+                      <Text style={{ fontFamily: theme.fontFamily, color: theme.textColor }}>
+                        {formatted.normalText}
+                      </Text>
+                    ) : null}
+                  </Text>
+                </View>
+                {formatted.formattedDate ? (
+                  <Text style={[styles.itemDateText, { marginLeft: 6, flexShrink: 0 }]}>
+                    {formatted.formattedDate}
+                  </Text>
                 ) : null}
               </View>
-              {item.date ? (
-                <Text style={styles.itemDateText}>{item.date}</Text>
-              ) : null}
             </View>
-            {item.description ? (
-              <Text style={styles.summaryParagraph}>{item.description}</Text>
-            ) : null}
-            {item.url ? (
-              <Link src={item.url} style={[styles.linkItem, { marginTop: 1.5 }]}>
-                View Certificate
-              </Link>
-            ) : null}
-          </View>
-        ))}
+          );
+        })}
       </View>
     );
   };

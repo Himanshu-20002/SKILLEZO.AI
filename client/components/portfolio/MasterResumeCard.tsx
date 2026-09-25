@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
+  Star,
   RefreshCw,
   ArrowUpRight,
   Check,
@@ -19,7 +20,7 @@ interface MasterResumeCardProps {
   syncing: boolean;
   isActive?: boolean;
   onSelect?: () => void;
-  onOpenEditor?: () => void;
+  onOpenEditor?: (resumeId?: string) => void;
 }
 
 export const MasterResumeCard: React.FC<MasterResumeCardProps> = ({
@@ -30,7 +31,6 @@ export const MasterResumeCard: React.FC<MasterResumeCardProps> = ({
   onSelect,
   onOpenEditor,
 }) => {
-  const isStale = Boolean(master.isMasterStale);
   const formattedDate = master.updatedAt
     ? new Date(master.updatedAt).toLocaleDateString(undefined, {
         month: 'short',
@@ -41,54 +41,54 @@ export const MasterResumeCard: React.FC<MasterResumeCardProps> = ({
 
   return (
     <div
-      className={`group flex flex-col justify-between rounded-2xl border transition-all p-5 shadow-xs relative overflow-hidden ${
+      className={`group relative flex flex-col justify-between rounded-2xl border transition-all p-5 overflow-hidden ${
         isActive
-          ? 'border-orange-500/90 ring-2 ring-orange-500/25 bg-gradient-to-br from-amber-50/95 via-orange-50/50 to-white dark:from-amber-950/40 dark:via-orange-950/20 dark:to-slate-900 shadow-md'
-          : 'border-amber-300/80 dark:border-amber-700/60 bg-gradient-to-br from-amber-50/50 via-orange-50/20 to-white dark:from-amber-950/25 dark:via-orange-950/15 dark:to-slate-900 hover:border-orange-400 dark:hover:border-orange-500 hover:shadow-md'
+          ? 'border-orange-500 ring-2 ring-orange-500/20 bg-gradient-to-br from-amber-50/95 via-orange-50/40 to-white dark:from-[#25180f] dark:via-[#1c140d] dark:to-slate-900 shadow-md'
+          : 'border-amber-200/90 dark:border-amber-900/60 bg-gradient-to-br from-amber-50/60 via-orange-50/20 to-white dark:from-[#1e130b]/80 dark:via-[#160f0a]/60 dark:to-slate-900 hover:border-orange-400 dark:hover:border-orange-600 hover:shadow-md'
       }`}
     >
-      {/* Decorative Warm Ambient Glow */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-orange-400/10 dark:bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
-
       <div>
-        {/* Top: Badges & Sync Action */}
+        {/* Top: Badges & Actions */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs">
-              ⭐ Master Resume
+            {/* Distinct Master Resume Orange Badge */}
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-white shadow-xs">
+              <Star className="w-3 h-3 fill-current" />
+              <span>Master Resume</span>
             </span>
 
+            {/* Active in Studio Indicator */}
             {isActive && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shadow-xs">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-600 text-white shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 Active in Studio
               </span>
             )}
 
-            {isStale ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300/80">
-                <AlertCircle className="w-2.5 h-2.5 text-rose-600 dark:text-rose-400" />
-                Needs Sync
+            {/* Stale Status / Sync Badge */}
+            {master.isMasterStale ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                Out of Sync
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100/90 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60">
-                <Check className="w-2.5 h-2.5 text-amber-700 dark:text-amber-400" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/80 dark:bg-slate-800/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                <Check className="w-2.5 h-2.5" />
                 Synced
               </span>
             )}
           </div>
 
-          {/* Sync Button if Stale */}
-          {isStale && (
-            <button
-              onClick={onSync}
-              disabled={syncing}
-              className="p-1.5 rounded-lg text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-950/40 transition-colors cursor-pointer"
-              title="Sync career profile changes to Master Resume"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-            </button>
-          )}
+          {/* Sync CTA Button */}
+          <button
+            onClick={onSync}
+            disabled={syncing}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-amber-900 dark:text-amber-200 hover:bg-amber-100/60 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800/80 transition-colors disabled:opacity-50 cursor-pointer"
+            title="Sync with Career Profile facts"
+            aria-label="Synchronize Master Resume with Profile"
+          >
+            <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin text-orange-600' : 'text-orange-500'}`} />
+            <span className="hidden sm:inline">Sync</span>
+          </button>
         </div>
 
         {/* Title */}
@@ -120,28 +120,32 @@ export const MasterResumeCard: React.FC<MasterResumeCardProps> = ({
 
         {isActive ? (
           <button
-            onClick={onOpenEditor}
+            onClick={() => onOpenEditor?.(master.id)}
             className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition-all shadow-xs cursor-pointer active:scale-95"
           >
             <span>Edit in Studio</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
-        ) : onSelect ? (
-          <button
-            onClick={onSelect}
-            className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
-          >
-            <span>Switch to Master</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </button>
         ) : (
-          <Link
-            href={`/dashboard/resume-studio?resumeId=${master.id}`}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 transition-colors"
-          >
-            <span>Open</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
+          <div className="flex items-center gap-1.5">
+            {onSelect && (
+              <button
+                onClick={onSelect}
+                className="text-[11px] font-medium text-amber-800/80 hover:text-amber-950 dark:text-amber-300 dark:hover:text-amber-200 px-2 py-1 rounded-lg hover:bg-amber-100/50 dark:hover:bg-amber-900/40 transition cursor-pointer"
+                title="Select master to view ATS diagnostics"
+              >
+                Select
+              </button>
+            )}
+            <button
+              onClick={() => onOpenEditor?.(master.id)}
+              className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-all cursor-pointer active:scale-95"
+              title="Open and edit Master Resume in Visual Editor"
+            >
+              <span>Edit in Studio</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         )}
       </div>
     </div>

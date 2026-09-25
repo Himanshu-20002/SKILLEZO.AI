@@ -25,6 +25,11 @@ export const ResumeHeader: React.FC<ResumeHeaderProps> = React.memo(({
   const isCompact = config?.templateId === 'compact';
   const isModern = config?.templateId === 'modern';
 
+  const displayName =
+    contact.fullName && contact.fullName.trim().toLowerCase() !== 'resume'
+      ? contact.fullName.trim()
+      : 'Candidate Name';
+
   return (
     <header
       id="resume-section-contact"
@@ -43,7 +48,7 @@ export const ResumeHeader: React.FC<ResumeHeaderProps> = React.memo(({
             isCompact ? 'text-xl sm:text-2xl' : isModern ? 'text-3xl sm:text-4xl' : 'text-2xl sm:text-3xl'
           }`}
         >
-          {contact.fullName || 'Candidate Name'}
+          {displayName}
         </h1>
 
         {targetRole && (

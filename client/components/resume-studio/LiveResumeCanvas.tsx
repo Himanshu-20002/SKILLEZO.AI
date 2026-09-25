@@ -202,7 +202,7 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
                     No Resume Document Loaded
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Upload a PDF or DOCX resume to activate visual rendering, font customization, and live bullet editing.
+                    Upload a PDF resume to activate visual rendering, font customization, and live bullet editing.
                   </p>
                 </div>
               </div>

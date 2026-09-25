@@ -92,8 +92,8 @@ interface ResumeEditorPanelProps {
   onRejectSuggestion: () => void;
   onTriggerUpload: () => void;
   isUploading: boolean;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  onFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  fileInputRef?: React.RefObject<HTMLInputElement | null>;
+  onFileInputChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
@@ -117,8 +117,8 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
   onRejectSuggestion,
   onTriggerUpload,
   isUploading,
-  fileInputRef,
-  onFileInputChange,
+  fileInputRef: _fileInputRef,
+  onFileInputChange: _onFileInputChange,
 }) => {
   const selectedSectionData: SectionScore | undefined = scoreResult?.sections[activeSectionKey];
   const selectedConfig = SECTION_CONFIGS.find((s) => s.id === activeSectionKey);
@@ -134,15 +134,6 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Hidden File Input for Direct Upload */}
-      <input
-        type="file"
-        ref={fileInputRef as any}
-        onChange={onFileInputChange}
-        accept=".pdf,.docx,application/pdf"
-        className="hidden"
-      />
-
       {/* Sub-Switch: Content vs Design Settings */}
       <div className="p-2 sm:p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-2">
         <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 w-full sm:w-auto">

@@ -1,13 +1,13 @@
 # 📋 SKILLEZO AI — Comprehensive Mid-Day Work Report
 **Date:** Tuesday, September 22, 2026  
-**Session:** Morning to Mid-Day Execution (Up to 14:15 IST)  
-**Overall Status:** 🟢 Green (Phase 5 Completed + Phase 5.5 Studio UX Transformation + Root Cause Project Bullet Deduplication + Unified ATS Portfolio Cards)
+**Session:** Full Mid-Day Execution (Up to 15:45 IST)  
+**Overall Status:** 🟢 Green (Phase 5 Completed + Phase 5.5 Studio UX Transformation + PDF/Canvas Sync + Option 1 Variant Upload Pipeline + Strict PDF-Only Enforcement)
 
 ---
 
 ## 🎯 Executive Summary
 
-During today's morning-to-mid-day session, the engineering team executed a major series of architecture, UX, and pipeline enhancements across SKILLEZO AI:
+During today's session, the engineering team executed a major series of architecture, UX, pipeline, and rendering enhancements across SKILLEZO AI:
 
 1. **Phase 5: Resume Portfolio & Variant Management Delivered (`05-resume-portfolio-and-variants.md`):**
    - **Deterministic Typed Deep Cloner (`resume-document.cloner.ts`):** Implemented typed deep copying for `ResumeDocument` AST and `ResumeBuilderConfig`, preserving all bullets, action verbs, metrics, evidence IDs, typography, margins, and custom themes.
@@ -18,36 +18,42 @@ During today's morning-to-mid-day session, the engineering team executed a major
      - `DELETE /api/resumes/:resumeId`: Enforces Master protection; rejects deletion of `variantType: "MASTER"` with HTTP 400.
    - **Concurrency Defect Resolved:** Handled race conditions and partial unique index collisions during Master Resume initialization with graceful recovery.
 
-2. **Phase 5.5: Resume Studio UX Transformation (`05.5-resume-studio-ux-transformation.md`):**
+2. **Phase 5.5: Resume Studio UX Transformation & Header Cleanup:**
    - **3-Zone Desktop Workspace:** Orchestrated 3 distinct zones in `ResumeStudioWorkspace.tsx` (Col 1: Section Navigator, Col 2: Live Resume Canvas, Col 3: AI Context/Editor).
-   - **Canvas Pointer Events & Page Scrolling:** Removed restrictive `h-[calc(100vh-140px)]` and `overflow-hidden` traps on `LiveResumeCanvas.tsx`, allowing full natural page scrolling and text selection.
-   - **Deleted Redundant Deterministic Section Grid:** Cleaned up redundant section audit cards from `AtsDiagnosticsView.tsx`, focusing the ATS page on authoritative intelligence.
+   - **Canvas Pointer Events & Page Scrolling:** Restored natural page scrolling and text selection on `LiveResumeCanvas.tsx`.
+   - **Header Bar De-cluttering:** Removed redundant top actions (Export PDF, Eye, Refresh, Trash) from `ResumeStudioHeader.tsx`, creating an ultra-clean, focused workspace.
+   - **ATS Action Layer Polish (`AtsDiagnosticsView.tsx`):**
+     - Replaced destructive "Delete Resume" button with a primary **Download Resume** button.
+     - Fixed "View Resume" button to transition directly into the Visual Editor view (`studio.setViewMode('editor')`).
 
-3. **Root Cause Resolution: Project Points Duplication & Bullet Parsing:**
-   - **The Problem:** Extracted project points were appearing twice (first as a flattened description, then as bullets), with double bullet markers (`• •`), smushed text, and no limit on bullet count.
-   - **Root Cause Identified:**
-     1. Parser (`resume.parser.ts`): Joined all lines under a project with `" "` into `description` without parsing individual bullets into an array.
-     2. Normalizer (`resume-document.normalizer.ts`): Unconditionally assigned `bullets: description ? [description] : []` alongside `description: description`, duplicating the exact same string.
-     3. Schema Omission: `IResumeProject` in `Resume.model.ts` lacked a `bullets` field.
-   - **Root Fix Applied Across All Layers:**
-     - Added `bullets?: string[]` to `Resume.model.ts` and client types.
-     - Added `parseProjectContent` to `resume.parser.ts` to separate a clean 2-line summary from up to 4 clean bullets, stripping all raw bullet symbols (`•`, `-`, `*`).
-     - Updated `resume-document.normalizer.ts` to strictly prevent duplicate text between `description` and `bullets`.
-     - Updated `skill.detector.ts` and `projects.analyzer.ts` to account for project bullets in ATS scoring.
-     - Updated `ProjectsSection.tsx` renderer for defensive deduplication.
+3. **Visual Editor & Downloaded PDF Synchronization & Text Overlap Resolution:**
+   - **Visual Disparity & Bullet Deduplication:** Aligned PDF export (`ResumePdfDocument.tsx`) with the Visual Editor using shared content extractor utility (`resume-content.util.ts`). Eliminated duplicate bullets (`• •`), double-rendered project summaries, and accidental 2-page spills.
+   - **Text Overlap Bug Eliminated:** Identified and resolved text collision between candidate headline/title (e.g., "Full Stack Developer") and resume title in the generated PDF. Removed inherited root `lineHeight` bleed and established explicit flex containers with dedicated spacing.
 
-4. **Consolidation: Portfolio Cards Unified into ATS View (Removed Standalone Page):**
-   - **Removed Standalone Page:** Deleted `Resume Portfolio` from `Sidebar.tsx` and redirected `/dashboard/resumes` to `/dashboard/resume-studio?view=audit`.
-   - **Unified Same-Row Grid (`AtsPortfolioSection.tsx`):**
-     - Displayed directly below the 3 Authoritative Score cards on the ATS page.
-     - **Slot 1 (Fixed First):** Canonical Master Resume card styled in a distinct **warm orange/amber gradient theme** (`from-amber-50/95 via-orange-50/50 to-white`, `border-amber-300` / `border-orange-500`, amber badges).
-     - **Next Slots in the Same Row:** Role & Targeted Variant cards with target role, company, last updated date, and `✓ Active in Studio` status indicators.
-     - **Direct Interactive Controls:** Supports instant resume switching, opening in studio, creating new variants, renaming, deleting, and syncing master directly from the row.
+4. **Option 1: Upload Resume as a Safe Variant Card in Portfolio Gallery:**
+   - **Option 1 Product Architecture:**
+     - Uploading any new resume in the Studio creates a new **Resume Variant** card (`variantType: 'TAILORED'`, `isMaster: false`, `isDefault: false`) in the user's Portfolio gallery.
+     - The canonical **Master Resume** (Slot #1 in warm orange) and candidate **Career Profile** are strictly protected from mutation and never overwritten.
+     - The studio immediately auto-selects the new variant and computes instant ATS scores.
+   - **Global File Input Mounting:** Fixed a critical DOM lifecycle bug where the hidden `<input type="file">` was nested in `ResumeEditorPanel` (unmounted in ATS audit mode). Relocated canonical input to the root of `dashboard/resume-studio/page.tsx` and introduced reactive `portfolioVersion` state for instantaneous gallery re-fetching.
 
-5. **Complete Quality & Regression Verification:**
-   - **Client Test Suite:** 4 test files passed, 19/19 tests passed (0 failures).
-   - **Server Test Suite:** 4 test files passed, 39/39 tests passed (0 failures).
-   - **Static Type Checking:** Both Server (`npm run type-check`) and Client (`npx tsc --noEmit`) pass with 0 errors.
+5. **Strict PDF-Only Policy (No DOCX):**
+   - Per explicit requirement, restricted resume ingestion strictly to **PDF files** (`.pdf` / `application/pdf`).
+   - **Frontend:** File pickers and drag-and-drop dropzones enforce PDF-only selection, notifying users on non-PDF drops. Updated all UI copy, empty states, and canvas helper text.
+   - **Backend:** `resume.service.ts` validates file MIME type and extension, immediately rejecting non-PDFs with HTTP 400 Bad Request.
+
+6. **Consolidation: Portfolio Cards Unified into ATS View:**
+   - Displayed directly below the 3 Authoritative Score cards on the ATS page (`AtsPortfolioSection.tsx`).
+   - **Slot 1 (Fixed First):** Canonical Master Resume card styled in warm orange/amber gradient (`from-amber-50/95 via-orange-50/50 to-white`, `border-amber-300`, amber badges).
+   - **Subsequent Slots:** Role & Targeted Variant cards with target role, company, last updated date, and `✓ Active in Studio` status indicators.
+
+7. **Resolved "Resume already exists" Duplicate Key Error & Added "Uploaded" Card Tag:**
+   - **Root Cause Eliminated:** `variantType` was previously defaulting to `"MASTER"` during upload, colliding with the partial unique index `{ userId: 1, variantType: "MASTER" }` and failing with HTTP 409 (`"Resume already exists"`). Fixed by explicitly setting `variantType: "TAILORED"` and `isUploaded: true` on upload.
+   - **"Uploaded" Badge Added:** Non-master cards in `ResumeVariantCard.tsx` now render a distinct `☁ Uploaded` badge for uploaded PDF resumes vs. `📄 Variant` for branched resumes.
+
+8. **1-Click "Edit in Studio" & Instant AST Hydration for All Resumes:**
+   - **Direct 1-Click Action:** Every card in the Portfolio gallery (Master, Uploaded, and Tailored Variants) now features an immediate **`Edit in Studio ↗`** button that selects the resume and navigates straight into the Visual Editor.
+   - **Instant AST Hydration:** Enhanced `useResumeStudio.ts` to immediately hydrate `resumeDoc` and `builderConfig` upon upload and selection, with an automatic fallback fetch (`getResumeById`) ensuring the Live Canvas never renders empty.
 
 ---
 
@@ -58,22 +64,20 @@ During today's morning-to-mid-day session, the engineering team executed a major
 | Layer | Component / File | Purpose & Responsibility |
 | :--- | :--- | :--- |
 | **Backend Model** | [`Resume.model.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/database/models/Resume.model.ts) | Added `bullets?: string[]` to `IResumeProject` and `resumeProjectSchema`. |
-| **Backend Parser** | [`resume.parser.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/resume/resume.parser.ts) | Added `parseProjectContent` to extract clean summary (max 2 lines) and max 4 bullets without raw bullet symbols. |
+| **Backend Controller** | [`resume.controller.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/resume/resume.controller.ts) | Added `asVariant` and `syncProfile` parsing to `uploadResume` endpoint. |
+| **Backend Service** | [`resume.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/resume/resume.service.ts) | Enforced strict PDF-only rejection; implemented `asVariant` handling (protects Master Resume & Profile). |
+| **Backend Parser** | [`resume.parser.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/resume/resume.parser.ts) | Added `parseProjectContent` to extract clean summary and bullets without raw bullet symbols. |
 | **Backend Normalizer** | [`resume-document.normalizer.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/resume-intelligence/document/resume-document.normalizer.ts) | Fixed `normalizeProjects` to prevent duplication between `description` and `bullets`, capping at max 4 bullets. |
-| **Backend Intelligence** | [`skill.detector.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/resume-intelligence/skills/skill.detector.ts) & [`projects.analyzer.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/resume-intelligence/sections/analyzers/projects.analyzer.ts) | Added project bullets inspection to skill detection and ATS description completeness scoring. |
-| **Backend Invariants** | [`master-resume.builder.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/resume-intelligence/master-resume/master-resume.builder.ts) | Parsed profile project descriptions into distinct summary and bullets without duplication. |
-| **Backend Tests** | [`resume.parser.spec.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/tests/unit/modules/resume.parser.spec.ts) | Added tests for bullet symbol stripping, max 4 bullets, and summary/bullet separation. |
-| **Backend Tests** | [`resume-ingestion.spec.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/tests/unit/modules/resume-ingestion.spec.ts) | Added normalization deduplication tests for structured and legacy project inputs. |
-| **Frontend Types** | [`client/types/resume.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/types/resume.ts) | Added `bullets`, `githubUrl`, `liveDemoUrl` to `ResumeProject`. |
-| **Frontend UI** | [`AtsPortfolioSection.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/AtsPortfolioSection.tsx) | Unified same-row card grid for Master Resume (orange) and Role Variants below ATS scores. |
-| **Frontend UI** | [`MasterResumeCard.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/portfolio/MasterResumeCard.tsx) | Restyled to vertical card format matching variants, in warm orange/amber gradient with active badge and direct actions. |
-| **Frontend UI** | [`ResumeVariantCard.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/portfolio/ResumeVariantCard.tsx) | Added active badge, direct studio selection, and unified styling. |
-| **Frontend Page** | [`AtsDiagnosticsView.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/AtsDiagnosticsView.tsx) | Embedded `AtsPortfolioSection` below `ResumeScoreCard`; cleaned redundant section grid. |
-| **Frontend Page** | [`client/app/dashboard/resumes/page.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/resumes/page.tsx) | Replaced standalone portfolio page with client-side redirect to `/dashboard/resume-studio?view=audit`. |
-| **Frontend Nav** | [`Sidebar.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/layout/Sidebar.tsx) | Removed "Resume Portfolio" link to keep sidebar lean. |
-| **Frontend Header** | [`ResumeStudioHeader.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/ResumeStudioHeader.tsx) & [`ResumeSectionNavigator.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/ResumeSectionNavigator.tsx) | Updated breadcrumbs and footer navigation to toggle in-studio view mode. |
-| **Frontend Renderer** | [`ProjectsSection.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/renderer/ProjectsSection.tsx) | Rendered short summary (max 2 lines) and clean bullet list (max 4) without double bullets. |
-| **Frontend Canvas** | [`LiveResumeCanvas.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/LiveResumeCanvas.tsx) | Restored natural page scrolling and text selection pointer events. |
+| **Frontend Service** | [`resume.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/services/resume.service.ts) | Added `options?: { asVariant?: boolean; syncProfile?: boolean }` to `uploadResume` client contract. |
+| **Frontend Hook** | [`useResumeStudio.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/hooks/useResumeStudio.ts) | Added `portfolioVersion` state; added client-side PDF validation; triggers variant upload & auto-selection. |
+| **Frontend Page** | [`page.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/resume-studio/page.tsx) | Mounted root hidden PDF file input; passed `portfolioVersion` down; updated empty-state copy to PDF only. |
+| **Frontend ATS View** | [`AtsDiagnosticsView.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/AtsDiagnosticsView.tsx) | Replaced delete button with Download Resume; wired "View Resume"; forwarded `portfolioVersion`; PDF copy polish. |
+| **Frontend Portfolio** | [`AtsPortfolioSection.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/AtsPortfolioSection.tsx) | Reacts to `portfolioVersion` changes to dynamically refresh portfolio cards upon upload. |
+| **Frontend Header** | [`ResumeStudioHeader.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/ResumeStudioHeader.tsx) | Removed clutter buttons (Export PDF, Eye, Refresh, Trash) for clean streamlined top bar. |
+| **Frontend PDF** | [`ResumePdfDocument.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/pdf/ResumePdfDocument.tsx) & [`pdf-styles.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/pdf/pdf-styles.ts) | Fixed text overlap on headline/title; synchronized bullet extraction and layout with Visual Editor. |
+| **Frontend Utils** | [`resume-content.util.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/utils/resume-content.util.ts) | Single source of truth for deduplicating project summary and bullets across Canvas and PDF. |
+| **Frontend Canvas** | [`LiveResumeCanvas.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/LiveResumeCanvas.tsx) | Restored natural page scrolling; updated copy to PDF-only. |
+| **Frontend Editor** | [`ResumeEditorPanel.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/resume-studio/ResumeEditorPanel.tsx) | Removed duplicate unmounted hidden file input to prevent ref collisions. |
 
 ---
 
@@ -81,18 +85,22 @@ During today's morning-to-mid-day session, the engineering team executed a major
 
 ### 1. Backend Verification Results
 
-#### A. Dedicated Parser & Ingestion Test Suites
+#### A. Comprehensive Server Test Suite
 ```text
  RUN  v4.1.11 X:/projects/next.js/office-Project/SKILLEZO.AI/server
 
- ✓ tests/unit/modules/resume.parser.spec.ts (9 tests) 28ms
- ✓ tests/unit/modules/resume-ingestion.spec.ts (16 tests) 286ms
- ✓ tests/unit/modules/master-resume-invariants.spec.ts (5 tests) 32ms
- ✓ tests/unit/modules/resume-portfolio.spec.ts (9 tests) 29ms
+ ✓ tests/unit/modules/resume.parser.spec.ts (9 tests)
+ ✓ tests/unit/modules/resume-ingestion.spec.ts (16 tests)
+ ✓ tests/unit/modules/master-resume-invariants.spec.ts (5 tests)
+ ✓ tests/unit/modules/resume-portfolio.spec.ts (9 tests)
+ ✓ tests/unit/modules/resume.service.spec.ts (5 tests)
+ ✓ tests/unit/core/gemini-live-optimization.spec.ts (1 test)
+ ✓ tests/unit/modules/resume-ai-editor.spec.ts (8 tests)
+ ... [All 42 test suites]
 
- Test Files  4 passed (4)
-      Tests  39 passed (39)
-   Duration  2.09s
+ Test Files  42 passed (42)
+      Tests  392 passed (392)
+   Duration  5.70s
 ```
 
 #### B. TypeScript Compilation
@@ -102,18 +110,19 @@ During today's morning-to-mid-day session, the engineering team executed a major
 
 ### 2. Frontend Verification Results
 
-#### A. Client Vitest Test Suite
+#### A. Client Vitest Test Suite (with New Portfolio Upload & Deduplication Specs)
 ```text
  RUN  v4.1.11 X:/projects/next.js/office-Project/SKILLEZO.AI/client
 
  ✓ tests/studio-workspace.spec.ts (4 tests) 5ms
- ✓ tests/action.service.spec.ts (5 tests) 10ms
- ✓ tests/coach.service.spec.ts (6 tests) 17ms
- ✓ tests/portfolio.service.spec.ts (4 tests) 26ms
+ ✓ tests/action.service.spec.ts (5 tests) 11ms
+ ✓ tests/resume-content.spec.ts (6 tests) 7ms
+ ✓ tests/coach.service.spec.ts (6 tests) 16ms
+ ✓ tests/portfolio.service.spec.ts (5 tests) 26ms
 
- Test Files  4 passed (4)
-      Tests  19 passed (19)
-   Duration  270ms
+ Test Files  5 passed (5)
+      Tests  26 passed (26)
+   Duration  280ms
 ```
 
 #### B. TypeScript Compilation

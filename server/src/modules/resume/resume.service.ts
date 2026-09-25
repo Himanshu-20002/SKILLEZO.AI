@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { ResumeRepository } from "@/database/repositories/resume/ResumeRepository";
 import { IResume, IResumeExtractedData } from "@/database/models/Resume.model";
 import {
@@ -71,10 +71,19 @@ export class ResumeService {
     userId: string,
     file: Express.Multer.File,
     titleRequested?: string,
-    isDefaultRequested = false
+    isDefaultRequested = false,
+    options?: { asVariant?: boolean; syncProfile?: boolean }
   ): Promise<IResume> {
     if (!file) {
       throw new AppError("No file uploaded", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+    }
+
+    const isPdf =
+      file.mimetype === "application/pdf" ||
+      file.originalname.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      throw new AppError("Only PDF resumes are supported.", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
     }
 
     // Check user resume count limit
@@ -93,7 +102,7 @@ export class ResumeService {
 
     const existingResumes = await this.resumeRepository.findByUserId(userId);
     const isFirstResume = existingResumes.length === 0;
-    const makeDefault = isFirstResume || isDefaultRequested;
+    const makeDefault = isFirstResume && !options?.asVariant ? true : isDefaultRequested;
 
     const uniqueId = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const ext = path.extname(file.originalname);
@@ -173,6 +182,9 @@ export class ResumeService {
 
       const fileUrl = `/api/resumes/download-ref/${path.basename(storageKey)}`;
 
+      const isMasterVariant = isFirstResume && !options?.asVariant;
+      const variantType = isMasterVariant ? "MASTER" : "TAILORED";
+
       const newResume = await this.resumeRepository.create({
         userId,
         title,
@@ -183,6 +195,9 @@ export class ResumeService {
         mimeType: file.mimetype,
         fileSize: file.size,
         isDefault: makeDefault,
+        isMaster: isMasterVariant,
+        variantType,
+        isUploaded: true,
         status,
         version: 1,
         extractedData,
@@ -192,10 +207,11 @@ export class ResumeService {
         uploadedAt: new Date(),
       } as any);
 
-      console.log("[ResumeService] Resume document persisted successfully. ID:", newResume._id);
+      console.log("[ResumeService] Resume document persisted successfully. ID:", newResume._id, "variantType:", variantType);
 
-      // Automatically hydrate candidate's profile from parsed resume data
-      if (extractedData || resumeDocument) {
+      // Only hydrate candidate's profile if this is their first initial resume or if syncProfile is explicitly requested
+      const shouldSyncProfile = (isFirstResume && !options?.asVariant) || options?.syncProfile === true;
+      if (shouldSyncProfile && (extractedData || resumeDocument)) {
         try {
           await this.profileService.hydrateFromParsedResume(userId, extractedData, resumeDocument);
         } catch (hydrateErr) {
@@ -751,6 +767,68 @@ export class ResumeService {
   }
 
   /**
+   * Resolves the candidate's real name and email from Better Auth user records
+   * or existing parsed resumes to ensure Master Resume never defaults to "Resume".
+   */
+  private async resolveCandidateIdentity(userId: string): Promise<{ candidateName?: string; candidateEmail?: string }> {
+    let candidateName: string | undefined;
+    let candidateEmail: string | undefined;
+
+    try {
+      if (mongoose.connection.db) {
+        const userDoc = await mongoose.connection.db.collection("user").findOne({
+          $or: [
+            { id: userId },
+            { _id: userId },
+            ...(mongoose.Types.ObjectId.isValid(userId) ? [{ _id: new mongoose.Types.ObjectId(userId) }] : []),
+          ],
+        } as any);
+        if (userDoc) {
+          candidateEmail = userDoc.email;
+          if (userDoc.name && userDoc.name.trim() && userDoc.name.trim().toLowerCase() !== "resume") {
+            candidateName = userDoc.name.trim();
+          }
+        }
+      }
+
+      if (!candidateName) {
+        const user = (await UserModel.findById(userId).lean()) as any;
+        if (user) {
+          candidateEmail = candidateEmail || user.email;
+          if (user.name && user.name.trim() && user.name.trim().toLowerCase() !== "resume") {
+            candidateName = user.name.trim();
+          }
+        }
+      }
+
+      // Check existing uploaded resumes for this user to extract their original parsed name
+      if (!candidateName && typeof (this.resumeRepository as any).findByUserId === "function") {
+        const allResumes = await (this.resumeRepository as any).findByUserId(userId);
+        if (Array.isArray(allResumes)) {
+          for (const resItem of allResumes) {
+          const parsedName =
+            resItem.resumeDocument?.contact?.fullName ||
+            resItem.parsedData?.personalInfo?.fullName;
+          if (
+            parsedName &&
+            parsedName.trim() &&
+            parsedName.trim().toLowerCase() !== "resume" &&
+            parsedName.trim().toLowerCase() !== "candidate"
+          ) {
+            candidateName = parsedName.trim();
+            break;
+          }
+        }
+      }
+    }
+    } catch (e) {
+      console.warn("[ResumeService] Failed to resolve candidate identity:", e);
+    }
+
+    return { candidateName, candidateEmail };
+  }
+
+  /**
    * Lazily retrieves or generates the Master Resume for a user from their Career Profile.
    * Concurrency-safe: handles duplicate key races if multiple creation calls occur simultaneously.
    */
@@ -762,8 +840,25 @@ export class ResumeService {
     const profile = await this.profileService.getMyProfile(userId);
     const profileVersion = profile.profileVersion || 1;
 
+    const { candidateName, candidateEmail } = await this.resolveCandidateIdentity(userId);
+
     const existingMaster = await this.resumeRepository.findMasterByUserId(userId);
     if (existingMaster) {
+      // Auto-heal if contact fullName was previously hardcoded or defaulted to "Resume"
+      const currentName = existingMaster.resumeDocument?.contact?.fullName;
+      if ((!currentName || currentName.trim().toLowerCase() === "resume") && candidateName) {
+        const doc = (existingMaster.resumeDocument || {}) as any;
+        if (!doc.contact) {
+          doc.contact = { fullName: candidateName, links: [] };
+        } else {
+          doc.contact.fullName = candidateName;
+        }
+        existingMaster.resumeDocument = doc;
+        await this.resumeRepository.updateById(existingMaster._id.toString(), {
+          resumeDocument: existingMaster.resumeDocument,
+        });
+      }
+
       const isStale = (existingMaster.sourceProfileVersion ?? 0) < profileVersion;
       return {
         resume: existingMaster,
@@ -772,18 +867,8 @@ export class ResumeService {
       };
     }
 
-    // Attempt lazy creation
-    let candidateEmail: string | undefined;
-    try {
-      const user = (await UserModel.findById(userId).lean()) as any;
-      if (user?.email) {
-        candidateEmail = user.email;
-      }
-    } catch (e) {
-      // Safe fallback if user record is unavailable
-    }
-
     const ast = MasterResumeBuilder.buildFromProfile(profile, {
+      candidateName,
       email: candidateEmail,
     });
 
@@ -885,17 +970,10 @@ export class ResumeService {
     // Preserve presentation customizations
     const existingBuilderConfig = existingMaster.builderConfig;
 
-    let candidateEmail: string | undefined;
-    try {
-      const user = (await UserModel.findById(userId).lean()) as any;
-      if (user?.email) {
-        candidateEmail = user.email;
-      }
-    } catch (e) {
-      // Safe fallback
-    }
+    const { candidateName, candidateEmail } = await this.resolveCandidateIdentity(userId);
 
     const updatedAst = MasterResumeBuilder.buildFromProfile(profile, {
+      candidateName,
       email: candidateEmail,
       existingDoc: existingMaster.resumeDocument,
       builderConfig: existingBuilderConfig,
@@ -958,6 +1036,7 @@ export class ResumeService {
           sourceProfileVersion: res.sourceProfileVersion ?? null,
           isMasterStale: (res.sourceProfileVersion ?? 0) < currentProfileVersion,
           isDefault: Boolean(res.isDefault),
+          isUploaded: Boolean(res.isUploaded || (res.storageKey && res.storageKey.startsWith("resumes/"))),
         };
       } else {
         variants.push({
@@ -971,6 +1050,11 @@ export class ResumeService {
           createdAt: (res.createdAt || new Date()).toISOString(),
           sourceProfileVersion: res.sourceProfileVersion ?? null,
           isDefault: Boolean(res.isDefault),
+          isUploaded: Boolean(
+            res.isUploaded ||
+            (res.storageKey && res.storageKey.startsWith("resumes/")) ||
+            (res.originalFileName && res.originalFileName !== "master-resume")
+          ),
         });
       }
     }

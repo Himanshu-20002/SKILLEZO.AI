@@ -26,7 +26,7 @@ interface ResumeInsightsPanelProps {
   analysis: ResumeAnalysisData;
   activePillar: AuditPillarType;
   onSelectPillar: (pillar: AuditPillarType) => void;
-  onOpenEditor: () => void;
+  onOpenEditor: (resumeId?: string) => void;
   onUploadClick: () => void;
   isUploading: boolean;
   onOptimize: (rec: AIResumeRecommendation) => void;
@@ -36,9 +36,12 @@ interface ResumeInsightsPanelProps {
   prioritySection: { id: keyof ResumeScoreResult['sections']; title: string; score: number } | null;
   onSectionFixWithAi: (sectionId: string) => void;
   currentResume: ResumeRecord | null;
-  onDeleteClick: () => void;
+  onDeleteClick?: () => void;
   selectedResumeId?: string | null;
   onSelectResume?: (resumeId: string) => void;
+  onDownloadPdf?: () => void;
+  isDownloadingPdf?: boolean;
+  portfolioVersion?: number;
 }
 
 export const ResumeInsightsPanel: React.FC<ResumeInsightsPanelProps> = ({
@@ -60,6 +63,9 @@ export const ResumeInsightsPanel: React.FC<ResumeInsightsPanelProps> = ({
   onDeleteClick,
   selectedResumeId,
   onSelectResume,
+  onDownloadPdf,
+  isDownloadingPdf,
+  portfolioVersion,
 }) => {
   return (
     <div className="w-full">
@@ -82,6 +88,9 @@ export const ResumeInsightsPanel: React.FC<ResumeInsightsPanelProps> = ({
         onDeleteClick={onDeleteClick}
         selectedResumeId={selectedResumeId}
         onSelectResume={onSelectResume}
+        onDownloadPdf={onDownloadPdf}
+        isDownloadingPdf={isDownloadingPdf}
+        portfolioVersion={portfolioVersion}
       />
     </div>
   );

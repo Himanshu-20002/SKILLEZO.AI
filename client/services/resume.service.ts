@@ -5,10 +5,20 @@ export const resumeService = {
   /**
    * Upload a new PDF resume with candidate title.
    */
-  async uploadResume(file: File, title?: string): Promise<ResumeRecord> {
+  async uploadResume(
+    file: File,
+    title?: string,
+    options?: { asVariant?: boolean; syncProfile?: boolean }
+  ): Promise<ResumeRecord> {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("title", title?.trim() || file.name.replace(/\.[^/.]+$/, ""));
+    if (options?.asVariant) {
+      formData.append("asVariant", "true");
+    }
+    if (options?.syncProfile) {
+      formData.append("syncProfile", "true");
+    }
 
     const res = await apiFetch<{ success: boolean; data: ResumeRecord }>("/api/resumes/upload", {
       method: "POST",

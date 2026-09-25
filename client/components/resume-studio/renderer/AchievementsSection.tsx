@@ -3,6 +3,7 @@ import { ResumeAchievementItem } from '@/types/resume-document';
 import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { ExternalLink } from 'lucide-react';
 import { resolveConfigClasses } from './templates';
+import { formatAchievementItem } from '../utils/resume-content.util';
 
 interface AchievementsSectionProps {
   achievements?: ResumeAchievementItem[];
@@ -38,54 +39,60 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = React.mem
         Achievements & Certifications
       </h2>
 
-      <div className={isCompact ? 'space-y-2' : 'space-y-3'}>
-        {achievements.map((ach) => (
-          <div
-            key={ach.id}
-            className={`space-y-0.5 break-inside-avoid print:break-inside-avoid ${
-              isCompact ? 'text-xs' : 'text-xs sm:text-sm'
-            }`}
-          >
-            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
-              <div className="flex flex-wrap items-baseline gap-2">
-                <span className="font-bold text-slate-900 dark:text-slate-100">
-                  {ach.title}
-                </span>
+      <ul className={`${template.bulletStyle} text-slate-700 dark:text-slate-300 ${lineHeightClass}`}>
+        {achievements.map((ach) => {
+          const formatted = formatAchievementItem(ach);
 
-                {ach.issuer && (
-                  <span className="text-xs text-slate-600 dark:text-slate-400">
-                    — {ach.issuer}
+          return (
+            <li
+              key={ach.id}
+              className={`break-inside-avoid print:break-inside-avoid ${
+                isCompact ? 'text-xs' : 'text-xs sm:text-sm'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                <div className="flex flex-wrap items-baseline gap-1.5">
+                  {formatted.boldPrefix && (
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {formatted.boldPrefix}
+                    </span>
+                  )}
+
+                  {formatted.normalText && (
+                    <span className="font-normal text-slate-700 dark:text-slate-300">
+                      {formatted.normalText}
+                    </span>
+                  )}
+
+                  {ach.url && (
+                    <a
+                      href={ach.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-0.5 text-xs hover:underline ${accentTextClass}`}
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Credential</span>
+                    </a>
+                  )}
+                </div>
+
+                {formatted.formattedDate && (
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 shrink-0">
+                    {formatted.formattedDate}
                   </span>
-                )}
-
-                {ach.url && (
-                  <a
-                    href={ach.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-0.5 text-xs hover:underline ${accentTextClass}`}
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    <span>Credential</span>
-                  </a>
                 )}
               </div>
 
-              {ach.date && (
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 shrink-0 font-mono">
-                  {ach.date}
-                </span>
+              {ach.description && (
+                <p className={`text-slate-600 dark:text-slate-400 text-xs mt-0.5 ${lineHeightClass}`}>
+                  {ach.description}
+                </p>
               )}
-            </div>
-
-            {ach.description && (
-              <p className={`text-slate-700 dark:text-slate-300 text-xs ${lineHeightClass}`}>
-                {ach.description}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 });

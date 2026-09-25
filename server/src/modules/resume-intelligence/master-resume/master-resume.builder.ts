@@ -67,12 +67,16 @@ export class MasterResumeBuilder {
     const existingDoc = options?.existingDoc;
 
     // 1. Contact
+    const existingName =
+      existingDoc?.contact?.fullName && existingDoc.contact.fullName.trim().toLowerCase() !== "resume"
+        ? existingDoc.contact.fullName.trim()
+        : "";
     const rawName =
       options?.candidateName ||
-      existingDoc?.contact?.fullName ||
+      existingName ||
       (profile as any).fullName ||
       "";
-    const fullName = rawName.trim().length > 0 ? rawName.trim() : "Resume";
+    const fullName = rawName.trim().length > 0 ? rawName.trim() : (options?.candidateName || "Candidate");
 
     const email = options?.email || existingDoc?.contact?.email || undefined;
     const phone = profile.phone?.trim() || existingDoc?.contact?.phone || undefined;

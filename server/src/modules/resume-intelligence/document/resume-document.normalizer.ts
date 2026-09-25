@@ -289,12 +289,47 @@ export class ResumeDocumentNormalizer {
     timestamp = new Date().toISOString()
   ): ResumeContact {
     const rawName = personalInfo?.fullName || "";
-    const cleanName = rawName
+    let cleanName = rawName
       .replace(/\s+/g, " ")
       .replace(/[\r\n\t]+/g, " ")
       .trim();
 
-    const fullName = cleanName || "Resume";
+    // If name is missing or defaulted to 'Resume', try to extract real candidate name from top lines of rawText
+    if (!cleanName || cleanName.toLowerCase() === "resume") {
+      if (rawText) {
+        const lines = rawText.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean);
+        for (const line of lines.slice(0, 6)) {
+          if (
+            !/resume|curriculum|vitae|contact|phone|email|linkedin|github|portfolio|page|developer|engineer|full\s*stack/i.test(line) &&
+            !line.includes("@") &&
+            /^[a-zA-Z\s.'-]+$/.test(line) &&
+            line.split(/\s+/).length >= 2 &&
+            line.split(/\s+/).length <= 5
+          ) {
+            cleanName = line;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!cleanName || cleanName.toLowerCase() === "resume") {
+      const emailForName = (personalInfo?.email || "").split("@")[0] || "";
+      if (emailForName) {
+        const words = emailForName
+          .replace(/[._-]+/g, " ")
+          .replace(/\d+/g, "")
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+        if (words.length > 0) {
+          cleanName = words.join(" ");
+        }
+      }
+    }
+
+    const fullName = cleanName && cleanName.toLowerCase() !== "resume" ? cleanName : "Anonymous Candidate";
 
     let email: string | undefined = undefined;
     const rawEmail = (personalInfo?.email || "").trim().toLowerCase();
@@ -509,6 +544,14 @@ export class ResumeDocumentNormalizer {
 
       // If there is no company, no job title, and no description, skip empty entry
       if (!rawCompany && !rawTitle && !rawDesc.trim()) continue;
+
+      // Filter out accidental summary hallucination (e.g. company "hands" from "with hands-on")
+      if (
+        (rawCompany.toLowerCase() === "hands" || rawCompany.toLowerCase() === "company") &&
+        /hands-on experience|seeking full stack|strong foundation in/i.test(rawDesc)
+      ) {
+        continue;
+      }
 
       const companyName = rawCompany || undefined;
       const jobTitle = rawTitle || undefined;
@@ -784,7 +827,10 @@ export class ResumeDocumentNormalizer {
     return {
       ...doc,
       contact: {
-        fullName: doc.contact?.fullName || "Resume",
+        fullName:
+          doc.contact?.fullName && doc.contact.fullName.trim().toLowerCase() !== "resume"
+            ? doc.contact.fullName.trim()
+            : "Candidate",
         email: doc.contact?.email && doc.contact.email.includes("@") ? doc.contact.email : undefined,
         phone: doc.contact?.phone,
         location: doc.contact?.location,

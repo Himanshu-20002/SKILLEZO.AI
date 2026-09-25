@@ -50,63 +50,63 @@ export function resolvePdfTheme(config?: ResumeBuilderConfig | null): ResolvedPd
     fontFamilyItalic = 'Courier-Oblique';
   }
 
-  // Font Size Scaling
-  let bodyFontSize = 9.5;
-  let subheadFontSize = 10.5;
-  let sectionTitleFontSize = 12;
-  let nameFontSize = 20;
+  // Font Size Scaling (calibrated for clean 1-page visual parity)
+  let bodyFontSize = 9;
+  let subheadFontSize = 10;
+  let sectionTitleFontSize = 11.5;
+  let nameFontSize = 19;
 
   if (fontSizeKey === 'small') {
-    bodyFontSize = 8.5;
-    subheadFontSize = 9.5;
-    sectionTitleFontSize = 11;
-    nameFontSize = 17;
+    bodyFontSize = 8.2;
+    subheadFontSize = 9.2;
+    sectionTitleFontSize = 10.5;
+    nameFontSize = 16.5;
   } else if (fontSizeKey === 'large') {
-    bodyFontSize = 10.5;
-    subheadFontSize = 11.5;
-    sectionTitleFontSize = 13.5;
-    nameFontSize = 22;
+    bodyFontSize = 10;
+    subheadFontSize = 11;
+    sectionTitleFontSize = 12.5;
+    nameFontSize = 21;
   }
 
-  // Page Margins
-  let pagePadding = 36; // 0.5 in
+  // Page Margins (compact professional print margins to eliminate awkward overflows)
+  let pagePadding = 28; // ~0.39 in
   if (marginKey === 'compact') {
-    pagePadding = 24; // 0.33 in
+    pagePadding = 20; // ~0.28 in
   } else if (marginKey === 'wide') {
-    pagePadding = 48; // 0.67 in
+    pagePadding = 38; // ~0.53 in
   }
 
   // Section Spacing & Density
-  let sectionSpacing = 12;
-  let itemSpacing = 6;
-  let lineHeight = 1.35;
+  let sectionSpacing = 10;
+  let itemSpacing = 4;
+  let lineHeight = 1.25;
 
   if (config?.sectionSpacing === 'compact' || templateId === 'compact') {
-    sectionSpacing = 8;
-    itemSpacing = 4;
-    lineHeight = 1.25;
+    sectionSpacing = 7;
+    itemSpacing = 2.5;
+    lineHeight = 1.18;
   } else if (config?.sectionSpacing === 'comfortable') {
-    sectionSpacing = 16;
-    itemSpacing = 8;
-    lineHeight = 1.45;
+    sectionSpacing = 14;
+    itemSpacing = 6;
+    lineHeight = 1.35;
   }
 
   // Accent Colors
   let primaryColor = '#1E293B'; // Slate 800
   let secondaryColor = '#475569';
   let borderColor = '#CBD5E1';
-  let bulletColor = '#64748B';
+  let bulletColor = '#334155'; // Clean neutral bullets matching preview
 
   if (accentKey === 'professional' || templateId === 'modern') {
     primaryColor = '#3730A3'; // Indigo 800
     secondaryColor = '#4F46E5'; // Indigo 600
-    borderColor = '#C7D2FE';
-    bulletColor = '#4F46E5';
+    borderColor = '#CBD5E1';
+    bulletColor = templateId === 'modern' ? '#4F46E5' : '#334155';
   } else if (accentKey === 'minimal') {
     primaryColor = '#115E59'; // Teal 800
     secondaryColor = '#0D9488'; // Teal 600
     borderColor = '#99F6E4';
-    bulletColor = '#0D9488';
+    bulletColor = '#334155';
   }
 
   return {
@@ -137,19 +137,19 @@ export function createPdfStyles(theme: ResolvedPdfTheme, templateId: ResumeTempl
       fontFamily: theme.fontFamily,
       fontSize: theme.bodyFontSize,
       color: theme.textColor,
-      lineHeight: theme.lineHeight,
       backgroundColor: '#FFFFFF',
     },
     // Header
     headerContainer: {
-      marginBottom: theme.sectionSpacing + 2,
-      borderBottomWidth: templateId === 'classic' ? 1.5 : 1,
-      borderBottomColor: templateId === 'classic' ? '#0F172A' : theme.borderColor,
+      marginBottom: theme.sectionSpacing,
+      borderBottomWidth: 1,
+      borderBottomColor: '#CBD5E1',
       paddingBottom: theme.itemSpacing + 2,
     },
     candidateName: {
       fontFamily: theme.fontFamilyBold,
       fontSize: theme.nameFontSize,
+      lineHeight: 1.2,
       color: templateId === 'modern' ? theme.primaryColor : '#0F172A',
       letterSpacing: -0.2,
       marginBottom: 3,
@@ -157,6 +157,7 @@ export function createPdfStyles(theme: ResolvedPdfTheme, templateId: ResumeTempl
     targetRoleText: {
       fontFamily: theme.fontFamilyBold,
       fontSize: theme.subheadFontSize,
+      lineHeight: 1.25,
       color: templateId === 'modern' ? theme.secondaryColor : '#334155',
       marginBottom: 4,
     },
@@ -246,11 +247,11 @@ export function createPdfStyles(theme: ResolvedPdfTheme, templateId: ResumeTempl
     // Bullets
     bulletRow: {
       flexDirection: 'row',
-      marginTop: 2,
-      paddingLeft: 4,
+      marginTop: 1.5,
+      paddingLeft: 3,
     },
     bulletSymbol: {
-      width: 10,
+      width: 9,
       fontSize: theme.bodyFontSize,
       color: theme.bulletColor,
       lineHeight: theme.lineHeight,
@@ -264,13 +265,14 @@ export function createPdfStyles(theme: ResolvedPdfTheme, templateId: ResumeTempl
     // Skills
     skillsCategoryRow: {
       flexDirection: 'row',
-      marginBottom: 3.5,
+      marginBottom: 2.5,
+      alignItems: 'flex-start',
     },
     skillCategoryLabel: {
       fontFamily: theme.fontFamilyBold,
       fontSize: theme.bodyFontSize,
       color: '#0F172A',
-      width: 100,
+      width: 125,
     },
     skillCategoryValues: {
       flex: 1,
@@ -282,7 +284,7 @@ export function createPdfStyles(theme: ResolvedPdfTheme, templateId: ResumeTempl
     // Summary paragraph
     summaryParagraph: {
       fontSize: theme.bodyFontSize,
-      lineHeight: theme.lineHeight + 0.1,
+      lineHeight: theme.lineHeight + 0.08,
       color: theme.textColor,
     },
     // Footer / Page numbers

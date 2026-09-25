@@ -3,6 +3,7 @@ import { ResumeProjectItem } from '@/types/resume-document';
 import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { ExternalLink, FolderGit2 } from 'lucide-react';
 import { resolveConfigClasses } from './templates';
+import { cleanProjectContent } from '../utils/resume-content.util';
 
 interface ProjectsSectionProps {
   projects?: ResumeProjectItem[];
@@ -40,50 +41,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = React.memo(({
 
       <div className={isCompact ? 'space-y-2.5' : 'space-y-3.5'}>
         {projects.map((proj) => {
-          // Parse description and bullets to eliminate duplication and strip raw bullet characters
-          const rawDesc = proj.description?.trim() || '';
-          const rawBullets = (proj.bullets || []).map((b) => b.trim()).filter(Boolean);
-
-          const splitBullets = (text: string): string[] => {
-            return text
-              .split(/(?:^|\s+)[•\-\*]\s+|\n+/)
-              .map((s) => s.trim().replace(/^[•\-\*]\s*/, ''))
-              .filter((s) => s.length > 0);
-          };
-
-          let cleanBullets: string[] = [];
-          if (rawBullets.length > 0) {
-            if (rawBullets.length === 1 && (rawBullets[0].includes('•') || rawBullets[0].includes('\n'))) {
-              cleanBullets = splitBullets(rawBullets[0]);
-            } else {
-              cleanBullets = rawBullets.flatMap(splitBullets);
-            }
-          } else if (rawDesc) {
-            cleanBullets = splitBullets(rawDesc);
-          }
-
-          // Deduplicate and cap at max 4 bullets
-          const seen = new Set<string>();
-          cleanBullets = cleanBullets
-            .map((b) => b.replace(/^[•\-\*]\s*/, '').trim())
-            .filter((b) => {
-              const lower = b.toLowerCase();
-              if (!lower || seen.has(lower)) return false;
-              seen.add(lower);
-              return true;
-            })
-            .slice(0, 4);
-
-          // Only show description as a short 1-2 line summary if it's NOT a duplicate of the bullets
-          let cleanSummary: string | null = null;
-          if (rawDesc) {
-            const descNorm = rawDesc.replace(/^[•\-\*]\s*/, '').trim().toLowerCase();
-            const isBulletList = rawDesc.includes('•') || rawDesc.startsWith('-');
-            const isDuplicate = cleanBullets.some((b) => b.toLowerCase() === descNorm);
-            if (!isBulletList && !isDuplicate) {
-              cleanSummary = rawDesc;
-            }
-          }
+          const { cleanSummary, cleanBullets } = cleanProjectContent(proj);
 
           return (
             <div

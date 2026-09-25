@@ -10,23 +10,27 @@ import {
   DeleteVariantModal,
   PortfolioSkeleton,
 } from '@/components/portfolio';
+import { JobTailoringWorkspace } from '@/components/job-tailoring';
 import { Plus, Layers, Sparkles } from 'lucide-react';
 
 interface AtsPortfolioSectionProps {
   selectedResumeId?: string | null;
   onSelectResume?: (resumeId: string) => void;
-  onOpenEditor?: () => void;
+  onOpenEditor?: (resumeId?: string) => void;
+  portfolioVersion?: number;
 }
 
 export const AtsPortfolioSection: React.FC<AtsPortfolioSectionProps> = ({
   selectedResumeId,
   onSelectResume,
   onOpenEditor,
+  portfolioVersion,
 }) => {
   const {
     portfolio,
     loading,
     actionLoading,
+    refreshPortfolio,
     handleCreateVariant,
     handleRenameVariant,
     handleDeleteVariant,
@@ -42,6 +46,14 @@ export const AtsPortfolioSection: React.FC<AtsPortfolioSectionProps> = ({
     openDeleteModal,
     closeDeleteModal,
   } = useResumePortfolio();
+
+  const [isJobTailoringOpen, setIsJobTailoringOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (portfolioVersion && portfolioVersion > 0) {
+      refreshPortfolio();
+    }
+  }, [portfolioVersion, refreshPortfolio]);
 
   if (loading || !portfolio) {
     return (
@@ -74,13 +86,23 @@ export const AtsPortfolioSection: React.FC<AtsPortfolioSectionProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white shadow-xs transition-all cursor-pointer self-start sm:self-auto shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Create New Variant</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
+          <button
+            onClick={() => setIsJobTailoringOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-[0.98] text-white shadow-xs transition-all cursor-pointer shrink-0"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>✨ Tailor Resume for This Job</span>
+          </button>
+
+          <button
+            onClick={openCreateModal}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 active:scale-[0.98] shadow-xs transition-all cursor-pointer shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Create Variant</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Unified Grid: Master Fixed First + Variants in the Same Row */}
@@ -163,6 +185,12 @@ export const AtsPortfolioSection: React.FC<AtsPortfolioSectionProps> = ({
           }
           return success;
         }}
+      />
+
+      {/* 4. Phase 6A: Job Intake & JD Intelligence Modal */}
+      <JobTailoringWorkspace
+        isOpen={isJobTailoringOpen}
+        onClose={() => setIsJobTailoringOpen(false)}
       />
     </div>
   );
