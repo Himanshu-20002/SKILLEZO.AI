@@ -11,6 +11,8 @@ import {
   GitCompare,
   Target,
   ChevronDown,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import { ResumeRecord } from '@/types/resume';
 import { ResumeComparisonResult } from '@/types/resume-comparison.types';
@@ -65,6 +67,8 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
   onSyncMasterResume,
   onOpenComparison,
   onOpenMobileSidebar,
+  isDownloadingPdf = false,
+  onDownloadPdf,
   targetRole,
   onTargetRoleChange,
 }) => {
@@ -144,8 +148,8 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
         )}
       </div>
 
-      {/* Center: Mode Switcher & Save State (Desktop/Tablet) */}
-      <div className="hidden md:flex items-center gap-3">
+      {/* Center: Mode Switcher & Save State (Desktop/Tablet) — Mathematically Centered */}
+      <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-3 pointer-events-auto">
         {/* Workspace Mode Switcher */}
         {onViewModeChange && (
           <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs font-semibold">
@@ -202,6 +206,26 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
                 {diffSummary.totalChanges}
               </span>
             )}
+          </button>
+        )}
+
+        {/* Download PDF Button: Downloads currently opened resume in canvas */}
+        {onDownloadPdf && (
+          <button
+            type="button"
+            data-testid="header-download-pdf-btn"
+            onClick={onDownloadPdf}
+            disabled={isDownloadingPdf}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white transition-all cursor-pointer shadow-xs shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Download this resume as high-fidelity vector PDF"
+          >
+            {isDownloadingPdf ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Download className="w-3.5 h-3.5" aria-hidden="true" />
+            )}
+            <span className="hidden sm:inline">{isDownloadingPdf ? 'Generating...' : 'Download PDF'}</span>
+            <span className="sm:hidden">{isDownloadingPdf ? 'PDF...' : 'PDF'}</span>
           </button>
         )}
 
