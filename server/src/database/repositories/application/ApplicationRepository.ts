@@ -1,10 +1,15 @@
 import { BaseRepository } from "../base";
 import { ApplicationModel, IApplication } from "@/database/models/Application.model";
+import { ApplicationStatus } from "@/core/constants/enums";
 
 export interface FindApplicationsPaginatedOptions {
   page?: number;
   limit?: number;
   status?: string;
+  jobProfileId?: string;
+  source?: string;
+  search?: string;
+  metadataOnly?: boolean;
 }
 
 export class ApplicationRepository extends BaseRepository<IApplication> {
@@ -16,6 +21,7 @@ export class ApplicationRepository extends BaseRepository<IApplication> {
     return await this.model
       .findOne({ _id: applicationId, userId })
       .populate("jobId")
+      .populate("jobProfileId")
       .populate("resumeId")
       .exec();
   }
@@ -24,9 +30,32 @@ export class ApplicationRepository extends BaseRepository<IApplication> {
     return await this.model.findOne({ userId, jobId }).exec();
   }
 
+  async findByUserAndJobProfile(userId: string, jobProfileId: string): Promise<IApplication | null> {
+    return await this.model.findOne({ userId, jobProfileId }).sort({ createdAt: -1 }).exec();
+  }
+
+  async findActiveByUserIdAndJobProfileId(userId: string, jobProfileId: string): Promise<IApplication | null> {
+    const activeStatuses = [
+      ApplicationStatus.DRAFT,
+      ApplicationStatus.APPLIED,
+      ApplicationStatus.UNDER_REVIEW,
+      ApplicationStatus.SHORTLISTED,
+      ApplicationStatus.INTERVIEW,
+      ApplicationStatus.OFFERED,
+    ];
+    return await this.model
+      .findOne({
+        userId,
+        jobProfileId,
+        status: { $in: activeStatuses },
+      })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
   async findAppliedJobIdsByUserId(userId: string): Promise<string[]> {
     const apps = await this.model
-      .find({ userId, status: { $ne: "withdrawn" } })
+      .find({ userId, status: { $ne: ApplicationStatus.WITHDRAWN } })
       .select("jobId")
       .exec();
     return apps.map((a: any) => a.jobId?.toString()).filter(Boolean);
@@ -41,19 +70,41 @@ export class ApplicationRepository extends BaseRepository<IApplication> {
     const skip = (page - 1) * limit;
 
     const query: any = { userId };
-    if (options.status) {
+    if (options.status && options.status !== "all") {
       query.status = options.status;
+    }
+    if (options.jobProfileId) {
+      query.jobProfileId = options.jobProfileId;
+    }
+    if (options.source) {
+      query.source = options.source;
+    }
+    if (options.search && options.search.trim()) {
+      const searchRegex = new RegExp(options.search.trim(), "i");
+      query.$or = [
+        { "jobIdentitySnapshot.companyName": searchRegex },
+        { "jobIdentitySnapshot.jobTitle": searchRegex },
+      ];
+    }
+
+    let queryBuilder = this.model
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("jobId")
+      .populate("jobProfileId")
+      .populate("resumeId");
+
+    if (options.metadataOnly) {
+      // Exclude heavy resume AST in metadata-only listing
+      queryBuilder = queryBuilder.select(
+        "-resumeSnapshot.resumeDocument -resumeSnapshot.builderConfig"
+      );
     }
 
     const [items, total] = await Promise.all([
-      this.model
-        .find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate("jobId")
-        .populate("resumeId")
-        .exec(),
+      queryBuilder.exec(),
       this.model.countDocuments(query).exec(),
     ]);
 
@@ -66,6 +117,11 @@ export class ApplicationRepository extends BaseRepository<IApplication> {
       limit,
       totalPages,
     };
+  }
+
+  async deleteByIdAndUserId(applicationId: string, userId: string): Promise<boolean> {
+    const result = await this.model.deleteOne({ _id: applicationId, userId }).exec();
+    return result.deletedCount > 0;
   }
 
   async findCompanyApplications(
@@ -127,4 +183,3 @@ export class ApplicationRepository extends BaseRepository<IApplication> {
       .exec();
   }
 }
-

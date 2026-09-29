@@ -8,6 +8,10 @@ import { JobAnalysisSummary } from "./JobAnalysisSummary";
 import { CareerMatchView } from "@/components/job-matching";
 import { TailoringPlanView } from "@/components/job-tailoring-plan";
 import { X, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  getJobTailoringSession,
+  saveJobTailoringSession,
+} from "@/lib/job-intake-storage";
 
 interface JobTailoringWorkspaceProps {
   isOpen: boolean;
@@ -29,6 +33,26 @@ export const JobTailoringWorkspace: React.FC<JobTailoringWorkspaceProps> = ({
     reanalyzeJob,
     reset,
   } = useJobIntake();
+
+  // Restore active step from ongoing session
+  React.useEffect(() => {
+    const session = getJobTailoringSession();
+    if (session?.activeStep) {
+      setActiveStep(session.activeStep);
+    }
+  }, [isOpen]);
+
+  // Persist current active step in session
+  React.useEffect(() => {
+    if (jobProfile) {
+      saveJobTailoringSession({
+        jobProfileId: jobProfile.id,
+        jobTitle: jobProfile.jobTitle,
+        company: jobProfile.company,
+        activeStep,
+      });
+    }
+  }, [activeStep, jobProfile]);
 
   if (!isOpen) return null;
 

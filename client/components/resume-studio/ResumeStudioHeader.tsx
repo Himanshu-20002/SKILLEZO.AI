@@ -4,21 +4,29 @@ import React from 'react';
 import Link from 'next/link';
 import {
   Menu,
-  Sparkles,
   RefreshCw,
   ArrowLeft,
   Check,
   AlertCircle,
+  GitCompare,
+  Target,
+  ChevronDown,
 } from 'lucide-react';
 import { ResumeRecord } from '@/types/resume';
+import { ResumeComparisonResult } from '@/types/resume-comparison.types';
 import { StudioViewMode } from './ResumeStudioSidebar';
 import { SaveStatus } from '@/hooks/useResumeStudio';
+import { ResumeVariantSwitcher } from './ResumeVariantSwitcher';
+import { TARGET_ROLES } from './AtsDiagnosticsView';
 
-interface ResumeStudioHeaderProps {
+export interface ResumeStudioHeaderProps {
   resumes: ResumeRecord[];
   selectedResumeId: string | null;
+  activeResumeId?: string | null;
   currentResume: ResumeRecord | null;
   isCurrentResumeMaster: boolean;
+  isMaster?: boolean;
+  isTailored?: boolean;
   isMasterStale: boolean;
   isSyncingMaster: boolean;
   saveStatus: SaveStatus;
@@ -27,38 +35,54 @@ interface ResumeStudioHeaderProps {
   refreshing?: boolean;
   isDeletingResume?: boolean;
   isDownloadingPdf?: boolean;
+  diffSummary?: ResumeComparisonResult | null;
   onSelectResume: (id: string) => void;
   onSyncMasterResume: () => void;
   onRefreshScore?: () => void;
   onDeleteClick?: () => void;
   onDownloadPdf?: () => void;
+  onOpenComparison?: () => void;
   onOpenMobileSidebar: () => void;
+  targetRole?: string;
+  onTargetRoleChange?: (role: string) => void;
 }
 
 export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
-  resumes: _resumes,
-  selectedResumeId: _selectedResumeId,
+  resumes,
+  selectedResumeId,
+  activeResumeId,
   currentResume,
   isCurrentResumeMaster,
+  isMaster: propIsMaster,
+  isTailored: propIsTailored,
   isMasterStale,
   isSyncingMaster,
   saveStatus,
   viewMode,
   onViewModeChange,
+  diffSummary,
+  onSelectResume,
   onSyncMasterResume,
+  onOpenComparison,
   onOpenMobileSidebar,
+  targetRole,
+  onTargetRoleChange,
 }) => {
   const isAudit = viewMode === 'audit' || viewMode === 'analysis';
   const isBuilder = viewMode === 'builder';
   const isEditor = !isAudit && !isBuilder;
 
+  const activeId = activeResumeId || selectedResumeId;
+  const isMaster = propIsMaster !== undefined ? propIsMaster : (currentResume?.variantType === 'MASTER' || isCurrentResumeMaster);
+  const isTailored = propIsTailored !== undefined ? propIsTailored : currentResume?.variantType === 'TAILORED';
+
   return (
     <header className="h-16 shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 gap-3">
-      {/* Left: Back Link, Title, Identity Badges */}
-      <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+      {/* Left: Back Link, Title, Identity Badges, Switcher, Target Job Context */}
+      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
         <button
           onClick={onOpenMobileSidebar}
-          className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
           aria-label="Open Workspace Menu"
         >
           <Menu className="w-5 h-5" />
@@ -86,27 +110,38 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
 
         <span className="text-slate-200 dark:text-slate-700 hidden sm:inline">/</span>
 
-        {/* Current Resume Title & Type Badge */}
-        <div className="flex items-center gap-2 min-w-0">
-          <h2
-            className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate max-w-[140px] sm:max-w-[220px]"
-            title={currentResume?.title || 'Master Resume'}
-          >
-            {currentResume?.title || 'Master Resume'}
-          </h2>
+        {/* Variant Switcher Dropdown */}
+        <ResumeVariantSwitcher
+          resumes={resumes}
+          activeResumeId={activeId}
+          onSelectResume={onSelectResume}
+        />
 
-          {isCurrentResumeMaster ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 shadow-xs shrink-0">
-              <Sparkles className="w-2.5 h-2.5 text-amber-500" />
-              <span>Master</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40 shadow-xs shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-              <span>Variant</span>
-            </span>
-          )}
-        </div>
+        {/* Target Role Selector beside Resume Selector */}
+        {onTargetRoleChange && (
+          <div className="relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 shadow-xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors shrink-0">
+            <Target className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+            <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 hidden xl:inline">Role:</span>
+            <select
+              value={targetRole || TARGET_ROLES[0]}
+              onChange={(e) => onTargetRoleChange(e.target.value)}
+              className="bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer text-xs pr-1 appearance-none hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              title="Target Role for ATS Benchmarking"
+              aria-label="Select Target Role"
+            >
+              {TARGET_ROLES.map((role) => (
+                <option
+                  key={role}
+                  value={role}
+                  className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-medium py-1"
+                >
+                  {role}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3 h-3 text-slate-400 dark:text-slate-500 pointer-events-none shrink-0" />
+          </div>
+        )}
       </div>
 
       {/* Center: Mode Switcher & Save State (Desktop/Tablet) */}
@@ -146,45 +181,38 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
             </button>
           </div>
         )}
-
-        {/* Live Autosave Indicator */}
-        <div className="flex items-center px-2.5 py-1 rounded-xl text-xs font-medium border border-slate-200/60 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/40">
-          {saveStatus === 'saving' && (
-            <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <RefreshCw className="w-3 h-3 animate-spin text-indigo-500" />
-              <span>Saving...</span>
-            </span>
-          )}
-          {saveStatus === 'saved' && (
-            <span className="text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-              <Check className="w-3 h-3 text-emerald-500" />
-              <span>Saved ✓</span>
-            </span>
-          )}
-          {saveStatus === 'unsaved' && (
-            <span className="text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-              <span>Unsaved</span>
-            </span>
-          )}
-          {saveStatus === 'error' && (
-            <span className="text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
-              <AlertCircle className="w-3 h-3 text-rose-500" />
-              <span>Save failed</span>
-            </span>
-          )}
-        </div>
       </div>
 
-      {/* Right: Master Sync Alert */}
+      {/* Right: Master Sync Alert & Comparison Launcher */}
       <div className="flex items-center gap-2">
+        {/* Compare with Master Button: ALWAYS visible on Tailored variants, completely hidden on Master */}
+        {isTailored && onOpenComparison && (
+          <button
+            type="button"
+            data-testid="header-compare-with-master-btn"
+            onClick={onOpenComparison}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer shadow-xs shrink-0"
+            title="Compare with Master Resume"
+          >
+            <GitCompare className="w-3.5 h-3.5" aria-hidden="true" />
+            <span className="hidden sm:inline">Compare with Master</span>
+            <span className="sm:hidden">Compare</span>
+            {diffSummary && diffSummary.totalChanges > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200">
+                {diffSummary.totalChanges}
+              </span>
+            )}
+          </button>
+        )}
+
+
         {/* Stale Master Sync Notification Button */}
-        {isCurrentResumeMaster && isMasterStale && (
+        {isMaster && isMasterStale && (
           <button
             onClick={onSyncMasterResume}
             disabled={isSyncingMaster}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-all cursor-pointer shadow-xs disabled:opacity-50"
-            title="Profile updated — click to synchronize career facts"
+            title="Profile updated — click to update your resume"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncingMaster ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isSyncingMaster ? 'Syncing...' : 'Sync Profile'}</span>

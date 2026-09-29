@@ -28,7 +28,7 @@ export const PortfolioEmptyState: React.FC<PortfolioEmptyStateProps> = ({
       </h3>
 
       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md">
-        Your canonical Master Resume is ready. Create targeted resume versions for specific roles (e.g. Frontend, DevOps, or Full-Stack) while keeping your Career Profile as the sole source of truth.
+        Your master resume is ready. Create tailored versions for specific roles (e.g. Frontend, DevOps, or Full-Stack) to maximize your match score for each job.
       </p>
 
       <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
@@ -45,7 +45,7 @@ export const PortfolioEmptyState: React.FC<PortfolioEmptyStateProps> = ({
           className="inline-flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>Create Resume Variant</span>
+          <span>Create Tailored Resume</span>
         </button>
       </div>
     </div>

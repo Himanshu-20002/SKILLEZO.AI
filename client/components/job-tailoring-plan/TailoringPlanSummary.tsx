@@ -25,8 +25,23 @@ export const TailoringPlanSummary: React.FC<TailoringPlanSummaryProps> = ({
   onResetAll,
   disabled = false,
 }) => {
-  const actionableTotal = summary.totalProposals - summary.protectedCount;
-  const reviewedCount = summary.acceptedCount + summary.editedCount + summary.rejectedCount;
+  const protectedCount =
+    summary?.protectedCount ?? (summary as any)?.doNotAdd ?? 0;
+  const acceptedCount =
+    summary?.acceptedCount ?? (summary as any)?.accepted ?? 0;
+  const editedCount =
+    summary?.editedCount ?? (summary as any)?.edited ?? 0;
+  const rejectedCount =
+    summary?.rejectedCount ?? (summary as any)?.rejected ?? 0;
+  const pendingCount =
+    summary?.pendingCount ?? (summary as any)?.pending ?? 0;
+  const totalProposals =
+    summary?.totalProposals ??
+    (acceptedCount + editedCount + rejectedCount + pendingCount + protectedCount);
+
+  const actionableTotal =
+    (summary as any)?.actionableTotal ?? Math.max(0, totalProposals - protectedCount);
+  const reviewedCount = acceptedCount + editedCount + rejectedCount;
   const progressPercent = actionableTotal > 0 ? Math.round((reviewedCount / actionableTotal) * 100) : 100;
 
   return (
@@ -47,7 +62,7 @@ export const TailoringPlanSummary: React.FC<TailoringPlanSummaryProps> = ({
 
         {/* Batch Actions */}
         <div className="flex items-center gap-2">
-          {summary.pendingCount > 0 && (
+          {pendingCount > 0 && (
             <button
               type="button"
               disabled={disabled}
@@ -55,7 +70,7 @@ export const TailoringPlanSummary: React.FC<TailoringPlanSummaryProps> = ({
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all disabled:opacity-50 cursor-pointer"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Accept All Pending ({summary.pendingCount})</span>
+              <span>Accept All Pending ({pendingCount})</span>
             </button>
           )}
 
@@ -97,7 +112,7 @@ export const TailoringPlanSummary: React.FC<TailoringPlanSummaryProps> = ({
             <span className="text-[11px] font-medium">Pending</span>
           </div>
           <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {summary.pendingCount}
+            {pendingCount}
           </div>
         </div>
 
@@ -108,7 +123,7 @@ export const TailoringPlanSummary: React.FC<TailoringPlanSummaryProps> = ({
             <span className="text-[11px] font-medium">Accepted</span>
           </div>
           <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {summary.acceptedCount}
+            {acceptedCount}
           </div>
         </div>
 
@@ -119,7 +134,7 @@ export const TailoringPlanSummary: React.FC<TailoringPlanSummaryProps> = ({
             <span className="text-[11px] font-medium">Custom Edit</span>
           </div>
           <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {summary.editedCount}
+            {editedCount}
           </div>
         </div>
 
@@ -130,7 +145,7 @@ export const TailoringPlanSummary: React.FC<TailoringPlanSummaryProps> = ({
             <span className="text-[11px] font-medium">Rejected</span>
           </div>
           <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {summary.rejectedCount}
+            {rejectedCount}
           </div>
         </div>
 
@@ -141,7 +156,7 @@ export const TailoringPlanSummary: React.FC<TailoringPlanSummaryProps> = ({
             <span className="text-[11px] font-medium">Protected Shields</span>
           </div>
           <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {summary.protectedCount}
+            {protectedCount}
           </div>
         </div>
       </div>

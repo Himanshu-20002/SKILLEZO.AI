@@ -275,8 +275,11 @@ export interface ResumeRecord {
   version?: number;
   status?: string;
   variantType?: "MASTER" | "TAILORED";
+  targetJobId?: string | null;
   targetJobTitle?: string | null;
   targetCompany?: string | null;
+  sourceTailoringPlanId?: string | null;
+  sourceTailoringPlanVersion?: number | null;
   parentResumeId?: string | null;
   sourceProfileVersion?: number | null;
   extractedData?: ResumeExtractedData;
@@ -299,8 +302,10 @@ export interface ResumePortfolioItem {
   id: string;
   displayName: string;
   variantType: ResumeVariantType;
+  targetJobId?: string | null;
   targetJobTitle?: string | null;
   targetCompany?: string | null;
+  sourceTailoringPlanId?: string | null;
   parentResumeId?: string | null;
   updatedAt: string;
   createdAt: string;

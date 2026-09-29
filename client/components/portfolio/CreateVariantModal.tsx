@@ -75,7 +75,7 @@ export const CreateVariantModal: React.FC<CreateVariantModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Variants deep-copy your Master Resume presentation state. You can customize layout and focus without modifying your canonical Career Profile.
+            Create a tailored copy of your Master Resume. You can customize the layout, skills, and experience for a specific job without affecting your primary profile.
           </p>
 
           {error && (
@@ -86,7 +86,7 @@ export const CreateVariantModal: React.FC<CreateVariantModalProps> = ({
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Resume Variant Name <span className="text-rose-500">*</span>
+              Tailored Resume Name <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"

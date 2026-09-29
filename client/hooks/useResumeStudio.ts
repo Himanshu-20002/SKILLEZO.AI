@@ -11,8 +11,11 @@ import { ResumeRecord, ResumeAnalysisData, ResumeOptimizationDraft } from '@/typ
 import { StudioViewMode } from '@/components/resume-studio/ResumeStudioSidebar';
 import { exportResumeToPdf } from '@/services/pdf-export.service';
 import { AuditPillarType } from '@/components/dashboard/resume-intelligence/ATSCompatibility';
+import { computeResumeDiff } from '@/lib/resume-studio';
+import { ResumeComparisonResult, ResumeComparisonContext } from '@/types/resume-comparison.types';
 
 export type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
+export type NavigationSource = 'USER_VARIANT_SWITCH' | 'BROWSER_HISTORY_NAVIGATION';
 
 const EMPTY_RESUME_ANALYSIS: ResumeAnalysisData = {
   overallScore: 0,
@@ -75,12 +78,17 @@ function mapResumeToExtractedData(resume: ResumeRecord): ResumeAnalysisData['ext
 export function useResumeStudio(initialResumeId?: string | null) {
   // Server State
   const [resumes, setResumes] = useState<ResumeRecord[]>([]);
+  // selectedResumeId is the underlying internal React state; activeResumeId is the conceptual canonical identity
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(initialResumeId || null);
+  const activeResumeId = selectedResumeId;
   const [resumeDoc, setResumeDoc] = useState<ResumeDocument | null>(null);
   const [scoreResult, setScoreResult] = useState<ResumeScoreResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Cached Master Resume Document for performance-safe diff badge
+  const [masterResumeDoc, setMasterResumeDoc] = useState<ResumeDocument | null>(null);
 
   // Master Resume State
   const [isMasterStale, setIsMasterStale] = useState(false);
@@ -88,8 +96,8 @@ export function useResumeStudio(initialResumeId?: string | null) {
 
   // UI & View State
   const [viewMode, setViewMode] = useState<StudioViewMode>('audit');
-  const [activeView, setActiveView] = useState<'overview' | 'detail'>('overview');
-  const [activeSectionKey, setActiveSectionKey] = useState<keyof ResumeScoreResult['sections']>('experience');
+  const [activeView, setActiveView] = useState<'overview' | 'detail'>('detail');
+  const [activeSectionKey, setActiveSectionKey] = useState<keyof ResumeScoreResult['sections']>('summary');
   const [previewHighlightSection, setPreviewHighlightSection] = useState<string | null>(null);
   const [mobileEditorView, setMobileEditorView] = useState<'editor' | 'preview' | 'insights'>('editor');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -104,6 +112,18 @@ export function useResumeStudio(initialResumeId?: string | null) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const activeSavePromiseRef = useRef<Promise<any> | null>(null);
+  const pendingConfigRef = useRef<ResumeBuilderConfig | null>(null);
+
+  // Variant Switching & Concurrency Guard State
+  const [pendingSwitchResumeId, setPendingSwitchResumeId] = useState<string | null>(null);
+  const [isSwitchConfirmOpen, setIsSwitchConfirmOpen] = useState(false);
+  const switchRequestIdRef = useRef(0);
+  const selectedResumeIdRef = useRef<string | null>(selectedResumeId);
+
+  useEffect(() => {
+    selectedResumeIdRef.current = selectedResumeId;
+  }, [selectedResumeId]);
 
   // Section AI Editor State
   const [isGenerating, setIsGenerating] = useState(false);
@@ -127,32 +147,58 @@ export function useResumeStudio(initialResumeId?: string | null) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Derived: Current Resume & Master identity
+  // Derived: Current Resume & Canonical Variant Identities
   const currentResume = useMemo(() => {
     return resumes.find((r) => r._id === selectedResumeId) || null;
   }, [resumes, selectedResumeId]);
 
-  const isCurrentResumeMaster = currentResume?.variantType === 'MASTER';
+  const isMaster = currentResume?.variantType === 'MASTER';
+  const isTailored = currentResume?.variantType === 'TAILORED';
+  const isCurrentResumeMaster = isMaster;
 
-  // Fetch Authoritative Score
+  // Performance-Safe 6E.1 Diff Summary
+  const diffSummary = useMemo<ResumeComparisonResult | null>(() => {
+    if (!isTailored || !resumeDoc || !masterResumeDoc) {
+      return null;
+    }
+    try {
+      const masterRecord = resumes.find((r) => r.variantType === 'MASTER');
+      const comparisonContext: ResumeComparisonContext = {
+        masterSectionOrder: masterRecord?.builderConfig?.sectionOrder,
+        tailoredSectionOrder: builderConfig?.sectionOrder,
+      };
+      return computeResumeDiff(masterResumeDoc, resumeDoc, comparisonContext);
+    } catch (err) {
+      console.warn('Failed to compute resume diff summary', err);
+      return null;
+    }
+  }, [isTailored, resumeDoc, masterResumeDoc, builderConfig, resumes]);
+
+  // Fetch Authoritative Score (Guarded against stale variant responses)
   const fetchScore = useCallback(async (resumeId: string) => {
     try {
       setRefreshing(true);
       setError(null);
       const score = await resumeService.getResumeScore(resumeId);
-      setScoreResult(score);
+      if (selectedResumeIdRef.current === resumeId) {
+        setScoreResult(score);
+      }
     } catch (err: any) {
-      setError("We couldn't load your resume analysis. Please try again.");
+      if (selectedResumeIdRef.current === resumeId) {
+        setError("We couldn't load your resume analysis. Please try again.");
+      }
     } finally {
-      setRefreshing(false);
+      if (selectedResumeIdRef.current === resumeId) {
+        setRefreshing(false);
+      }
     }
   }, []);
 
-  // Fetch ATS Intelligence
+  // Fetch ATS Intelligence (Guarded against stale variant responses)
   const fetchAtsIntelligence = useCallback(async (resumeId: string, role?: string) => {
     try {
       const liveAts = await resumeService.getResumeAtsScore(resumeId, role);
-      if (liveAts) {
+      if (liveAts && selectedResumeIdRef.current === resumeId) {
         setAnalysis((prev) => ({
           ...prev,
           overallScore: liveAts.overallScore ?? prev.overallScore,
@@ -191,6 +237,9 @@ export function useResumeStudio(initialResumeId?: string | null) {
 
       if (masterRes?.resume) {
         setIsMasterStale(masterRes.isStale);
+        if (masterRes.resume.resumeDocument) {
+          setMasterResumeDoc(masterRes.resume.resumeDocument as any);
+        }
         const masterIdx = allResumes.findIndex((r) => r._id === masterRes.resume._id);
         if (masterIdx >= 0) {
           allResumes[masterIdx] = masterRes.resume;
@@ -200,10 +249,31 @@ export function useResumeStudio(initialResumeId?: string | null) {
         activeResume = masterRes.resume;
       }
 
-      setResumes(allResumes);
+      // Ensure single master invariant across allResumes in frontend state
+      const canonicalMasterId = masterRes?.resume?._id;
+      const sanitizedResumes = allResumes.map((r) => {
+        if (r.variantType === 'MASTER' && canonicalMasterId && r._id !== canonicalMasterId) {
+          return { ...r, variantType: 'TAILORED' as const };
+        }
+        return r;
+      });
+
+      setResumes(sanitizedResumes);
 
       if (initialResumeId) {
-        const requested = allResumes.find((r) => r._id === initialResumeId);
+        let requested = allResumes.find((r) => r._id === initialResumeId);
+        if (!requested) {
+          try {
+            const fetched = await resumeService.getResumeById(initialResumeId);
+            if (fetched) {
+              requested = fetched;
+              allResumes.unshift(fetched);
+              setResumes([...allResumes]);
+            }
+          } catch {
+            // Requested deep link failed/unauthorized; activeResume remains default/master
+          }
+        }
         if (requested) {
           activeResume = requested;
         }
@@ -215,8 +285,12 @@ export function useResumeStudio(initialResumeId?: string | null) {
 
       if (activeResume) {
         setSelectedResumeId(activeResume._id);
+        selectedResumeIdRef.current = activeResume._id;
         if (activeResume.resumeDocument) {
           setResumeDoc(activeResume.resumeDocument as any);
+          if (activeResume.variantType === 'MASTER') {
+            setMasterResumeDoc(activeResume.resumeDocument as any);
+          }
         }
         if (activeResume.extractedData) {
           setAnalysis((prev) => ({
@@ -226,10 +300,14 @@ export function useResumeStudio(initialResumeId?: string | null) {
         }
         if (activeResume.builderConfig) {
           setBuilderConfig(activeResume.builderConfig);
+          pendingConfigRef.current = activeResume.builderConfig;
         } else {
-          resumeService.getBuilderConfig(activeResume._id).then((cfg) => {
-            if (cfg) setBuilderConfig(cfg);
-          }).catch(() => {});
+          resumeService.getBuilderConfig?.(activeResume._id)?.then?.((cfg) => {
+            if (cfg) {
+              setBuilderConfig(cfg);
+              pendingConfigRef.current = cfg;
+            }
+          })?.catch?.(() => {});
         }
         await fetchScore(activeResume._id);
         await fetchAtsIntelligence(activeResume._id, targetRole);
@@ -246,11 +324,12 @@ export function useResumeStudio(initialResumeId?: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [targetRole, fetchScore, fetchAtsIntelligence]);
+  }, [initialResumeId, targetRole, fetchScore, fetchAtsIntelligence]);
 
   // Select Resume Handler
   const handleSelectResume = useCallback((resumeId: string, directResume?: ResumeRecord, andOpenEditor = false) => {
     setSelectedResumeId(resumeId);
+    selectedResumeIdRef.current = resumeId;
     setActiveView('overview');
     setCurrentSuggestion(null);
     setScoreDeltaNotice(null);
@@ -270,6 +349,9 @@ export function useResumeStudio(initialResumeId?: string | null) {
     if (resume) {
       if (resume.resumeDocument) {
         setResumeDoc(resume.resumeDocument as any);
+        if (resume.variantType === 'MASTER') {
+          setMasterResumeDoc(resume.resumeDocument as any);
+        }
       }
       if (resume.extractedData) {
         setAnalysis((prev) => ({
@@ -279,21 +361,28 @@ export function useResumeStudio(initialResumeId?: string | null) {
       }
       if (resume.builderConfig) {
         setBuilderConfig(resume.builderConfig);
+        pendingConfigRef.current = resume.builderConfig;
       } else {
         resumeService.getBuilderConfig(resumeId).then((cfg) => {
-          if (cfg) setBuilderConfig(cfg);
+          if (cfg) {
+            setBuilderConfig(cfg);
+            pendingConfigRef.current = cfg;
+          }
         }).catch(() => {});
       }
     } else {
       // Fallback: Fetch complete resume document from server if missing in local state
       resumeService.getResumeById(resumeId).then((fetched) => {
-        if (fetched) {
+        if (fetched && selectedResumeIdRef.current === resumeId) {
           setResumes((prev) => {
             const exists = prev.some((r) => r._id === fetched._id);
             return exists ? prev.map((r) => (r._id === fetched._id ? fetched : r)) : [fetched, ...prev];
           });
           if (fetched.resumeDocument) {
             setResumeDoc(fetched.resumeDocument as any);
+            if (fetched.variantType === 'MASTER') {
+              setMasterResumeDoc(fetched.resumeDocument as any);
+            }
           }
           if (fetched.extractedData) {
             setAnalysis((prev) => ({
@@ -303,6 +392,7 @@ export function useResumeStudio(initialResumeId?: string | null) {
           }
           if (fetched.builderConfig) {
             setBuilderConfig(fetched.builderConfig);
+            pendingConfigRef.current = fetched.builderConfig;
           }
         }
       }).catch((fetchErr) => {
@@ -316,9 +406,14 @@ export function useResumeStudio(initialResumeId?: string | null) {
 
   // Master Resume Synchronize Handler
   const handleSyncMasterResume = useCallback(async () => {
+    let syncPromise: Promise<any> | null = null;
     try {
       setIsSyncingMaster(true);
-      const syncResult = await resumeService.syncMasterResume();
+      setSaveStatus('saving');
+      syncPromise = resumeService.syncMasterResume();
+      activeSavePromiseRef.current = syncPromise;
+      const syncResult = await syncPromise;
+      setSaveStatus('saved');
       if (syncResult?.resume) {
         setIsMasterStale(false);
         setResumes((prev) =>
@@ -326,9 +421,11 @@ export function useResumeStudio(initialResumeId?: string | null) {
         );
         if (syncResult.resume.resumeDocument) {
           setResumeDoc(syncResult.resume.resumeDocument as any);
+          setMasterResumeDoc(syncResult.resume.resumeDocument as any);
         }
         if (syncResult.resume.builderConfig) {
           setBuilderConfig(syncResult.resume.builderConfig);
+          pendingConfigRef.current = syncResult.resume.builderConfig;
         }
         if (selectedResumeId === syncResult.resume._id) {
           await fetchScore(syncResult.resume._id);
@@ -336,15 +433,40 @@ export function useResumeStudio(initialResumeId?: string | null) {
         toast.success("Master Resume synchronized with your Career Profile!");
       }
     } catch (err: any) {
+      setSaveStatus('error');
       toast.error(err.message || "Failed to synchronize Master Resume");
     } finally {
+      if (syncPromise && activeSavePromiseRef.current === syncPromise) {
+        activeSavePromiseRef.current = null;
+      }
       setIsSyncingMaster(false);
     }
   }, [selectedResumeId, fetchScore]);
 
+  // Helper to execute builder config save with strict promise lifecycle
+  const executeSaveBuilderConfig = useCallback(async (targetId: string, config: ResumeBuilderConfig) => {
+    setSaveStatus('saving');
+    const savePromise = resumeService.saveBuilderConfig(targetId, config);
+    activeSavePromiseRef.current = savePromise;
+    try {
+      await savePromise;
+      setSaveStatus('saved');
+    } catch (err) {
+      console.error("Failed to persist builder config", err);
+      setSaveStatus('error');
+      toast.error("Failed to save layout changes.");
+      throw err;
+    } finally {
+      if (activeSavePromiseRef.current === savePromise) {
+        activeSavePromiseRef.current = null;
+      }
+    }
+  }, []);
+
   // Debounced Presentation Builder Config Save
   const handleBuilderConfigChange = useCallback((newConfig: ResumeBuilderConfig) => {
     setBuilderConfig(newConfig);
+    pendingConfigRef.current = newConfig;
     setSaveStatus('unsaved');
 
     if (!selectedResumeId) return;
@@ -353,18 +475,185 @@ export function useResumeStudio(initialResumeId?: string | null) {
       clearTimeout(saveTimerRef.current);
     }
 
-    setSaveStatus('saving');
     saveTimerRef.current = setTimeout(async () => {
+      saveTimerRef.current = null;
       try {
-        await resumeService.saveBuilderConfig(selectedResumeId, newConfig);
-        setSaveStatus('saved');
-      } catch (err) {
-        console.error("Failed to persist builder config", err);
-        setSaveStatus('error');
-        toast.error("Failed to save layout changes.");
+        await executeSaveBuilderConfig(selectedResumeId, newConfig);
+      } catch {
+        // Handled in executeSaveBuilderConfig
       }
     }, 600);
-  }, [selectedResumeId]);
+  }, [selectedResumeId, executeSaveBuilderConfig]);
+
+  // Flush pending autosave immediately and await completion
+  const flushPendingAutosave = useCallback(async (): Promise<boolean> => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+      if (selectedResumeId && pendingConfigRef.current) {
+        try {
+          await executeSaveBuilderConfig(selectedResumeId, pendingConfigRef.current);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+    }
+    if (activeSavePromiseRef.current) {
+      try {
+        await activeSavePromiseRef.current;
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  }, [selectedResumeId, executeSaveBuilderConfig]);
+
+  // Execute Variant Switch Transaction guarded by switchRequestIdRef
+  const executeVariantSwitch = useCallback(async (
+    targetResumeId: string,
+    navigationSource: NavigationSource = 'USER_VARIANT_SWITCH',
+    onCommitted?: (committedId: string, requestId: number) => void
+  ) => {
+    const currentRequestId = ++switchRequestIdRef.current;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const targetResume = await resumeService.getResumeById(targetResumeId);
+
+      // Concurrency check: If a newer switch was requested, ignore this response completely!
+      if (currentRequestId !== switchRequestIdRef.current) {
+        return;
+      }
+
+      if (!targetResume) {
+        toast.error("Resume variant could not be found.");
+        return;
+      }
+
+      // Commit target variant to authoritative state
+      setSelectedResumeId(targetResume._id);
+      selectedResumeIdRef.current = targetResume._id;
+
+      if (targetResume.resumeDocument) {
+        setResumeDoc(targetResume.resumeDocument as any);
+        if (targetResume.variantType === 'MASTER') {
+          setMasterResumeDoc(targetResume.resumeDocument as any);
+        }
+      } else {
+        setResumeDoc(null);
+      }
+
+      if (targetResume.extractedData) {
+        setAnalysis((prev) => ({
+          ...prev,
+          extractedData: mapResumeToExtractedData(targetResume),
+        }));
+      }
+
+      if (targetResume.builderConfig) {
+        setBuilderConfig(targetResume.builderConfig);
+        pendingConfigRef.current = targetResume.builderConfig;
+      } else {
+        setBuilderConfig(DEFAULT_BUILDER_CONFIG);
+        pendingConfigRef.current = DEFAULT_BUILDER_CONFIG;
+      }
+
+      setSaveStatus('saved');
+      setActiveView('overview');
+      setCurrentSuggestion(null);
+      setScoreDeltaNotice(null);
+
+      // Update lightweight metadata list if needed
+      setResumes((prev) => {
+        const exists = prev.some((r) => r._id === targetResume._id);
+        return exists ? prev.map((r) => (r._id === targetResume._id ? targetResume : r)) : [targetResume, ...prev];
+      });
+
+      // Synchronize URL / notify caller strictly AFTER successful commit
+      if (onCommitted) {
+        onCommitted(targetResume._id, currentRequestId);
+      }
+
+      if (targetResume.variantType === 'MASTER') {
+        resumeService.getMasterResume().then((mr) => {
+          if (mr && currentRequestId === switchRequestIdRef.current) {
+            setIsMasterStale(mr.isStale);
+          }
+        }).catch(() => {});
+      }
+
+      // Trigger background intelligence protected by active resume ID
+      fetchScore(targetResume._id);
+      fetchAtsIntelligence(targetResume._id, targetRole);
+
+    } catch (err: any) {
+      if (currentRequestId === switchRequestIdRef.current) {
+        toast.error(err.message || "Failed to switch resume variant.");
+      }
+    } finally {
+      if (currentRequestId === switchRequestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [fetchScore, fetchAtsIntelligence, targetRole]);
+
+  // Main variant switch function with dirty guard & in-flight save await
+  const switchResumeVariant = useCallback(async (
+    targetResumeId: string,
+    navigationSource: NavigationSource = 'USER_VARIANT_SWITCH',
+    onCommitted?: (committedId: string, requestId: number) => void
+  ) => {
+    if (targetResumeId === selectedResumeId) {
+      return;
+    }
+
+    if (saveStatus === 'error') {
+      toast.error("Save failed. Please resolve the save error before switching.");
+      return;
+    }
+
+    // Flush pending autosave if debounce timer is active
+    if (saveTimerRef.current) {
+      const flushed = await flushPendingAutosave();
+      if (!flushed) {
+        toast.error("Could not save pending changes before switching.");
+        return;
+      }
+    } else if (saveStatus === 'saving' && activeSavePromiseRef.current) {
+      try {
+        await activeSavePromiseRef.current;
+      } catch {
+        toast.error("Active save failed. Please resolve before switching.");
+        return;
+      }
+    }
+
+    // If local changes are still unsaved, prompt confirmation
+    if (saveStatus === 'unsaved') {
+      setPendingSwitchResumeId(targetResumeId);
+      setIsSwitchConfirmOpen(true);
+      return;
+    }
+
+    await executeVariantSwitch(targetResumeId, navigationSource, onCommitted);
+  }, [selectedResumeId, saveStatus, flushPendingAutosave, executeVariantSwitch]);
+
+  const confirmSwitchVariant = useCallback((onCommitted?: (committedId: string, requestId: number) => void) => {
+    if (!pendingSwitchResumeId) return;
+    const targetId = pendingSwitchResumeId;
+    setIsSwitchConfirmOpen(false);
+    setPendingSwitchResumeId(null);
+    executeVariantSwitch(targetId, 'USER_VARIANT_SWITCH', onCommitted);
+  }, [pendingSwitchResumeId, executeVariantSwitch]);
+
+  const cancelSwitchVariant = useCallback(() => {
+    setIsSwitchConfirmOpen(false);
+    setPendingSwitchResumeId(null);
+  }, []);
 
   // Download PDF Handler
   const handleDownloadPDF = useCallback(async () => {
@@ -495,10 +784,12 @@ export function useResumeStudio(initialResumeId?: string | null) {
   const handleApproveSuggestion = useCallback(async () => {
     if (!currentSuggestion || !selectedResumeId) return;
 
+    let savePromise: Promise<any> | null = null;
     try {
       setIsApplying(true);
+      setSaveStatus('saving');
 
-      const result = await resumeService.applySectionImprovement(
+      savePromise = resumeService.applySectionImprovement(
         selectedResumeId,
         activeSectionKey,
         {
@@ -507,8 +798,15 @@ export function useResumeStudio(initialResumeId?: string | null) {
           baseDocumentVersion: currentSuggestion.baseDocumentVersion,
         }
       );
+      activeSavePromiseRef.current = savePromise;
+
+      const result = await savePromise;
+      setSaveStatus('saved');
 
       setResumeDoc(result.resumeDocument);
+      if (currentResume?.variantType === 'MASTER') {
+        setMasterResumeDoc(result.resumeDocument);
+      }
       setScoreDeltaNotice({
         section: activeSectionKey,
         from: result.previousScore,
@@ -519,11 +817,15 @@ export function useResumeStudio(initialResumeId?: string | null) {
       await fetchScore(selectedResumeId);
       toast.success("Section changes approved & updated!");
     } catch (err: any) {
+      setSaveStatus('error');
       toast.error(err.message || "Failed to apply improvement.");
     } finally {
+      if (savePromise && activeSavePromiseRef.current === savePromise) {
+        activeSavePromiseRef.current = null;
+      }
       setIsApplying(false);
     }
-  }, [currentSuggestion, selectedResumeId, activeSectionKey, fetchScore]);
+  }, [currentSuggestion, selectedResumeId, activeSectionKey, fetchScore, currentResume?.variantType]);
 
   const handleRejectSuggestion = useCallback(() => {
     setCurrentSuggestion(null);
@@ -554,8 +856,13 @@ export function useResumeStudio(initialResumeId?: string | null) {
       return;
     }
     setIsApplyingOptimization(true);
+    setSaveStatus('saving');
+    let savePromise: Promise<any> | null = null;
     try {
-      const res = await resumeService.acceptOptimization(selectedResumeId, draft);
+      savePromise = resumeService.acceptOptimization(selectedResumeId, draft);
+      activeSavePromiseRef.current = savePromise;
+      const res = await savePromise;
+      setSaveStatus('saved');
       if (res && res.freshIntelligence) {
         setAnalysis((prev) => ({
           ...prev,
@@ -572,6 +879,9 @@ export function useResumeStudio(initialResumeId?: string | null) {
           );
           if (res.resume.resumeDocument) {
             setResumeDoc(res.resume.resumeDocument as any);
+            if (res.resume.variantType === 'MASTER') {
+              setMasterResumeDoc(res.resume.resumeDocument as any);
+            }
           }
         }
       }
@@ -580,8 +890,12 @@ export function useResumeStudio(initialResumeId?: string | null) {
       setSelectedDraft(null);
       await fetchScore(selectedResumeId);
     } catch (err: any) {
+      setSaveStatus('error');
       toast.error(err.message || 'Failed to apply optimization.');
     } finally {
+      if (savePromise && activeSavePromiseRef.current === savePromise) {
+        activeSavePromiseRef.current = null;
+      }
       setIsApplyingOptimization(false);
     }
   }, [selectedResumeId, fetchScore]);
@@ -614,11 +928,18 @@ export function useResumeStudio(initialResumeId?: string | null) {
   }, []);
 
   return {
-    // State
+    // State & Canonical Identifiers
     resumes,
     selectedResumeId,
+    activeResumeId: selectedResumeId,
     currentResume,
     isCurrentResumeMaster,
+    isMaster,
+    isTailored,
+    masterResumeDoc,
+    diffSummary,
+    pendingSwitchResumeId,
+    isSwitchConfirmOpen,
     resumeDoc,
     scoreResult,
     loading,
@@ -667,9 +988,13 @@ export function useResumeStudio(initialResumeId?: string | null) {
     setSelectedDraft,
     setIsDeleteDialogOpen,
 
-    // Actions
+    // Actions & Variant Switch Lifecycle
     loadInitialData,
     handleSelectResume,
+    switchResumeVariant,
+    flushPendingAutosave,
+    confirmSwitchVariant,
+    cancelSwitchVariant,
     handleSyncMasterResume,
     handleBuilderConfigChange,
     handleDownloadPDF,

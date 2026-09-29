@@ -100,14 +100,19 @@ export class ResumeService {
       );
     }
 
+    const existingMaster =
+      typeof this.resumeRepository.findMasterByUserId === "function"
+        ? await this.resumeRepository.findMasterByUserId(userId)
+        : null;
     const existingResumes = await this.resumeRepository.findByUserId(userId);
-    const isFirstResume = existingResumes.length === 0;
-    const makeDefault = isFirstResume && !options?.asVariant ? true : isDefaultRequested;
+    const isFirstResume = !existingMaster && existingResumes.length === 0;
+    const isMasterVariant = isFirstResume && !options?.asVariant;
+    const makeDefault = isMasterVariant ? true : isDefaultRequested;
 
     const uniqueId = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const ext = path.extname(file.originalname);
     const storageKey = `resumes/${userId}/${uniqueId}${ext}`;
-    const title = titleRequested || file.originalname;
+    const title = isMasterVariant ? (titleRequested || "Master Resume") : (titleRequested || file.originalname);
 
     console.log("[ResumeService] Ingestion started for file:", file.originalname);
 
@@ -198,6 +203,8 @@ export class ResumeService {
         isMaster: isMasterVariant,
         variantType,
         isUploaded: true,
+        parentResumeId: !isMasterVariant && existingMaster ? existingMaster._id : null,
+        builderConfig: isMasterVariant ? DEFAULT_BUILDER_CONFIG : undefined,
         status,
         version: 1,
         extractedData,
@@ -213,7 +220,7 @@ export class ResumeService {
       const shouldSyncProfile = (isFirstResume && !options?.asVariant) || options?.syncProfile === true;
       if (shouldSyncProfile && (extractedData || resumeDocument)) {
         try {
-          await this.profileService.hydrateFromParsedResume(userId, extractedData, resumeDocument);
+          await this.profileService.hydrateFromParsedResume(userId, extractedData, resumeDocument as any);
         } catch (hydrateErr) {
           console.warn("[ResumeService] Profile hydration failed non-fatally:", hydrateErr);
         }
@@ -500,7 +507,13 @@ export class ResumeService {
         throw new AppError("Unauthorized access to resume", HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
       }
     } else {
-      resume = await this.resumeRepository.findDefaultByUserId(userId);
+      resume =
+        typeof this.resumeRepository.findMasterByUserId === "function"
+          ? await this.resumeRepository.findMasterByUserId(userId)
+          : null;
+      if (!resume) {
+        resume = await this.resumeRepository.findDefaultByUserId(userId);
+      }
       if (!resume) {
         const resumes = await this.resumeRepository.findByUserId(userId);
         if (resumes.length > 0) {
@@ -829,6 +842,56 @@ export class ResumeService {
   }
 
   /**
+   * Idempotently resolves duplicate Master Resumes for a user:
+   * Keeps exactly one canonical Master Resume (preferring "Master Resume" or "profile-generated"),
+   * hydrates any missing extracted facts to the profile, and cleans up secondary duplicates.
+   */
+  async autoHealMasterResumes(userId: string): Promise<IResume | null> {
+    const masters =
+      typeof this.resumeRepository.findAllMastersByUserId === "function"
+        ? await this.resumeRepository.findAllMastersByUserId(userId)
+        : [await this.resumeRepository.findMasterByUserId(userId)].filter(Boolean) as IResume[];
+
+    if (!masters || masters.length === 0) {
+      return null;
+    }
+
+    if (masters.length === 1) {
+      return masters[0];
+    }
+
+    console.log(`[ResumeService] Auto-healing ${masters.length} duplicate Master resumes for user ${userId}`);
+
+    // Prefer canonical master with title "Master Resume" or storageKey "profile-generated"
+    const canonicalMaster =
+      masters.find((m) => m.title === "Master Resume" || m.storageKey === "profile-generated") ||
+      masters[0];
+
+    for (const duplicate of masters) {
+      if (duplicate._id.toString() === canonicalMaster._id.toString()) continue;
+
+      try {
+        // Hydrate any extracted facts or contact info to profile if needed
+        if (duplicate.extractedData || duplicate.resumeDocument) {
+          await this.profileService.hydrateFromParsedResume(
+            userId,
+            duplicate.extractedData || null,
+            (duplicate.resumeDocument || null) as any
+          );
+        }
+
+        // Delete the redundant duplicate record so it does not linger or conflict
+        await this.resumeRepository.deleteUserResume(userId, duplicate._id.toString());
+        console.log(`[ResumeService] Successfully deleted duplicate master resume ${duplicate._id} (${duplicate.title})`);
+      } catch (err: any) {
+        console.warn(`[ResumeService] Failed to clean up duplicate master resume ${duplicate._id}:`, err?.message);
+      }
+    }
+
+    return canonicalMaster;
+  }
+
+  /**
    * Lazily retrieves or generates the Master Resume for a user from their Career Profile.
    * Concurrency-safe: handles duplicate key races if multiple creation calls occur simultaneously.
    */
@@ -842,7 +905,7 @@ export class ResumeService {
 
     const { candidateName, candidateEmail } = await this.resolveCandidateIdentity(userId);
 
-    const existingMaster = await this.resumeRepository.findMasterByUserId(userId);
+    const existingMaster = await this.autoHealMasterResumes(userId);
     if (existingMaster) {
       // Auto-heal if contact fullName was previously hardcoded or defaulted to "Resume"
       const currentName = existingMaster.resumeDocument?.contact?.fullName;
@@ -1023,7 +1086,7 @@ export class ResumeService {
     const variants: ResumePortfolioItemDTO[] = [];
 
     for (const res of userResumes) {
-      if (res.variantType === "MASTER" || res._id.toString() === masterResume._id.toString()) {
+      if (res._id.toString() === masterResume._id.toString()) {
         masterItem = {
           id: res._id.toString(),
           displayName: res.title || "Master Resume",

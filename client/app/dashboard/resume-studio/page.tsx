@@ -1,17 +1,17 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback, Suspense } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertCircle,
   RefreshCw,
-  Lock,
-  Sparkles,
-  UploadCloud,
-  Check,
   Trash2,
+  Check,
 } from 'lucide-react';
 import { useResumeStudio } from '@/hooks/useResumeStudio';
+import { useResumeComparison } from '@/hooks/useResumeComparison';
+import { ComparisonChangeVM } from '@/types/resume-comparison-view.types';
 import {
   ResumeStudioSidebar,
   ResumeStudioHeader,
@@ -21,6 +21,8 @@ import {
   ResumeInsightsPanel,
   ResumeSectionNavigator,
   ResumeStudioWorkspace,
+  ResumeSwitchConfirmDialog,
+  ResumeComparisonDialog,
 } from '@/components/resume-studio';
 
 // Code-split optimization review modal (only loaded when user triggers optimization)
@@ -32,39 +34,126 @@ const OptimizationReviewModal = dynamic(
   { ssr: false }
 );
 
-export default function ResumeStudioPage() {
+interface ProgrammaticNavigationToken {
+  id: string;
+  requestId: number;
+}
+
+function ResumeStudioPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [initialResumeId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return new URLSearchParams(window.location.search).get('resumeId');
-    }
-    return null;
+    return searchParams.get('resumeId');
   });
+
   const studio = useResumeStudio(initialResumeId);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Sync viewMode and resumeId from URL query parameters (e.g. ?view=audit, ?view=editor, or ?resumeId=xyz)
+  // Programmatic navigation tracking ref to eliminate search-param loops
+  const programmaticNavigationTokenRef = useRef<ProgrammaticNavigationToken | null>(null);
+  const initialReconciledRef = useRef(false);
+
+  // User variant switch handler (triggers USER_VARIANT_SWITCH)
+  const handleSelectVariant = useCallback((targetResumeId: string) => {
+    studio.switchResumeVariant(targetResumeId, 'USER_VARIANT_SWITCH', (committedId, requestId) => {
+      programmaticNavigationTokenRef.current = { id: committedId, requestId };
+      router.push(`/dashboard/resume-studio?resumeId=${committedId}`, { scroll: false });
+    });
+  }, [studio.switchResumeVariant, router]);
+
+  // Dirty switch confirmation handler
+  const handleConfirmSwitch = useCallback(() => {
+    studio.confirmSwitchVariant((committedId, requestId) => {
+      programmaticNavigationTokenRef.current = { id: committedId, requestId };
+      router.push(`/dashboard/resume-studio?resumeId=${committedId}`, { scroll: false });
+    });
+  }, [studio.confirmSwitchVariant, router]);
+
+  // Cancel switch handler (restore URL if triggered by browser history navigation)
+  const handleCancelSwitch = useCallback(() => {
+    studio.cancelSwitchVariant();
+    if (studio.activeResumeId) {
+      router.replace(`/dashboard/resume-studio?resumeId=${studio.activeResumeId}`, { scroll: false });
+    }
+  }, [studio.cancelSwitchVariant, studio.activeResumeId, router]);
+
+  // Master resume resolution for comparison baseline
+  const masterResume = useMemo(
+    () => studio.resumes.find((r) => r.variantType === 'MASTER'),
+    [studio.resumes]
+  );
+
+  // Phase 6E.4: Concurrency-guarded comparison hook
+  const comparison = useResumeComparison({
+    activeResumeId: studio.activeResumeId,
+    masterResumeId: masterResume?.id || '',
+    variantType: studio.currentResume?.variantType,
+    targetJobId: studio.currentResume?.targetJobId,
+    diffResult: studio.diffSummary,
+  });
+
+  // Canonical Studio navigation handler from comparison card/drawer
+  const handleNavigateFromComparison = useCallback(
+    (change: ComparisonChangeVM) => {
+      comparison.closeComparison();
+      const sectionMap: Record<string, string> = {
+        summary: 'summary',
+        skills: 'skills',
+        experience: 'experience',
+        projects: 'projects',
+        education: 'education',
+        layout: 'summary',
+      };
+      const targetSection = sectionMap[change.section] || 'summary';
+      studio.setActiveSectionKey(targetSection as any);
+      studio.setPreviewHighlightSection(targetSection);
+      studio.setActiveView('detail');
+      studio.setViewMode('editor');
+      studio.setMobileEditorView('editor');
+    },
+    [comparison, studio]
+  );
+
+  // Sync viewMode and handle browser Back/Forward navigation from URL searchParams
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const viewParam = params.get('view') || params.get('tab');
-      if (viewParam) {
-        if (viewParam === 'audit' || viewParam === 'analysis') {
-          studio.setViewMode('audit');
-        } else if (viewParam === 'builder' || viewParam === 'design') {
-          studio.setViewMode('builder');
-        } else if (['editor', 'split', 'visual', 'content'].includes(viewParam)) {
-          studio.setViewMode('editor');
-        }
-      }
-      const resumeIdParam = params.get('resumeId');
-      if (resumeIdParam && studio.resumes.length > 0 && studio.selectedResumeId !== resumeIdParam) {
-        const targetResume = studio.resumes.find((r) => r._id === resumeIdParam);
-        if (targetResume) {
-          studio.handleSelectResume(resumeIdParam);
-        }
+    const viewParam = searchParams.get('view') || searchParams.get('tab');
+    if (viewParam) {
+      if (viewParam === 'audit' || viewParam === 'analysis') {
+        studio.setViewMode('audit');
+      } else if (viewParam === 'builder' || viewParam === 'design') {
+        studio.setViewMode('builder');
+      } else if (['editor', 'split', 'visual', 'content'].includes(viewParam)) {
+        studio.setViewMode('editor');
       }
     }
-  }, [studio.setViewMode, studio.resumes, studio.selectedResumeId, studio.handleSelectResume]);
+
+    const resumeIdParam = searchParams.get('resumeId');
+    const token = programmaticNavigationTokenRef.current;
+
+    // If this URL change matches our active programmatic switch token, ignore:
+    if (token && token.id === resumeIdParam) {
+      programmaticNavigationTokenRef.current = null;
+      return;
+    }
+
+    // Legitimate browser Back/Forward navigation:
+    if (resumeIdParam && studio.activeResumeId && resumeIdParam !== studio.activeResumeId && !studio.loading) {
+      studio.switchResumeVariant(resumeIdParam, 'BROWSER_HISTORY_NAVIGATION');
+    }
+  }, [searchParams, studio.setViewMode, studio.activeResumeId, studio.loading, studio.switchResumeVariant]);
+
+  // Reconcile invalid/fallback deep links: URL only updates after fallback commits
+  useEffect(() => {
+    if (!studio.loading && studio.activeResumeId && !initialReconciledRef.current) {
+      initialReconciledRef.current = true;
+      const urlResumeId = searchParams.get('resumeId');
+      if (urlResumeId && urlResumeId !== studio.activeResumeId) {
+        // Deep link failed to load or fell back to default/master
+        router.replace(`/dashboard/resume-studio?resumeId=${studio.activeResumeId}`, { scroll: false });
+      }
+    }
+  }, [studio.loading, studio.activeResumeId, searchParams, router]);
 
   // Load initial data on mount
   useEffect(() => {
@@ -117,7 +206,7 @@ export default function ResumeStudioPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{studio.error}</p>
           </div>
           <button
-            onClick={() => studio.selectedResumeId && studio.fetchScore(studio.selectedResumeId)}
+            onClick={() => studio.activeResumeId && studio.fetchScore(studio.activeResumeId)}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
           >
             <RefreshCw className="w-4 h-4" />
@@ -165,8 +254,11 @@ export default function ResumeStudioPage() {
           <ResumeStudioHeader
             resumes={studio.resumes}
             selectedResumeId={studio.selectedResumeId}
+            activeResumeId={studio.activeResumeId}
             currentResume={studio.currentResume}
             isCurrentResumeMaster={studio.isCurrentResumeMaster}
+            isMaster={studio.isMaster}
+            isTailored={studio.isTailored}
             isMasterStale={studio.isMasterStale}
             isSyncingMaster={studio.isSyncingMaster}
             saveStatus={studio.saveStatus}
@@ -175,12 +267,16 @@ export default function ResumeStudioPage() {
             refreshing={studio.refreshing}
             isDeletingResume={studio.isDeletingResume}
             isDownloadingPdf={studio.isDownloadingPdf}
-            onSelectResume={studio.handleSelectResume}
+            diffSummary={studio.diffSummary}
+            onSelectResume={handleSelectVariant}
             onSyncMasterResume={studio.handleSyncMasterResume}
-            onRefreshScore={() => studio.selectedResumeId && studio.fetchScore(studio.selectedResumeId)}
+            onRefreshScore={() => studio.activeResumeId && studio.fetchScore(studio.activeResumeId)}
             onDeleteClick={() => studio.handleDeleteClick()}
             onDownloadPdf={studio.handleDownloadPDF}
+            onOpenComparison={comparison.openComparison}
             onOpenMobileSidebar={() => studio.setIsMobileSidebarOpen(true)}
+            targetRole={studio.targetRole}
+            onTargetRoleChange={studio.handleTargetRoleChange}
           />
 
           {/* Master Resume Stale Banner Alert */}
@@ -220,11 +316,9 @@ export default function ResumeStudioPage() {
                   activeView={studio.activeView}
                   onActiveViewChange={studio.setActiveView}
                   activeSectionKey={studio.activeSectionKey}
-                  onSelectSection={(secId) => {
-                    studio.setActiveSectionKey(secId);
-                    studio.setPreviewHighlightSection(secId);
-                  }}
+                  onSelectSection={(key: keyof import('@/types/resume-scoring.types').ResumeScoreResult['sections']) => studio.setActiveSectionKey(key)}
                   scoreResult={studio.scoreResult}
+                  analysis={studio.analysis}
                   builderConfig={studio.builderConfig}
                   onBuilderConfigChange={studio.handleBuilderConfigChange}
                   isGenerating={studio.isGenerating}
@@ -236,10 +330,17 @@ export default function ResumeStudioPage() {
                   onRejectSuggestion={studio.handleRejectSuggestion}
                   onTriggerUpload={() => studio.fileInputRef.current?.click()}
                   isUploading={studio.isUploading}
-                  fileInputRef={studio.fileInputRef}
-                  onFileInputChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) studio.handleFileUpload(file);
+                  currentResume={studio.currentResume}
+                  diffResult={studio.diffSummary}
+                  onOpenComparison={comparison.openComparison}
+                  onNavigateToSection={(_category, sectionKey) => {
+                    if (sectionKey) {
+                      studio.setActiveSectionKey(sectionKey as any);
+                      studio.setPreviewHighlightSection(sectionKey);
+                      studio.setActiveView('detail');
+                      studio.setViewMode('editor');
+                      studio.setMobileEditorView('editor');
+                    }
                   }}
                 />
               }
@@ -248,18 +349,13 @@ export default function ResumeStudioPage() {
                   document={studio.resumeDoc}
                   config={studio.builderConfig}
                   highlightSectionId={studio.previewHighlightSection}
-                  onSectionClick={(secId) => {
-                    studio.setPreviewHighlightSection(secId);
-                    studio.setActiveSectionKey(secId as any);
-                  }}
-                  onJumpToImprove={(secId) => {
+                  onSectionClick={(secId: string) => {
                     studio.setActiveSectionKey(secId as any);
                     studio.setPreviewHighlightSection(secId);
                     studio.setActiveView('detail');
                     studio.setViewMode('editor');
                     studio.setMobileEditorView('editor');
                   }}
-                  isVisibleOnMobile={studio.mobileEditorView === 'preview'}
                 />
               }
               insightsPanel={
@@ -269,12 +365,9 @@ export default function ResumeStudioPage() {
                   analysis={studio.analysis}
                   activePillar={studio.activePillar}
                   onSelectPillar={studio.setActivePillar}
-                  onOpenEditor={(resumeId?: string) => {
-                    if (resumeId && resumeId !== studio.selectedResumeId) {
-                      studio.handleSelectResume(resumeId);
-                    }
+                  onOpenEditor={(resumeId) => {
+                    if (resumeId) studio.handleSelectResume(resumeId);
                     studio.setViewMode('editor');
-                    studio.setMobileEditorView('editor');
                   }}
                   onUploadClick={() => studio.fileInputRef.current?.click()}
                   isUploading={studio.isUploading}
@@ -283,7 +376,7 @@ export default function ResumeStudioPage() {
                   optimizingRecId={studio.optimizingRecId}
                   scoreResult={studio.scoreResult}
                   prioritySection={prioritySection}
-                  onSectionFixWithAi={(secId) => {
+                  onSectionFixWithAi={(secId: string) => {
                     studio.setActiveSectionKey(secId as any);
                     studio.setPreviewHighlightSection(secId);
                     studio.setActiveView('detail');
@@ -291,9 +384,9 @@ export default function ResumeStudioPage() {
                     studio.setMobileEditorView('editor');
                   }}
                   currentResume={studio.currentResume}
-                  onDeleteClick={() => studio.handleDeleteClick()}
+                  onDeleteClick={studio.handleDeleteClick}
                   selectedResumeId={studio.selectedResumeId}
-                  onSelectResume={studio.handleSelectResume}
+                  onSelectResume={handleSelectVariant}
                   onDownloadPdf={studio.handleDownloadPDF}
                   isDownloadingPdf={studio.isDownloadingPdf}
                   portfolioVersion={studio.portfolioVersion}
@@ -304,97 +397,8 @@ export default function ResumeStudioPage() {
         </div>
       </div>
 
-      {/* 3. LOCKED EMPTY STATE OVERLAY */}
-      {isLocked && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center p-4 sm:p-6 bg-slate-950/20 dark:bg-slate-950/40 backdrop-blur-xs">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-gradient-to-tr from-indigo-500/20 via-purple-500/15 to-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* 3. MODALS & DIALOGS */}
 
-          <div className="relative max-w-lg w-full rounded-3xl p-8 sm:p-10 bg-white/75 dark:bg-[#0c1236]/85 backdrop-blur-2xl border border-white/60 dark:border-indigo-500/30 shadow-2xl text-center space-y-6 overflow-hidden">
-            <div className="relative mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/15 via-purple-500/10 to-indigo-600/20 dark:from-indigo-900/50 dark:via-purple-900/30 dark:to-indigo-800/50 border border-indigo-500/30 dark:border-indigo-400/40 flex items-center justify-center shadow-inner">
-              <Lock className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white flex items-center justify-center shadow-md">
-                <Sparkles className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-            <div className="relative z-10 space-y-2">
-              <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                Resume Studio is Ready
-              </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto">
-                Upload your resume or build your Career Profile to unlock real-time ATS scoring, section-by-section AI diagnostics, and the interactive live editor.
-              </p>
-            </div>
-
-            {/* Drag & Drop Upload Zone */}
-            <div
-              onClick={() => studio.fileInputRef.current?.click()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              className={`group relative z-10 p-6 rounded-2xl border-2 border-dashed transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-3 ${isDragging
-                ? 'border-indigo-500 bg-indigo-500/10'
-                : 'border-slate-300/80 dark:border-slate-700/80 hover:border-indigo-500/70 dark:hover:border-indigo-400/70 bg-white/40 dark:bg-slate-900/40 hover:bg-white/70 dark:hover:bg-slate-900/60'
-                }`}
-            >
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
-                {studio.isUploading ? (
-                  <RefreshCw className="w-6 h-6 animate-spin text-indigo-600 dark:text-indigo-400" />
-                ) : (
-                  <UploadCloud className="w-6 h-6" />
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  {studio.isUploading ? 'Analyzing and parsing resume...' : 'Click to upload or drag & drop'}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                  Supports PDF (Max 5MB)
-                </p>
-              </div>
-            </div>
-
-            <div className="relative z-10">
-              <button
-                onClick={() => studio.fileInputRef.current?.click()}
-                disabled={studio.isUploading}
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-[0.99]"
-              >
-                {studio.isUploading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Analyzing Resume...</span>
-                  </>
-                ) : (
-                  <>
-                    <UploadCloud className="w-4 h-4" />
-                    <span>Upload Resume to Begin</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div className="relative z-10 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-center gap-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-              <span className="flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-500" /> ATS Scoring
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-500" /> AI Diagnostics
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-500" /> Live Editor
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. MODALS & DIALOGS */}
       <OptimizationReviewModal
         draft={studio.selectedDraft}
         isOpen={studio.isOptimizationModalOpen}
@@ -404,6 +408,13 @@ export default function ResumeStudioPage() {
         onAccept={studio.handleAcceptOptimization}
         onReject={studio.handleRejectOptimization}
         onTargetChange={() => { }}
+      />
+
+      {/* Variant Switch Dirty Confirmation Dialog */}
+      <ResumeSwitchConfirmDialog
+        isOpen={studio.isSwitchConfirmOpen}
+        onStay={handleCancelSwitch}
+        onConfirmSwitch={handleConfirmSwitch}
       />
 
       {/* Delete Resume Confirmation Modal */}
@@ -468,7 +479,24 @@ export default function ResumeStudioPage() {
         </div>
       )}
 
-      {/* Global Hidden PDF File Input for Studio (Works in all view modes: Audit / Editor) */}
+      {/* Phase 6E.4: Resume Comparison & Evidence Dialog */}
+      <ResumeComparisonDialog
+        isOpen={comparison.isDialogOpen}
+        onClose={comparison.closeComparison}
+        viewModel={comparison.viewModel}
+        isLoading={comparison.isLoading}
+        error={comparison.error}
+        viewMode={comparison.viewMode}
+        onViewModeChange={comparison.setViewMode}
+        selectedChangeId={comparison.selectedChangeId}
+        isEvidenceDrawerOpen={comparison.isEvidenceDrawerOpen}
+        onOpenEvidence={comparison.openEvidenceDrawer}
+        onCloseEvidence={comparison.closeEvidenceDrawer}
+        selectedEvidenceDrawerVM={comparison.selectedEvidenceDrawerVM}
+        onNavigateToResume={handleNavigateFromComparison}
+      />
+
+      {/* Global Hidden PDF File Input for Studio */}
       <input
         type="file"
         ref={studio.fileInputRef}
@@ -484,5 +512,20 @@ export default function ResumeStudioPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function ResumeStudioPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1130] p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6 animate-pulse font-sans">
+          <div className="h-14 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800" />
+          <div className="h-44 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800" />
+        </div>
+      }
+    >
+      <ResumeStudioPageContent />
+    </Suspense>
   );
 }

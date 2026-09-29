@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@vitest/runner": "^4.1.11",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.6.26",
     "cookie-parser": "^1.4.7",

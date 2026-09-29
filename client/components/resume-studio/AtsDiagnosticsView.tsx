@@ -2,23 +2,18 @@
 
 import React from 'react';
 import { 
-  ShieldCheck, 
   Wand2, 
   RefreshCw, 
-  UploadCloud, 
-  FileText,
-  Download,
-  Eye,
+  UploadCloud,
 } from 'lucide-react';
 import { ResumeAnalysisData, AIResumeRecommendation, ResumeRecord } from '@/types/resume';
 import { ResumeScoreResult } from '@/types/resume-scoring.types';
 import { ResumeScoreCard } from '@/components/dashboard/resume-intelligence/ResumeScoreCard';
 import { ATSCompatibility, AuditPillarType } from '@/components/dashboard/resume-intelligence/ATSCompatibility';
 import { PillarDetailInspector } from '@/components/dashboard/resume-intelligence/PillarDetailInspector';
-import { AIRecommendations } from '@/components/dashboard/resume-intelligence/AIRecommendations';
 import { AtsPortfolioSection } from './AtsPortfolioSection';
 
-const TARGET_ROLES = [
+export const TARGET_ROLES = [
   'Full-Stack Engineer',
   'Frontend Engineer',
   'Backend Engineer',
@@ -60,20 +55,23 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
   onOpenEditor,
   onUploadClick,
   isUploading,
-  onOptimize,
-  isOptimizing,
-  optimizingRecId,
+  onOptimize: _onOptimize,
+  isOptimizing: _isOptimizing,
+  optimizingRecId: _optimizingRecId,
   scoreResult,
-  prioritySection,
-  onSectionFixWithAi,
-  currentResume,
+  prioritySection: _prioritySection,
+  onSectionFixWithAi: _onSectionFixWithAi,
+  currentResume: _currentResume,
   onDeleteClick: _onDeleteClick,
   selectedResumeId,
   onSelectResume,
-  onDownloadPdf,
-  isDownloadingPdf,
+  onDownloadPdf: _onDownloadPdf,
+  isDownloadingPdf: _isDownloadingPdf,
   portfolioVersion,
 }) => {
+  const [showPillars, setShowPillars] = React.useState(false); // Hidden by default
+  const [showDetails, setShowDetails] = React.useState(false); // Hidden by default
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-fadeIn">
       {/* 1. Header with Title & Target Role Benchmarking */}
@@ -163,67 +161,6 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
         </div>
       )}
 
-      {/* Active Resume Information & Management Card */}
-      {currentResume && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/40 shadow-xs">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-                  {currentResume.title || currentResume.originalFileName || currentResume.fileName || 'Active Master Resume'}
-                </span>
-                {currentResume.isDefault && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
-                    Primary
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                {currentResume.fileSize ? `${Math.round(currentResume.fileSize / 1024)} KB • ` : ''}
-                Uploaded {new Date(currentResume.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
-            <button
-              type="button"
-              onClick={() => onOpenEditor()}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-800/60 transition cursor-pointer"
-              title="Open and view resume in Visual Editor"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>View Resume</span>
-            </button>
-
-            {onDownloadPdf ? (
-              <button
-                onClick={onDownloadPdf}
-                disabled={isDownloadingPdf}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer disabled:opacity-50"
-                title="Download formatted resume as PDF"
-              >
-                <Download className={`w-3.5 h-3.5 ${isDownloadingPdf ? 'animate-bounce' : ''}`} />
-                <span>{isDownloadingPdf ? 'Downloading...' : 'Download Resume'}</span>
-              </button>
-            ) : (currentResume?._id || currentResume?.id) ? (
-              <a
-                href={`/api/resumes/${currentResume._id || currentResume.id}/download`}
-                download
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer"
-                title="Download resume file"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Download Resume</span>
-              </a>
-            ) : null}
-          </div>
-        </div>
-      )}
-
       {/* 2. Primary 3-Pillar Independent Score Header (ATS, Match, Content) */}
       <ResumeScoreCard
         atsScore={scoreResult ? analysis.atsScore : 0}
@@ -240,17 +177,6 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
         portfolioVersion={portfolioVersion}
       />
 
-      {/* 4. Primary Action Layer: Prioritized Recommendations */}
-      <div className="space-y-4">
-        <AIRecommendations
-          recommendations={analysis.recommendations}
-          topAction={analysis.topAction}
-          onOptimize={onOptimize}
-          isOptimizing={isOptimizing}
-          optimizingRecId={optimizingRecId}
-        />
-      </div>
-
       {/* 4. Secondary Layer: Diagnostic Deep-Dive Inspection (4 Pillars Tabs) */}
       <div className="space-y-6 pt-4 border-t border-slate-200 dark:border-slate-800/80">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -262,9 +188,11 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
               Select a pillar below to inspect keywords, impact formulas, formatting, and structural checks.
             </p>
           </div>
-          <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 dark:border-indigo-800/50 self-start sm:self-auto">
-            Role: {targetRole}
-          </span>
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 dark:border-indigo-800/50">
+              Role: {targetRole}
+            </span>
+          </div>
         </div>
 
         <ATSCompatibility
@@ -273,12 +201,17 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
           targetRole={targetRole}
           activePillar={activePillar}
           onSelectPillar={onSelectPillar}
+          isExpanded={showPillars}
+          onToggleExpanded={() => setShowPillars((prev) => !prev)}
         />
 
         <PillarDetailInspector
           activePillar={activePillar}
           analysis={analysis}
           targetRole={targetRole}
+          onSelectPillar={onSelectPillar}
+          isExpanded={showDetails}
+          onToggleExpanded={() => setShowDetails((prev) => !prev)}
         />
       </div>
     </div>

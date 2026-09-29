@@ -8,8 +8,10 @@ export class SkillGapService {
     userId: string,
     targetRole?: string
   ): Promise<SkillGapAnalysisResponseDTO> {
-    // 1. Fetch user's active resume (default first, or most recently updated)
-    const activeResume = (await ResumeModel.findOne({ userId, isDefault: true }).lean()) ||
+    // 1. Fetch candidate's Master Resume baseline (or default, or most recently updated as fallback)
+    const activeResume =
+      (await ResumeModel.findOne({ userId, variantType: "MASTER" }).lean()) ||
+      (await ResumeModel.findOne({ userId, isDefault: true }).lean()) ||
       (await ResumeModel.findOne({ userId }).sort({ updatedAt: -1 }).lean());
 
     // 2. Fetch user's profile to capture profile-based skills and projects

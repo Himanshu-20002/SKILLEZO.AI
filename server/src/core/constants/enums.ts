@@ -118,6 +118,7 @@ export const WorkplaceType = {
 export type WorkplaceType = (typeof WorkplaceType)[keyof typeof WorkplaceType];
 
 export const ApplicationStatus = {
+  DRAFT: "draft",
   APPLIED: "applied",
   UNDER_REVIEW: "under_review",
   SHORTLISTED: "shortlisted",
@@ -128,6 +129,13 @@ export const ApplicationStatus = {
   WITHDRAWN: "withdrawn",
 } as const;
 export type ApplicationStatus = (typeof ApplicationStatus)[keyof typeof ApplicationStatus];
+
+export const ApplicationSource = {
+  PLATFORM: "platform",
+  JOB_INTELLIGENCE: "job_intelligence",
+  MANUAL: "manual",
+} as const;
+export type ApplicationSource = (typeof ApplicationSource)[keyof typeof ApplicationSource];
 
 export const ResumeStatus = {
   UPLOADED: "uploaded",

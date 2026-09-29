@@ -6,6 +6,7 @@ import {
   TailoredResumeMetadataDTO,
   TailoredResumeGenerationResultDTO,
 } from "@/services/tailored-resume.service";
+import { clearJobIntakeDraft } from "@/lib/job-intake-storage";
 
 export interface UseTailoredResumeOptions {
   jobProfileId?: string;
@@ -63,6 +64,7 @@ export function useTailoredResume({
         const result = await tailoredResumeService.generateTailoredResume(targetId, force);
         if (result?.resume) {
           setTailoredResume(result.resume);
+          clearJobIntakeDraft();
         }
         return result;
       } catch (err: any) {

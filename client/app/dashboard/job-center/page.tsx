@@ -280,7 +280,7 @@ export default function SmartJobCenterPage() {
       if (res && res.items && res.items.length > 0) {
         const mappedApps: JobApplication[] = res.items.map((app) => ({
           id: app.id,
-          jobId: app.jobId,
+          jobId: app.jobId || app.jobProfileId || app.id,
           jobTitle: app.job?.title || 'Job Application',
           company: app.job?.companyName || 'Company',
           location: app.job?.location || 'Remote',

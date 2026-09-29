@@ -4,6 +4,7 @@ export type ExperienceRange = '0–1 years' | '1–3 years' | '3–5 years' | '5
 export type MatchTier = '85%+' | '70–85%' | 'All Jobs';
 export type SortOption = 'AI Match' | 'Latest' | 'Salary: High to Low' | 'Salary: Low to High';
 export type ApplicationStatus =
+  | 'draft'
   | 'applied'
   | 'under_review'
   | 'shortlisted'

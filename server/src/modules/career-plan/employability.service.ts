@@ -31,8 +31,10 @@ export class EmployabilityService {
 
     // 3. Gather Profile & Project signals from MongoDB
     const profile = await ProfileModel.findOne({ userId }).lean();
-    const resume = await ResumeModel.findOne({ userId, isDefault: true }).lean() ||
-      await ResumeModel.findOne({ userId }).sort({ updatedAt: -1 }).lean();
+    const resume =
+      (await ResumeModel.findOne({ userId, variantType: "MASTER" }).lean()) ||
+      (await ResumeModel.findOne({ userId, isDefault: true }).lean()) ||
+      (await ResumeModel.findOne({ userId }).sort({ updatedAt: -1 }).lean());
 
     const rawText = resume?.rawText?.toLowerCase() || "";
     const hasGithubLink = rawText.includes("github.com") || !!profile?.links?.github;

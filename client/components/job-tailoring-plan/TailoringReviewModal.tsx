@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TailoringPlanDTO } from "@/types/tailoring-plan.types";
 import { useTailoredResume } from "@/hooks/useTailoredResume";
+import { clearJobIntakeDraft } from "@/lib/job-intake-storage";
 import {
   CheckCircle2,
   ShieldCheck,
@@ -28,8 +29,31 @@ export const TailoringReviewModal: React.FC<TailoringReviewModalProps> = ({
 }) => {
   const router = useRouter();
   const { summary } = plan;
-  const totalApproved = summary.acceptedCount + summary.editedCount;
-  const hasPending = summary.pendingCount > 0;
+  const proposals = Array.isArray(plan.proposals) ? plan.proposals : [];
+
+  const acceptedCount =
+    summary?.acceptedCount ??
+    summary?.accepted ??
+    proposals.filter((p) => !p.isProtected && p.userDecision === "ACCEPTED").length;
+  const editedCount =
+    summary?.editedCount ??
+    summary?.edited ??
+    proposals.filter((p) => !p.isProtected && p.userDecision === "EDITED").length;
+  const rejectedCount =
+    summary?.rejectedCount ??
+    summary?.rejected ??
+    proposals.filter((p) => !p.isProtected && p.userDecision === "REJECTED").length;
+  const protectedCount =
+    summary?.protectedCount ??
+    summary?.doNotAdd ??
+    proposals.filter((p) => p.isProtected || p.action === "DO_NOT_ADD").length;
+  const pendingCount =
+    summary?.pendingCount ??
+    summary?.pending ??
+    proposals.filter((p) => !p.isProtected && (!p.userDecision || p.userDecision === "PENDING")).length;
+
+  const totalApproved = acceptedCount + editedCount;
+  const hasPending = pendingCount > 0;
 
   const {
     generating,
@@ -52,6 +76,7 @@ export const TailoringReviewModal: React.FC<TailoringReviewModalProps> = ({
     const result = await generate(force);
     if (result?.success) {
       setGenerationSuccess(true);
+      clearJobIntakeDraft();
     }
   };
 
@@ -92,7 +117,7 @@ export const TailoringReviewModal: React.FC<TailoringReviewModalProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/60 text-center">
             <div className="text-base font-bold text-emerald-700 dark:text-emerald-400">
-              {summary.acceptedCount}
+              {acceptedCount}
             </div>
             <div className="text-[10px] font-medium text-emerald-800 dark:text-emerald-300">
               Accepted
@@ -101,7 +126,7 @@ export const TailoringReviewModal: React.FC<TailoringReviewModalProps> = ({
 
           <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/60 text-center">
             <div className="text-base font-bold text-blue-700 dark:text-blue-400">
-              {summary.editedCount}
+              {editedCount}
             </div>
             <div className="text-[10px] font-medium text-blue-800 dark:text-blue-300">
               Custom Edited
@@ -110,7 +135,7 @@ export const TailoringReviewModal: React.FC<TailoringReviewModalProps> = ({
 
           <div className="p-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/60 text-center">
             <div className="text-base font-bold text-rose-700 dark:text-rose-400">
-              {summary.rejectedCount}
+              {rejectedCount}
             </div>
             <div className="text-[10px] font-medium text-rose-800 dark:text-rose-300">
               Rejected
@@ -119,7 +144,7 @@ export const TailoringReviewModal: React.FC<TailoringReviewModalProps> = ({
 
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-center">
             <div className="text-base font-bold text-slate-700 dark:text-slate-300">
-              {summary.protectedCount}
+              {protectedCount}
             </div>
             <div className="text-[10px] font-medium text-slate-600 dark:text-slate-400">
               Protected Shields
@@ -162,7 +187,7 @@ export const TailoringReviewModal: React.FC<TailoringReviewModalProps> = ({
           <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-300">
             <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
             <span>
-              You have <strong>{summary.pendingCount} pending proposal(s)</strong>. Review all proposals before generating the tailored variant.
+              You have <strong>{pendingCount} pending proposal(s)</strong>. Review all proposals before generating the tailored variant.
             </span>
           </div>
         )}

@@ -44,6 +44,10 @@ export class ResumeRepository extends BaseRepository<IResume> {
     return await this.model.findOne({ userId, variantType: "MASTER" }).exec();
   }
 
+  async findAllMastersByUserId(userId: string): Promise<IResume[]> {
+    return await this.model.find({ userId, variantType: "MASTER" }).sort({ createdAt: 1 }).exec();
+  }
+
   async clearDefaultFlag(userId: string): Promise<void> {
     await this.model.updateMany({ userId, isDefault: true }, { $set: { isDefault: false } }).exec();
   }

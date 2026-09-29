@@ -6,6 +6,48 @@ import {
   BatchProposalDecisionsInput,
 } from "@/types/tailoring-plan.types";
 
+function normalizePlan(raw: any): TailoringPlanDTO {
+  if (!raw) return raw;
+  const plan = { ...raw };
+  const proposals: any[] = Array.isArray(plan.proposals) ? plan.proposals : [];
+
+  const acceptedFromProposals = proposals.filter((p) => !p.isProtected && p.userDecision === "ACCEPTED").length;
+  const editedFromProposals = proposals.filter((p) => !p.isProtected && p.userDecision === "EDITED").length;
+  const rejectedFromProposals = proposals.filter((p) => !p.isProtected && p.userDecision === "REJECTED").length;
+  const protectedFromProposals = proposals.filter((p) => p.isProtected || p.action === "DO_NOT_ADD").length;
+  const pendingFromProposals = proposals.filter(
+    (p) => !p.isProtected && (!p.userDecision || p.userDecision === "PENDING")
+  ).length;
+
+  const rawSummary = plan.summary || {};
+  const accepted = rawSummary.acceptedCount ?? rawSummary.accepted ?? acceptedFromProposals;
+  const edited = rawSummary.editedCount ?? rawSummary.edited ?? editedFromProposals;
+  const rejected = rawSummary.rejectedCount ?? rawSummary.rejected ?? rejectedFromProposals;
+  const pending = rawSummary.pendingCount ?? rawSummary.pending ?? pendingFromProposals;
+  const protectedCount = rawSummary.protectedCount ?? rawSummary.doNotAdd ?? protectedFromProposals;
+  const total = rawSummary.totalProposals ?? proposals.length;
+  const actionableTotal = rawSummary.actionableTotal ?? Math.max(0, total - protectedCount);
+
+  plan.summary = {
+    totalProposals: total,
+    actionableTotal,
+    pending,
+    accepted,
+    edited,
+    rejected,
+    doNotAdd: protectedCount,
+    pendingCount: pending,
+    acceptedCount: accepted,
+    editedCount: edited,
+    rejectedCount: rejected,
+    protectedCount,
+    actionBreakdown: rawSummary.actionBreakdown || {},
+    sectionBreakdown: rawSummary.sectionBreakdown || {},
+  };
+
+  return plan;
+}
+
 export const tailoringPlanService = {
   /**
    * Create or fetch the TailoringPlan for a specific JobProfile.
@@ -21,7 +63,8 @@ export const tailoringPlanService = {
       method: "POST",
       body: JSON.stringify({ intensity }),
     });
-    return (res.data as any)?.tailoringPlan || res.data;
+    const raw = (res.data as any)?.tailoringPlan || res.data;
+    return normalizePlan(raw);
   },
 
   /**
@@ -32,7 +75,8 @@ export const tailoringPlanService = {
       success: boolean;
       data: { tailoringPlan?: TailoringPlanDTO } | TailoringPlanDTO;
     }>(`/api/job-profiles/${jobProfileId}/tailoring-plan`);
-    return (res.data as any)?.tailoringPlan || res.data;
+    const raw = (res.data as any)?.tailoringPlan || res.data;
+    return normalizePlan(raw);
   },
 
   /**
@@ -53,7 +97,8 @@ export const tailoringPlanService = {
         body: JSON.stringify(input),
       }
     );
-    return (res.data as any)?.tailoringPlan || res.data;
+    const raw = (res.data as any)?.tailoringPlan || res.data;
+    return normalizePlan(raw);
   },
 
   /**
@@ -74,7 +119,8 @@ export const tailoringPlanService = {
         body: JSON.stringify({ decisions, updates: decisions }),
       }
     );
-    return (res.data as any)?.tailoringPlan || res.data;
+    const raw = (res.data as any)?.tailoringPlan || res.data;
+    return normalizePlan(raw);
   },
 
   /**
@@ -92,6 +138,7 @@ export const tailoringPlanService = {
       method: "POST",
       body: JSON.stringify({ intensity, force }),
     });
-    return (res.data as any)?.tailoringPlan || res.data;
+    const raw = (res.data as any)?.tailoringPlan || res.data;
+    return normalizePlan(raw);
   },
 };

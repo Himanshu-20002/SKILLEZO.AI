@@ -438,6 +438,15 @@ export class TailoredResumeGenerator {
       if (!tailoredDoc.currentVersion.name) tailoredDoc.currentVersion.name = "Tailored Version";
     }
 
+    // Ensure all skills have valid categories
+    if (Array.isArray(tailoredDoc.skills)) {
+      for (const sk of tailoredDoc.skills) {
+        if (!sk.category || typeof sk.category !== "string") {
+          sk.category = "OTHER";
+        }
+      }
+    }
+
     const parseResult = ResumeDocumentSchema.safeParse(tailoredDoc);
     if (!parseResult.success) {
       throw new AppError(

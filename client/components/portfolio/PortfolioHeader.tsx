@@ -24,7 +24,7 @@ export const PortfolioHeader: React.FC<PortfolioHeaderProps> = ({
               Resume Portfolio
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              Manage your canonical Master Resume and targeted role variants ({variantCount + 1} total).
+              Manage your master resume and customized job versions ({variantCount + 1} total).
             </p>
           </div>
         </div>
@@ -36,7 +36,7 @@ export const PortfolioHeader: React.FC<PortfolioHeaderProps> = ({
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white transition-all shadow-md shadow-indigo-500/20 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>Create Variant</span>
+          <span>Create Tailored Resume</span>
         </button>
       </div>
     </div>

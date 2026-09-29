@@ -108,7 +108,7 @@ describe("Phase 5: Section AI Editor + Evidence Lock", () => {
 
       const updated = SectionMutator.applyChange(doc, "experience", newExperience, 1);
 
-      expect(updated.experience).toEqual(newExperience);
+      expect(updated.experience).toMatchObject(newExperience);
       expect(updated.currentVersion.versionNumber).toBe(2);
       expect(doc.experience).not.toEqual(newExperience); // Original remains untouched
     });

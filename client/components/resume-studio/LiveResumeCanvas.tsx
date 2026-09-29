@@ -32,9 +32,9 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
   const contentWrapperRef = useRef<HTMLDivElement>(null);
 
   // Zoom Modes: 'fit' (entire resume visible on screen with zero scrolling) vs '100%' (natural reading size) vs custom
-  const [zoomMode, setZoomMode] = useState<'fit' | '100%' | 'custom'>('fit');
+  const [zoomMode, setZoomMode] = useState<'fit' | '90%' | '100%' | 'custom'>('90%');
   const [fitScale, setFitScale] = useState<number>(0.68);
-  const [customScale, setCustomScale] = useState<number>(1);
+  const [customScale, setCustomScale] = useState<number>(0.9);
   const [contentHeight, setContentHeight] = useState<number>(1150);
 
   // Measure container and content to compute the exact scale needed to fit 100% of the resume on screen
@@ -71,7 +71,7 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
   }, [deferredDoc, deferredConfig]);
 
   const activeScale =
-    zoomMode === 'fit' ? fitScale : zoomMode === '100%' ? 1 : customScale;
+    zoomMode === 'fit' ? fitScale : zoomMode === '90%' ? 0.9 : zoomMode === '100%' ? 1 : customScale;
 
   const handleZoomIn = () => {
     setZoomMode('custom');
@@ -119,6 +119,21 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
             }`}
           >
             Fit Page
+          </button>
+
+          <button
+            onClick={() => {
+              setZoomMode('90%');
+              setCustomScale(0.9);
+            }}
+            title="Default 90% view (Optimal for studio reading & editing)"
+            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              zoomMode === '90%' || (zoomMode === 'custom' && customScale === 0.9)
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            90%
           </button>
 
           <button

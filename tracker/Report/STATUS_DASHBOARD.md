@@ -1,7 +1,7 @@
 # 📊 SKILLEZO AI — Project Status Dashboard
 
-> **Last Updated:** September 21, 2026 (Phases 0-4 Complete: Career Profile Foundation, Master Resume Integration & Resume Studio UX Refactor, 380/380 Server Tests Green, 0 TypeScript Errors)  
-> **Active Sprint:** Sprint 1 — Week 1 Candidate Loop Closure, Google OAuth, Career Profile Foundation & Resume Studio Architecture  
+> **Last Updated:** September 28, 2026 (Resume Studio UI Polish, Single Master Invariant, Extraction Pipeline, Baseline Anchoring & Collapsible 4 Audit Pillars, 631/631 Tests Monorepo-Wide Green, 0 TypeScript Errors)  
+> **Active Sprint:** Sprint 2 (Week 2) — Resume Studio Tailored Variant Architecture, Review Synchronization & Diagnostics Suite  
 > **Target Soft MVP:** September 30, 2026  
 > **Target Release:** October 10, 2026  
 
@@ -11,7 +11,7 @@
 
 ```text
 ========================================================================================
-OVERALL MVP PLATFORM PROGRESS: [███████████████████░] 95% (Resume Studio & Career OS Live)
+OVERALL MVP PLATFORM PROGRESS: [███████████████████░] 97% (Resume Studio & Tailoring Live)
 ========================================================================================
 Candidate Core Experience & Auth    : [████████████████████] 100% (Working & Verified)
 Resume Studio & Deterministic ATS   : [████████████████████] 100% (Refactored, Tested & Verified)
@@ -19,7 +19,7 @@ Career Profile Single Source of Truth: [█████████████�
 AI Career Coach (Phases 1 to 7)     : [████████████████████] 100% (Core, UI, Actions, Widget Complete)
 Recruiter Review Portal             : [██████████████░░░░░░]  70% (Kanban & Jobs Live, Data Hydration Next)
 Career GPS & Roadmaps               : [███████████████░░░░░]  75% (Core Taxonomies Live, Salary Bands Next)
-Cloud Infrastructure & Prod Hardening: [██████░░░░░░░░░░░░░░]  30% (Dev/Docker Live, Prod Hardening Next)
+Cloud Infrastructure & Prod Hardening: [██████░░░░░░░░░░░░░░]  35% (Dev/Docker Live, Prod Hardening Next)
 AI Auto-Apply Engine                : [░░░░░░░░░░░░░░░░░░░░]   0% (In Sprint 3 Priority)
 ========================================================================================
 ```

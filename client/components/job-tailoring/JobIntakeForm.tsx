@@ -1,8 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CreateJobProfileDTO } from "@/types/job-profile.types";
-import { Briefcase, Building2, Link2, FileText, AlertCircle, Sparkles } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  Link2,
+  FileText,
+  AlertCircle,
+  Sparkles,
+  RotateCcw,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  getJobIntakeDraft,
+  saveJobIntakeDraft,
+  clearJobIntakeDraft,
+  JOB_INTAKE_CLEARED_EVENT,
+} from "@/lib/job-intake-storage";
 
 interface JobIntakeFormProps {
   onSubmit: (input: CreateJobProfileDTO) => Promise<unknown>;
@@ -15,6 +30,68 @@ export const JobIntakeForm: React.FC<JobIntakeFormProps> = ({ onSubmit, loading 
   const [jobUrl, setJobUrl] = useState("");
   const [rawDescription, setRawDescription] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Restore saved draft on mount
+  useEffect(() => {
+    const draft = getJobIntakeDraft();
+    if (draft) {
+      if (draft.jobTitle) setJobTitle(draft.jobTitle);
+      if (draft.company) setCompany(draft.company);
+      if (draft.jobUrl) setJobUrl(draft.jobUrl);
+      if (draft.rawDescription) setRawDescription(draft.rawDescription);
+    }
+
+    const handleCleared = () => {
+      setJobTitle("");
+      setCompany("");
+      setJobUrl("");
+      setRawDescription("");
+      setErrors({});
+    };
+
+    window.addEventListener(JOB_INTAKE_CLEARED_EVENT, handleCleared);
+    return () => {
+      window.removeEventListener(JOB_INTAKE_CLEARED_EVENT, handleCleared);
+    };
+  }, []);
+
+  const handleTitleChange = (val: string) => {
+    setJobTitle(val);
+    saveJobIntakeDraft({ jobTitle: val });
+    if (errors.jobTitle) setErrors((prev) => ({ ...prev, jobTitle: "" }));
+  };
+
+  const handleCompanyChange = (val: string) => {
+    setCompany(val);
+    saveJobIntakeDraft({ company: val });
+    if (errors.company) setErrors((prev) => ({ ...prev, company: "" }));
+  };
+
+  const handleUrlChange = (val: string) => {
+    setJobUrl(val);
+    saveJobIntakeDraft({ jobUrl: val });
+    if (errors.jobUrl) setErrors((prev) => ({ ...prev, jobUrl: "" }));
+  };
+
+  const handleDescriptionChange = (val: string) => {
+    setRawDescription(val);
+    saveJobIntakeDraft({ rawDescription: val });
+    if (errors.rawDescription) setErrors((prev) => ({ ...prev, rawDescription: "" }));
+  };
+
+  const handleClear = () => {
+    setJobTitle("");
+    setCompany("");
+    setJobUrl("");
+    setRawDescription("");
+    setErrors({});
+    clearJobIntakeDraft();
+    toast.info("Job description form cleared.");
+  };
+
+  const hasContent = Boolean(
+    jobTitle.trim() || company.trim() || jobUrl.trim() || rawDescription.trim()
+  );
 
   const charCount = rawDescription.length;
   const isDescTooShort = charCount > 0 && charCount < 50;
@@ -75,10 +152,7 @@ export const JobIntakeForm: React.FC<JobIntakeFormProps> = ({ onSubmit, loading 
             <input
               type="text"
               value={jobTitle}
-              onChange={(e) => {
-                setJobTitle(e.target.value);
-                if (errors.jobTitle) setErrors((prev) => ({ ...prev, jobTitle: "" }));
-              }}
+              onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="e.g. Senior Full Stack Engineer"
               disabled={loading}
               className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-900/60 border ${
@@ -105,10 +179,7 @@ export const JobIntakeForm: React.FC<JobIntakeFormProps> = ({ onSubmit, loading 
             <input
               type="text"
               value={company}
-              onChange={(e) => {
-                setCompany(e.target.value);
-                if (errors.company) setErrors((prev) => ({ ...prev, company: "" }));
-              }}
+              onChange={(e) => handleCompanyChange(e.target.value)}
               placeholder="e.g. Stripe, Acme Corp"
               disabled={loading}
               className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none transition-all disabled:opacity-50"
@@ -127,10 +198,7 @@ export const JobIntakeForm: React.FC<JobIntakeFormProps> = ({ onSubmit, loading 
           <input
             type="url"
             value={jobUrl}
-            onChange={(e) => {
-              setJobUrl(e.target.value);
-              if (errors.jobUrl) setErrors((prev) => ({ ...prev, jobUrl: "" }));
-            }}
+            onChange={(e) => handleUrlChange(e.target.value)}
             placeholder="https://jobs.lever.co/company/role-id"
             disabled={loading}
             className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-900/60 border ${
@@ -171,10 +239,7 @@ export const JobIntakeForm: React.FC<JobIntakeFormProps> = ({ onSubmit, loading 
           <textarea
             rows={8}
             value={rawDescription}
-            onChange={(e) => {
-              setRawDescription(e.target.value);
-              if (errors.rawDescription) setErrors((prev) => ({ ...prev, rawDescription: "" }));
-            }}
+            onChange={(e) => handleDescriptionChange(e.target.value)}
             placeholder="Paste the full job description here (requirements, qualifications, responsibilities, tech stack)..."
             disabled={loading}
             className={`w-full pl-10 pr-3.5 py-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-900/60 border ${
@@ -198,8 +263,23 @@ export const JobIntakeForm: React.FC<JobIntakeFormProps> = ({ onSubmit, loading 
         )}
       </div>
 
-      {/* 4. Submission Button */}
-      <div className="pt-2 flex items-center justify-end">
+      {/* 4. Action Buttons Bar */}
+      <div className="pt-2 flex items-center justify-between gap-3">
+        {hasContent ? (
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-900/60 transition-all cursor-pointer disabled:opacity-40"
+            title="Clear all entered fields"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Clear Form</span>
+          </button>
+        ) : (
+          <div />
+        )}
+
         <button
           type="submit"
           disabled={loading || isDescTooShort || isDescTooLong}

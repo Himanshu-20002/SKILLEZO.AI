@@ -254,8 +254,13 @@ export function useTailoringPlan(jobProfileId?: string | null) {
   }, [plan]);
 
   const isFullyReviewed = useMemo(() => {
-    if (!plan || !plan.summary) return false;
-    return (plan.summary.pendingCount ?? 0) === 0;
+    if (!plan) return false;
+    const proposals = Array.isArray(plan.proposals) ? plan.proposals : [];
+    const pendingCount =
+      plan.summary?.pendingCount ??
+      (plan.summary as any)?.pending ??
+      proposals.filter((p) => !p.isProtected && (!p.userDecision || p.userDecision === "PENDING")).length;
+    return pendingCount === 0;
   }, [plan]);
 
   return {

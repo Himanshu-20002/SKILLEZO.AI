@@ -85,7 +85,14 @@ export const TailoringPlanView: React.FC<TailoringPlanViewProps> = ({
       key: "ALL",
       label: "Actionable Proposals",
       icon: Layers,
-      count: plan && plan.summary ? (plan.summary.totalProposals || 0) - (plan.summary.protectedCount || 0) : 0,
+      count:
+        plan && plan.summary
+          ? Math.max(
+              0,
+              (plan.summary.totalProposals || 0) -
+                (plan.summary.protectedCount ?? (plan.summary as any).doNotAdd ?? doNotAddProposals.length ?? 0)
+            )
+          : 0,
     },
     {
       key: "SUMMARY",
@@ -355,8 +362,15 @@ export const TailoringPlanView: React.FC<TailoringPlanViewProps> = ({
       {plan && (
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            {plan.summary.acceptedCount + plan.summary.editedCount} of{" "}
-            {plan.summary.totalProposals - plan.summary.protectedCount} proposals approved.
+            {(plan.summary.acceptedCount ?? (plan.summary as any).accepted ?? 0) +
+              (plan.summary.editedCount ?? (plan.summary as any).edited ?? 0)}{" "}
+            of{" "}
+            {Math.max(
+              0,
+              (plan.summary.totalProposals || 0) -
+                (plan.summary.protectedCount ?? (plan.summary as any).doNotAdd ?? doNotAddProposals.length ?? 0)
+            )}{" "}
+            proposals approved.
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto">

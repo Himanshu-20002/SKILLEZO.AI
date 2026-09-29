@@ -54,7 +54,7 @@ export const DeleteVariantModal: React.FC<DeleteVariantModalProps> = ({
           <p className="text-sm text-slate-600 dark:text-slate-300 mt-4 leading-relaxed">
             Are you sure you want to permanently delete{' '}
             <strong className="text-slate-900 dark:text-white">"{variant.displayName}"</strong>?
-            Your canonical Master Resume and Career Profile data will not be affected.
+            Your primary Master Resume and Career Profile will not be affected.
           </p>
 
           <div className="mt-6 flex items-center justify-end gap-2.5">

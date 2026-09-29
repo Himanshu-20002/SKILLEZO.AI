@@ -87,6 +87,11 @@ export interface ITailoringPlanSummary {
   edited: number;
   rejected: number;
   doNotAdd: number;
+  pendingCount?: number;
+  acceptedCount?: number;
+  editedCount?: number;
+  rejectedCount?: number;
+  protectedCount?: number;
 }
 
 export interface ITailoringPlan extends Document {

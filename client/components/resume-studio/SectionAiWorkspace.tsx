@@ -47,8 +47,8 @@ interface SectionAiWorkspaceProps {
   onGenerate: (instruction: string) => void;
   onApply: () => void;
   onDismissSuggestion: () => void;
-  onBack: () => void;
-  onPreviewOnResume: () => void;
+  onBack?: () => void;
+  onPreviewOnResume?: () => void;
 }
 
 export const SectionAiWorkspace: React.FC<SectionAiWorkspaceProps> = React.memo(({
@@ -92,24 +92,32 @@ export const SectionAiWorkspace: React.FC<SectionAiWorkspaceProps> = React.memo(
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Back Action & Navigation */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Resume Overview</span>
-        </button>
+      {/* Back Action & Navigation (Rendered only if onBack or onPreviewOnResume is provided) */}
+      {(onBack || onPreviewOnResume) && (
+        <div className="flex items-center justify-between">
+          {onBack ? (
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Resume Overview</span>
+            </button>
+          ) : (
+            <div />
+          )}
 
-        <button
-          onClick={onPreviewOnResume}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-        >
-          <Eye className="w-3.5 h-3.5" />
-          <span>Preview on Resume</span>
-        </button>
-      </div>
+          {onPreviewOnResume && (
+            <button
+              onClick={onPreviewOnResume}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Preview on Resume</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Section Summary Card */}
       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">

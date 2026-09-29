@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { jobProfileService } from "@/services/job-profile.service";
 import { JobProfile, CreateJobProfileDTO } from "@/types/job-profile.types";
+import {
+  saveJobIntakeDraft,
+  saveJobTailoringSession,
+  getJobTailoringSession,
+  clearJobTailoringSession,
+} from "@/lib/job-intake-storage";
 
 export type IntakeStatus = "idle" | "submitting" | "analyzing" | "success" | "error";
 
@@ -13,7 +19,28 @@ export function useJobIntake() {
   const [error, setError] = useState<{ message: string; code?: string } | null>(null);
   const [progressStep, setProgressStep] = useState<number>(0);
 
+  // Restore active job profile from session if user navigates or reopens modal
+  useEffect(() => {
+    const session = getJobTailoringSession();
+    if (session?.jobProfileId) {
+      jobProfileService
+        .getJobProfile(session.jobProfileId)
+        .then((profile) => {
+          if (profile) {
+            setJobProfile(profile);
+            setStatus("success");
+          }
+        })
+        .catch(() => {
+          // If profile not found, session expired or cleared
+        });
+    }
+  }, []);
+
   const submitJob = useCallback(async (input: CreateJobProfileDTO): Promise<JobProfile | null> => {
+    // Preserve input in draft immediately
+    saveJobIntakeDraft(input);
+
     setStatus("analyzing");
     setError(null);
     setProgressStep(1);
@@ -29,6 +56,15 @@ export function useJobIntake() {
       setProgressStep(4);
       setJobProfile(profile);
       setStatus("success");
+
+      // Save ongoing tailoring session
+      saveJobTailoringSession({
+        jobProfileId: profile.id,
+        jobTitle: profile.jobTitle,
+        company: profile.company,
+        activeStep: "ANALYSIS",
+      });
+
       toast.success("Job description successfully analyzed!");
       return profile;
     } catch (err: any) {
@@ -74,6 +110,7 @@ export function useJobIntake() {
     setStatus("idle");
     setError(null);
     setProgressStep(0);
+    clearJobTailoringSession();
   }, []);
 
   return {

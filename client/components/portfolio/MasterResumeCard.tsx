@@ -98,13 +98,13 @@ export const MasterResumeCard: React.FC<MasterResumeCardProps> = ({
 
         {/* Description / Baseline facts */}
         <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 line-clamp-2 leading-relaxed">
-          The canonical presentation view of your career facts. All tailored role variants branch from this Master Resume.
+          Your primary, comprehensive resume. All job-tailored versions are built and customized from this profile.
         </p>
 
         {/* Meta info */}
         <div className="mt-3 flex items-center gap-2 text-[11px] text-amber-800/80 dark:text-amber-400/80 font-medium">
           <ShieldCheck className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-          <span>Protected canonical baseline</span>
+          <span>Primary Master Resume</span>
           {master.sourceProfileVersion && (
             <span className="text-slate-400 dark:text-slate-500">• v{master.sourceProfileVersion}</span>
           )}

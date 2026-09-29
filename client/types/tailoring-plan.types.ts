@@ -70,8 +70,14 @@ export interface TailoringPlanSummary {
   rejectedCount: number;
   editedCount: number;
   protectedCount: number;
-  actionBreakdown: Record<string, number>;
-  sectionBreakdown: Record<string, number>;
+  actionableTotal?: number;
+  pending?: number;
+  accepted?: number;
+  edited?: number;
+  rejected?: number;
+  doNotAdd?: number;
+  actionBreakdown?: Record<string, number>;
+  sectionBreakdown?: Record<string, number>;
 }
 
 export interface TailoringPlanDTO {

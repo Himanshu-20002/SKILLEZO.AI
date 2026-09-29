@@ -13,6 +13,10 @@ import {
   Zap,
   Check,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { ResumeAuditPillars, ATSCompatibilityItem } from '@/types/resume';
 
@@ -24,6 +28,8 @@ interface ATSCompatibilityProps {
   targetRole?: string;
   activePillar?: AuditPillarType;
   onSelectPillar?: (pillar: AuditPillarType) => void;
+  isExpanded?: boolean;
+  onToggleExpanded?: () => void;
 }
 
 export const ATSCompatibility: React.FC<ATSCompatibilityProps> = ({
@@ -32,7 +38,19 @@ export const ATSCompatibility: React.FC<ATSCompatibilityProps> = ({
   targetRole = 'Senior Full Stack Engineer',
   activePillar = 'impact',
   onSelectPillar,
+  isExpanded: controlledExpanded,
+  onToggleExpanded,
 }) => {
+  const [internalExpanded, setInternalExpanded] = React.useState(false);
+  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+
+  const toggleExpanded = () => {
+    if (onToggleExpanded) {
+      onToggleExpanded();
+    } else {
+      setInternalExpanded((prev) => !prev);
+    }
+  };
   // Fallback defaults if auditPillars is not yet populated
   const formatting = auditPillars?.formatting || {
     score: 92,
@@ -98,7 +116,7 @@ export const ATSCompatibility: React.FC<ATSCompatibilityProps> = ({
   return (
     <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 shadow-xs">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isExpanded ? 'pb-6 border-b border-slate-100 dark:border-slate-800' : ''}`}>
         <div className="flex items-center gap-3.5">
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs shrink-0">
             <ShieldCheck className="w-5 h-5" />
@@ -114,22 +132,84 @@ export const ATSCompatibility: React.FC<ATSCompatibilityProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Click any pillar below to inspect detailed diagnostics and AI action recommendations
+              {isExpanded
+                ? 'Click any pillar below to inspect detailed diagnostics and AI action recommendations'
+                : 'The 4 audit pillars are collapsed. Click "Expand to Detail" to view full scorecards or switch tabs below.'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto text-xs font-medium px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300">
-          <Target className="w-3.5 h-3.5 text-[#3D5AFE]" />
-          <span>Target: <strong className="text-slate-900 dark:text-white font-semibold">{targetRole}</strong></span>
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          {/* Expand to Detail Button */}
+          <button
+            type="button"
+            onClick={toggleExpanded}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-all cursor-pointer shadow-2xs"
+            title={isExpanded ? 'Collapse the 4 audit pillars' : 'Expand the 4 audit pillars to detail'}
+          >
+            {isExpanded ? (
+              <>
+                <EyeOff className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                <span>Collapse Detail</span>
+                <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+              </>
+            ) : (
+              <>
+                <Eye className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>Expand to Detail</span>
+                <ChevronDown className="w-3.5 h-3.5 text-indigo-500" />
+              </>
+            )}
+          </button>
         </div>
       </div>
 
+      {/* Quick compact pillar switcher when collapsed */}
+      {!isExpanded && (
+        <div className="flex items-center gap-2.5 flex-wrap pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/80 animate-fadeIn">
+          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            Viewing:
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {[
+              { id: 'formatting' as const, label: '1. Formatting', badge: `${formatting.score}%` },
+              { id: 'keywords' as const, label: '2. Keyword Match', badge: `${keywordAlignment.score}%` },
+              { id: 'impact' as const, label: '3. Measurable Impact', badge: `${measurableImpact.metricsCount} detected` },
+              { id: 'structure' as const, label: '4. Section Structure', badge: `${sectionStructure.score}%` },
+            ].map((p) => {
+              const isActive = activePillar === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleCardClick(p.id)}
+                  className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-xs font-semibold'
+                      : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/70 dark:border-slate-700/70'
+                  }`}
+                >
+                  <span>{p.label}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    {p.badge}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* 4 Clean Interactive Pillar Tabs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4.5 pt-6">
-        {/* Pillar 1: ATS Formatting */}
-        <button
-          type="button"
+      {isExpanded && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4.5 pt-6 animate-fadeIn">
+          {/* Pillar 1: ATS Formatting */}
+          <button
+            type="button"
           onClick={() => handleCardClick('formatting')}
           className={`group text-left rounded-xl p-5 flex flex-col justify-between transition-all duration-200 cursor-pointer ${
             activePillar === 'formatting'
@@ -408,6 +488,7 @@ export const ATSCompatibility: React.FC<ATSCompatibilityProps> = ({
           </div>
         </button>
       </div>
+      )}
     </div>
   );
 };
