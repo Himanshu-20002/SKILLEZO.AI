@@ -1,3 +1,5 @@
+import { HistoricalResumeSnapshot } from './application';
+
 export type WorkMode = 'Remote' | 'Hybrid' | 'On-site';
 export type EmploymentType = 'Full-Time' | 'Part-Time' | 'Contract' | 'Internship';
 export type ExperienceRange = '0–1 years' | '1–3 years' | '3–5 years' | '5+ years';
@@ -88,6 +90,8 @@ export interface JobApplication {
   timeline: ApplicationTimelineEvent[];
   resumeUsed: string;
   atsScore: number;
+  resumeSnapshot?: HistoricalResumeSnapshot | null;
+  resumeSnapshotHash?: string | null;
 }
 
 export interface JobFilterState {

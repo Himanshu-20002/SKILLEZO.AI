@@ -292,6 +292,8 @@ export default function SmartJobCenterPage() {
           nextStep: app.status === 'withdrawn' ? 'Application withdrawn by candidate' : 'Awaiting recruiter review',
           resumeUsed: app.resumeSnapshot?.originalFileName || app.resumeSnapshot?.title || 'Attached Resume',
           atsScore: 85,
+          resumeSnapshot: app.resumeSnapshot || null,
+          resumeSnapshotHash: (app as any).resumeSnapshotHash || app.resumeSnapshot?.snapshotHash || null,
           timeline: (app.statusHistory || []).map((h) => ({
             title: h.status.replace(/_/g, ' ').toUpperCase(),
             date: new Date(h.changedAt).toLocaleDateString(),
@@ -379,6 +381,8 @@ export default function SmartJobCenterPage() {
         nextStep: 'Awaiting recruiter screening',
         resumeUsed: (appRecord as any).resumeSnapshot?.originalFileName || (appRecord as any).resumeSnapshot?.fileName || 'Attached AI Resume',
         atsScore: job.matchScore,
+        resumeSnapshot: (appRecord as any).resumeSnapshot || null,
+        resumeSnapshotHash: (appRecord as any).resumeSnapshotHash || (appRecord as any).resumeSnapshot?.snapshotHash || null,
         timeline: [
           { title: 'Application Submitted', date: 'Just now', completed: true, isCurrent: true },
           { title: 'Resume Review', date: 'Pending', completed: false },

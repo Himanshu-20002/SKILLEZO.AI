@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   Edit2,
   Trash2,
+  Target,
 } from 'lucide-react';
 import { ResumePortfolioItem } from '@/types/resume';
 
@@ -31,6 +32,14 @@ export const ResumeVariantCard: React.FC<ResumeVariantCardProps> = ({
   onSelect,
   onOpenEditor,
 }) => {
+  const isUploadedResume = Boolean(
+    variant.isUploaded &&
+    !variant.targetJobTitle &&
+    !variant.targetCompany &&
+    !variant.sourceTailoringPlanId &&
+    !variant.displayName.toLowerCase().startsWith('tailored')
+  );
+
   const formattedDate = variant.updatedAt
     ? new Date(variant.updatedAt).toLocaleDateString(undefined, {
         month: 'short',
@@ -51,15 +60,15 @@ export const ResumeVariantCard: React.FC<ResumeVariantCardProps> = ({
         {/* Top: Badges & Actions */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {variant.isUploaded ? (
+            {isUploadedResume ? (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/80">
                 <UploadCloud className="w-3 h-3 text-sky-500 shrink-0" />
                 <span>Uploaded</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                <FileText className="w-3 h-3 text-slate-400 shrink-0" />
-                <span>Variant</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/80">
+                <Target className="w-3 h-3 text-indigo-500 shrink-0" />
+                <span>Tailored</span>
               </span>
             )}
 

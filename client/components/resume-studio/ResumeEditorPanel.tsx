@@ -301,7 +301,7 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
                 }`}
               >
                 <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>⚡ Section AI &amp; Health</span>
+                <span>Section AI &amp; Health</span>
               </button>
 
               <button
@@ -314,7 +314,7 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
                 }`}
               >
                 <Target className="w-3.5 h-3.5 text-indigo-500" />
-                <span>🎯 Tailoring Insights</span>
+                <span>Tailoring Insights</span>
               </button>
             </div>
           )}
@@ -356,11 +356,6 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
                   onGenerate={onGenerateSuggestion}
                   onApply={onApproveSuggestion}
                   onDismissSuggestion={onRejectSuggestion}
-                  onPreviewOnResume={() => {
-                    if (onNavigateToSection) {
-                      onNavigateToSection('ALL' as any, activeSectionKey as any);
-                    }
-                  }}
                 />
               ) : (
                 <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse space-y-4">

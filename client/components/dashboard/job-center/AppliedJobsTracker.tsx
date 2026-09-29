@@ -11,8 +11,10 @@ import {
   Ban,
 } from 'lucide-react';
 import { JobApplication, ApplicationStatus } from '@/types/job-center';
-import { getApplicationStatusLabel } from '@/types/application';
+import { getApplicationStatusLabel, HistoricalResumeSnapshot } from '@/types/application';
 import { ApplicationTimeline } from './ApplicationTimeline';
+import { ApplicationSnapshotModal } from '@/components/applications/ApplicationSnapshotModal';
+import { applicationService } from '@/services/application.service';
 import { toast } from 'sonner';
 
 interface AppliedJobsTrackerProps {
@@ -27,6 +29,33 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [expandedAppId, setExpandedAppId] = useState<string | null>(null);
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+  const [snapshotModalApp, setSnapshotModalApp] = useState<JobApplication | null>(null);
+  const [activeSnapshot, setActiveSnapshot] = useState<HistoricalResumeSnapshot | null>(null);
+  const [loadingSnapshotId, setLoadingSnapshotId] = useState<string | null>(null);
+
+  const handleOpenSnapshot = async (app: JobApplication) => {
+    if (app.resumeSnapshot) {
+      setActiveSnapshot(app.resumeSnapshot);
+      setSnapshotModalApp(app);
+      return;
+    }
+
+    try {
+      setLoadingSnapshotId(app.id);
+      const fullRecord = await applicationService.getApplicationById(app.id);
+      if (fullRecord?.resumeSnapshot) {
+        setActiveSnapshot(fullRecord.resumeSnapshot);
+        setSnapshotModalApp(app);
+      } else {
+        toast.info('No frozen resume document found for this application.');
+      }
+    } catch (err: any) {
+      console.error('[AppliedJobsTracker] Failed to load application snapshot:', err);
+      toast.error(err.message || 'Could not load resume snapshot.');
+    } finally {
+      setLoadingSnapshotId(null);
+    }
+  };
 
   const filtered = applications.filter((app) => {
     if (filterStatus === 'All') return true;
@@ -145,16 +174,20 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
                       <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
                         <span>{app.company} • Applied on {app.appliedDate}</span>
                         {app.resumeUsed && (
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
+                          <button
+                            type="button"
+                            onClick={() => handleOpenSnapshot(app)}
+                            disabled={loadingSnapshotId === app.id}
+                            title="Click to view submitted resume snapshot"
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all cursor-pointer ${
                               isWithdrawn
-                                ? 'bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                ? 'bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-300/80'
+                                : 'bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 border-slate-200 dark:border-slate-700 hover:border-indigo-300'
                             }`}
                           >
                             <FileText className={`w-3 h-3 ${isWithdrawn ? 'text-slate-500' : 'text-[#3D5AFE]'}`} />
-                            {app.resumeUsed}
-                          </span>
+                            <span>{loadingSnapshotId === app.id ? 'Loading...' : app.resumeUsed}</span>
+                          </button>
                         )}
                       </div>
                     </div>
@@ -211,6 +244,16 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
                     )}
 
                     <button
+                      type="button"
+                      onClick={() => handleOpenSnapshot(app)}
+                      disabled={loadingSnapshotId === app.id}
+                      className="font-bold text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>{loadingSnapshotId === app.id ? 'Loading...' : 'View Resume Snapshot'}</span>
+                    </button>
+
+                    <button
                       onClick={() => toggleExpand(app.id)}
                       className={`font-bold text-[11px] hover:underline cursor-pointer ${
                         isWithdrawn
@@ -234,6 +277,18 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
           })}
         </div>
       )}
+
+      {/* Historical Resume Snapshot Modal */}
+      <ApplicationSnapshotModal
+        isOpen={!!snapshotModalApp && !!activeSnapshot}
+        onClose={() => {
+          setSnapshotModalApp(null);
+          setActiveSnapshot(null);
+        }}
+        snapshot={activeSnapshot}
+        jobTitle={snapshotModalApp?.jobTitle}
+        companyName={snapshotModalApp?.company}
+      />
     </div>
   );
 };

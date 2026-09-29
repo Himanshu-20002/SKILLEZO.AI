@@ -42,9 +42,13 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
     const updateDimensions = () => {
       if (!containerRef.current || !contentWrapperRef.current) return;
 
-      const containerHeight = containerRef.current.clientHeight;
       const containerWidth = containerRef.current.clientWidth;
-      const naturalHeight = contentWrapperRef.current.scrollHeight || 1150;
+      const firstChild = contentWrapperRef.current.firstElementChild as HTMLElement | null;
+      const naturalHeight =
+        firstChild?.offsetHeight ||
+        contentWrapperRef.current.offsetHeight ||
+        contentWrapperRef.current.scrollHeight ||
+        1150;
       const standardWidth = 850;
 
       setContentHeight(naturalHeight);
@@ -61,6 +65,9 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
     const resizeObserver = new ResizeObserver(updateDimensions);
     if (containerRef.current) resizeObserver.observe(containerRef.current);
     if (contentWrapperRef.current) resizeObserver.observe(contentWrapperRef.current);
+    if (contentWrapperRef.current?.firstElementChild) {
+      resizeObserver.observe(contentWrapperRef.current.firstElementChild);
+    }
 
     window.addEventListener('resize', updateDimensions);
 
@@ -174,7 +181,7 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
       {/* Main Canvas Viewport Container */}
       <div
         ref={containerRef}
-        className="min-h-[calc(100vh-140px)] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-100/70 dark:bg-slate-950/60 p-4 flex justify-center items-start overflow-x-auto will-change-scroll"
+        className="w-full h-fit rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-100/70 dark:bg-slate-950/60 p-4 flex justify-center items-start overflow-x-auto will-change-scroll"
       >
         {/* Scaled A4 Sheet Wrapper */}
         <div
@@ -183,7 +190,7 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
             minHeight: `${contentHeight * activeScale}px`,
             height: `${contentHeight * activeScale}px`,
           }}
-          className="relative shrink-0 flex justify-center py-2 pointer-events-auto"
+          className="relative shrink-0 flex justify-center pointer-events-auto"
         >
           <div
             ref={contentWrapperRef}
@@ -193,7 +200,7 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
               transformOrigin: 'top center',
               transition: 'transform 0.15s ease-out',
             }}
-            className="absolute top-2 shadow-2xl rounded-2xl pointer-events-auto select-text"
+            className="absolute top-0 shadow-2xl rounded-2xl pointer-events-auto select-text"
           >
             {deferredDoc ? (
               <ResumeRenderer

@@ -3,7 +3,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { 
   ArrowLeft, 
-  Eye, 
   ShieldCheck, 
   Wand2, 
   RefreshCw, 
@@ -48,7 +47,6 @@ interface SectionAiWorkspaceProps {
   onApply: () => void;
   onDismissSuggestion: () => void;
   onBack?: () => void;
-  onPreviewOnResume?: () => void;
 }
 
 export const SectionAiWorkspace: React.FC<SectionAiWorkspaceProps> = React.memo(({
@@ -61,7 +59,6 @@ export const SectionAiWorkspace: React.FC<SectionAiWorkspaceProps> = React.memo(
   onApply,
   onDismissSuggestion,
   onBack,
-  onPreviewOnResume,
 }) => {
   // Localized state: typing NEVER re-renders parent page or live preview canvas!
   const [instruction, setInstruction] = useState('');
@@ -92,30 +89,16 @@ export const SectionAiWorkspace: React.FC<SectionAiWorkspaceProps> = React.memo(
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Back Action & Navigation (Rendered only if onBack or onPreviewOnResume is provided) */}
-      {(onBack || onPreviewOnResume) && (
+      {/* Back Action & Navigation (Rendered only if onBack is provided) */}
+      {onBack && (
         <div className="flex items-center justify-between">
-          {onBack ? (
-            <button
-              onClick={onBack}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Resume Overview</span>
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {onPreviewOnResume && (
-            <button
-              onClick={onPreviewOnResume}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Preview on Resume</span>
-            </button>
-          )}
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Resume Overview</span>
+          </button>
         </div>
       )}
 

@@ -76,7 +76,7 @@ export const CreateApplicationModal: React.FC<CreateApplicationModalProps> = ({
           : 'Application draft saved!'
       );
       onClose();
-      router.push(`/dashboard/applications/${app.id}`);
+      router.push('/dashboard/job-center?tab=applied');
     } catch (err: any) {
       toast.error(err.message || 'Failed to record application');
     } finally {

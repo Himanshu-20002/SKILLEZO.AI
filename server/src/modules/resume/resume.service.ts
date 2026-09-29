@@ -1115,8 +1115,7 @@ export class ResumeService {
           isDefault: Boolean(res.isDefault),
           isUploaded: Boolean(
             res.isUploaded ||
-            (res.storageKey && res.storageKey.startsWith("resumes/")) ||
-            (res.originalFileName && res.originalFileName !== "master-resume")
+            (res.storageKey && res.storageKey.startsWith("resumes/"))
           ),
         });
       }

@@ -6,8 +6,6 @@ import {
   Menu,
   RefreshCw,
   ArrowLeft,
-  Check,
-  AlertCircle,
   GitCompare,
   Target,
   ChevronDown,
@@ -31,7 +29,7 @@ export interface ResumeStudioHeaderProps {
   isTailored?: boolean;
   isMasterStale: boolean;
   isSyncingMaster: boolean;
-  saveStatus: SaveStatus;
+  saveStatus?: SaveStatus;
   viewMode: StudioViewMode;
   onViewModeChange?: (mode: StudioViewMode) => void;
   refreshing?: boolean;
@@ -59,7 +57,6 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
   isTailored: propIsTailored,
   isMasterStale,
   isSyncingMaster,
-  saveStatus,
   viewMode,
   onViewModeChange,
   diffSummary,
@@ -73,8 +70,6 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
   onTargetRoleChange,
 }) => {
   const isAudit = viewMode === 'audit' || viewMode === 'analysis';
-  const isBuilder = viewMode === 'builder';
-  const isEditor = !isAudit && !isBuilder;
 
   const activeId = activeResumeId || selectedResumeId;
   const isMaster = propIsMaster !== undefined ? propIsMaster : (currentResume?.variantType === 'MASTER' || isCurrentResumeMaster);
@@ -92,7 +87,7 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
           <Menu className="w-5 h-5" />
         </button>
 
-        {viewMode !== 'audit' ? (
+        {!isAudit ? (
           <button
             onClick={() => onViewModeChange?.('audit')}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
@@ -144,45 +139,6 @@ export const ResumeStudioHeader: React.FC<ResumeStudioHeaderProps> = ({
               ))}
             </select>
             <ChevronDown className="w-3 h-3 text-slate-400 dark:text-slate-500 pointer-events-none shrink-0" />
-          </div>
-        )}
-      </div>
-
-      {/* Center: Mode Switcher & Save State (Desktop/Tablet) — Mathematically Centered */}
-      <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-3 pointer-events-auto">
-        {/* Workspace Mode Switcher */}
-        {onViewModeChange && (
-          <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs font-semibold">
-            <button
-              onClick={() => onViewModeChange('editor')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                isEditor
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              Content
-            </button>
-            <button
-              onClick={() => onViewModeChange('builder')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                isBuilder
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              Design
-            </button>
-            <button
-              onClick={() => onViewModeChange('audit')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                isAudit
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              ATS & Score
-            </button>
           </div>
         )}
       </div>
