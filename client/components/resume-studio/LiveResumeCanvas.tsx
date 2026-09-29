@@ -32,9 +32,9 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
   const contentWrapperRef = useRef<HTMLDivElement>(null);
 
   // Zoom Modes: 'fit' (entire resume visible on screen with zero scrolling) vs '100%' (natural reading size) vs custom
-  const [zoomMode, setZoomMode] = useState<'fit' | '90%' | '100%' | 'custom'>('90%');
+  const [zoomMode, setZoomMode] = useState<'fit' | '80%' | '100%' | 'custom'>('80%');
   const [fitScale, setFitScale] = useState<number>(0.68);
-  const [customScale, setCustomScale] = useState<number>(0.9);
+  const [customScale, setCustomScale] = useState<number>(0.8);
   const [contentHeight, setContentHeight] = useState<number>(1150);
 
   // Measure container and content to compute the exact scale needed to fit 100% of the resume on screen
@@ -71,7 +71,7 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
   }, [deferredDoc, deferredConfig]);
 
   const activeScale =
-    zoomMode === 'fit' ? fitScale : zoomMode === '90%' ? 0.9 : zoomMode === '100%' ? 1 : customScale;
+    zoomMode === 'fit' ? fitScale : zoomMode === '80%' ? 0.8 : zoomMode === '100%' ? 1 : customScale;
 
   const handleZoomIn = () => {
     setZoomMode('custom');
@@ -101,10 +101,6 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
           <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Live Resume Canvas
           </span>
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Live Sync</span>
-          </span>
         </div>
 
         {/* View Scaling Toolbar */}
@@ -123,17 +119,17 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
 
           <button
             onClick={() => {
-              setZoomMode('90%');
-              setCustomScale(0.9);
+              setZoomMode('80%');
+              setCustomScale(0.8);
             }}
-            title="Default 90% view (Optimal for studio reading & editing)"
+            title="Default 80% view (Optimal for studio reading & editing)"
             className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              zoomMode === '90%' || (zoomMode === 'custom' && customScale === 0.9)
+              zoomMode === '80%' || (zoomMode === 'custom' && customScale === 0.8)
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            90%
+            80%
           </button>
 
           <button
