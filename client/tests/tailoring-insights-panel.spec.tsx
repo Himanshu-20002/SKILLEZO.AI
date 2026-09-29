@@ -132,7 +132,7 @@ describe('Phase 6E.3 Component Tests: Tailoring Insights UI Panel', () => {
 
     expect(screen.getByText('Principal Cloud Architect')).toBeDefined();
     expect(screen.getByText(/at Amazon Web Services/i)).toBeDefined();
-    expect(screen.getByText(/5 AST Changes Applied/i)).toBeDefined();
+    expect(screen.getByText(/5 Tailored Improvements Applied/i)).toBeDefined();
   });
 
   it('Scenario 20: Category filter pills toggle visible cards correctly', () => {

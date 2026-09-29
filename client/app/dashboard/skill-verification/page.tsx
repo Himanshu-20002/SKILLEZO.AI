@@ -98,7 +98,6 @@ export default function SkillVerificationPage() {
         <PageHeader
           title="Skill Verification Engine"
           description="AI-evaluated skill certifications, verifiable credentials, and interactive skill assessments."
-          badge="AI v4.2"
           actions={
             <Link
               href="/dashboard/assessments"

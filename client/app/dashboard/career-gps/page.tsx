@@ -89,7 +89,6 @@ export default function CareerGPSPage() {
         <PageHeader
           title="Career GPS"
           description={`Your personalized milestone roadmap to achieve career readiness for ${targetRole}.`}
-          badge="Module 23 • Career GPS"
           actions={
             <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1.5 shadow-sm">
               <div className="flex items-center gap-1.5 px-2.5 text-xs font-bold text-slate-700 dark:text-slate-300">

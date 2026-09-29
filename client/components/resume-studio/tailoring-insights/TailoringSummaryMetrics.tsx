@@ -18,7 +18,7 @@ export const TailoringSummaryMetrics: React.FC<TailoringSummaryMetricsProps> = (
       id: 'metric-applied',
       label: 'Changes Applied',
       value: summary.totalAppliedChanges,
-      description: 'AST modifications',
+      description: 'Resume enhancements',
       icon: Sparkles,
       colorClasses: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20',
       iconColor: 'text-indigo-600 dark:text-indigo-400',

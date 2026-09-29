@@ -64,7 +64,6 @@ export default function SkillGapAnalysisPage() {
         <PageHeader
           title="Skill Gap Analysis"
           description="Understand what skills you need to become job-ready for your target role."
-          badge="Module 21 • Skill Gap Analysis"
         />
 
         {/* Role Selector Header */}

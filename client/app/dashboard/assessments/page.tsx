@@ -114,7 +114,6 @@ export default function AssessmentsPage() {
         <PageHeader
           title="Skill Assessments Engine"
           description="Interactive technical evaluations with real-time grading, cryptographic verification badges, and automated profile synchronization."
-          badge="AI Evaluator v4.2"
         />
 
         {/* Quick Stats Ribbon */}

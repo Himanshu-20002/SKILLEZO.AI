@@ -286,7 +286,7 @@ export const TailoringReviewModal: React.FC<TailoringReviewModalProps> = ({
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Generate Tailored Resume (Phase 6D)</span>
+                  <span>Generate Tailored Resume</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}

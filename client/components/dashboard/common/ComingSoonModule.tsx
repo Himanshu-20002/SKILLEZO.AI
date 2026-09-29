@@ -23,7 +23,6 @@ export const ComingSoonModule: React.FC<ComingSoonModuleProps> = ({
         <PageHeader
           title={title}
           description={description}
-          badge={`Module ${moduleNumber} • Coming Soon`}
         />
 
         <div className="rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-8 sm:p-12 text-center space-y-5 max-w-2xl mx-auto my-8 shadow-sm">
@@ -34,13 +33,13 @@ export const ComingSoonModule: React.FC<ComingSoonModuleProps> = ({
           <div className="space-y-2">
             <h2 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{title}</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-md mx-auto">
-              Module {moduleNumber} is scheduled in the upcoming phase. The Career Intelligence foundation (Modules 20–23) is active.
+              This feature is currently in active development and will be available soon.
             </p>
           </div>
 
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-600 border border-amber-500/30">
             <Clock className="w-4 h-4" />
-            <span>Scheduled for Next Phase</span>
+            <span>Coming Soon</span>
           </div>
 
           <div className="pt-4">

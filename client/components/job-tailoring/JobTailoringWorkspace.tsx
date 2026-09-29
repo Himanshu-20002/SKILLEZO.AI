@@ -67,19 +67,16 @@ export const JobTailoringWorkspace: React.FC<JobTailoringWorkspaceProps> = ({
       case "MATCH":
         return {
           title: "Career Evidence Matching",
-          badge: "Phase 6B",
           subtitle: "Evaluate verified Career Profile proof against job requirements.",
         };
       case "TAILORING_PLAN":
         return {
-          title: "Tailoring Plan + User Review",
-          badge: "Phase 6C",
+          title: "Tailoring Plan & Review",
           subtitle: "Ground truth resume adaptation proposals with complete user control.",
         };
       default:
         return {
           title: "Job Intake & JD Intelligence",
-          badge: "Phase 6A",
           subtitle: "Transform any job description into normalized, grounded role requirements.",
         };
     }
@@ -99,9 +96,6 @@ export const JobTailoringWorkspace: React.FC<JobTailoringWorkspaceProps> = ({
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <span>{stepMeta.title}</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">
-                  {stepMeta.badge}
-                </span>
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 {stepMeta.subtitle}

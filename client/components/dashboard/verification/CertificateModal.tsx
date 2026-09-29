@@ -135,7 +135,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
               <div className="col-span-2 sm:col-span-1">
                 <span className="text-slate-500 dark:text-slate-400 block">Assessor</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {certificate.assessor || 'SKILLEZO AI Engine v4.2'}
+                  {certificate.assessor || 'SKILLEZO Assessment Engine'}
                 </span>
               </div>
             </div>

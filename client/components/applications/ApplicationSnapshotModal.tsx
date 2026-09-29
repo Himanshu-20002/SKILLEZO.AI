@@ -145,7 +145,7 @@ export const ApplicationSnapshotModal: React.FC<ApplicationSnapshotModalProps> =
                 Legacy File Resume Snapshot
               </div>
               <p className="text-xs text-slate-500 max-w-sm">
-                This application used an uploaded file ({snapshot.fileName || snapshot.originalFileName || 'resume'}). No interactive AST document is available.
+                This application used an uploaded file ({snapshot.fileName || snapshot.originalFileName || 'resume'}). No interactive preview document is available.
               </p>
             </div>
           )}

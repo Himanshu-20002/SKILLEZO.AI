@@ -85,7 +85,7 @@ export default function RecruiterDashboardPage() {
         <PageHeader
           title="Recruiter Executive Hub"
           description="Enterprise talent acquisition intelligence, verified skill matching, and hiring pipeline analytics."
-          badge="Enterprise ATS v4.2"
+          badge="Enterprise ATS"
           actions={
             <div className="flex items-center gap-2">
               <Link

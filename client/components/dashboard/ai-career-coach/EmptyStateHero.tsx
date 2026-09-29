@@ -185,7 +185,7 @@ export const EmptyStateHero: React.FC<EmptyStateHeroProps> = memo(({
 
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 text-xs font-medium text-slate-600 dark:text-slate-400">
           <ShieldCheck className="w-3 h-3 text-emerald-500" />
-          <span>MongoDB Profile Linked</span>
+          <span>Career Profile Linked</span>
         </div>
 
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 text-xs font-medium text-slate-600 dark:text-slate-400">

@@ -36,7 +36,7 @@ export const TailoringInsightsHeader: React.FC<TailoringInsightsHeaderProps> = (
         <div className="flex items-center gap-2">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
             <Sparkles className="w-3 h-3 text-indigo-500" aria-hidden="true" />
-            <span>{totalChanges} AST Changes Applied</span>
+            <span>{totalChanges} Tailored Improvements Applied</span>
           </div>
 
           {onOpenComparison && (

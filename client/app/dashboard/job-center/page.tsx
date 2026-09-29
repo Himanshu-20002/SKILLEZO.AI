@@ -559,7 +559,6 @@ export default function SmartJobCenterPage() {
           <PageHeader
             title="Smart Job Center"
             description="Find real jobs matched to your skills, experience, and career goals across Direct Platform Employers and Jooble Aggregated Listings."
-            badge="Live MongoDB Database • Real-Time AI Matching"
           />
           <button
             onClick={fetchLiveJobs}
@@ -590,9 +589,9 @@ export default function SmartJobCenterPage() {
 
             <div className="flex items-center gap-2 border-l border-slate-300 dark:border-slate-700 pl-4">
               <FileCheck className="w-4 h-4 text-[#3D5AFE]" />
-              <span className="text-slate-600 dark:text-slate-400 font-medium">Data Pipeline:</span>
+              <span className="text-slate-600 dark:text-slate-400 font-medium">Job Sources:</span>
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold text-[10px] border border-emerald-500/30">
-                Direct Platform + Jooble API
+                Verified Employers + Jooble
               </span>
             </div>
           </div>

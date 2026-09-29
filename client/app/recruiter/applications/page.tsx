@@ -210,7 +210,7 @@ export default function RecruiterApplicationsPage() {
         <PageHeader
           title="Recruiter Applicant Pipeline"
           description="Track incoming applications, evaluate candidate verified skill credentials, and advance hiring stages."
-          badge="Enterprise ATS v4.2"
+          badge="Enterprise ATS"
           actions={
             <div className="flex items-center gap-2">
               <button

@@ -28,7 +28,7 @@ const STEPS: StepInfo[] = [
     key: 'executing_tools',
     stepNum: 2,
     title: 'Diagnostic Inspection',
-    desc: 'Scanning MongoDB profile, active resume & ATS...',
+    desc: 'Scanning Career Profile, active resume & ATS...',
     icon: <Cpu className="w-3.5 h-3.5 text-purple-400" />,
   },
   {

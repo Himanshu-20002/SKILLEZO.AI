@@ -89,7 +89,6 @@ export default function ProjectsPage() {
         <PageHeader
           title="Projects & Portfolio Engine"
           description="Curate production repositories, deploy live full-stack demos, and explore AI-recommended portfolio projects."
-          badge="Portfolio v4.2"
           actions={
             <button
               onClick={() => setIsAddModalOpen(true)}

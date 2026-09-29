@@ -192,10 +192,7 @@ export const TailoringPlanView: React.FC<TailoringPlanViewProps> = ({
             <span>Back to Career Evidence Matching</span>
           </button>
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <span>Tailoring Plan & User Review</span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
-              Phase 6C
-            </span>
+            <span>Tailoring Plan & Review</span>
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Tailoring proposals for <strong>{jobTitle}</strong>
