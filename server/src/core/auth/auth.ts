@@ -183,13 +183,16 @@ export function getAuth() {
         "http://localhost:3000",
         "http://localhost:5000",
       ].filter(Boolean),
+      account: {
+        storeStateStrategy: "database",
+        skipStateCookieCheck: true,
+      },
       advanced: {
         disableCSRFCheck: true,
         useSecureCookies: isProduction,
         defaultCookieAttributes: {
           sameSite: isProduction ? "none" : "lax",
           secure: isProduction,
-          partitioned: isProduction,
         },
         ipAddress: {
           ipAddressHeaders: ["cf-connecting-ip", "x-real-ip", "x-forwarded-for"],

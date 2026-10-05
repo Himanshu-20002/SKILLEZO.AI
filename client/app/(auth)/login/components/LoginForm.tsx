@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -38,6 +38,21 @@ export default function LoginForm({ activeRole = "candidate" }: LoginFormProps) 
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const errorParam = new URLSearchParams(window.location.search).get("error");
+      if (errorParam) {
+        setAuthError("Google authentication could not be completed. Please try again or sign in with your email.");
+        toast.error("Sign-In Incomplete", {
+          description: "Google authentication could not be completed. Please try again.",
+        });
+        const url = new URL(window.location.href);
+        url.searchParams.delete("error");
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+      }
+    }
+  }, []);
 
   const {
     register,

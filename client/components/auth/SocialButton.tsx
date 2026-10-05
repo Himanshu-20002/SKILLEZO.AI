@@ -27,7 +27,7 @@ export function SocialButton({ provider, label, className, role = "candidate" }:
         const redirectPath = targetRole === "recruiter" ? "/recruiter/applications" : "/dashboard";
         const callbackURL = origin ? `${origin}${redirectPath}` : redirectPath;
         const newUserCallbackURL = callbackURL;
-        const errorCallbackURL = origin ? `${origin}/account-suspended` : "/account-suspended";
+        const errorCallbackURL = origin ? `${origin}/login?error=oauth_failed` : "/login?error=oauth_failed";
 
         // Store role hint in localStorage/cookie so client and server can also recover it
         if (typeof window !== "undefined") {
