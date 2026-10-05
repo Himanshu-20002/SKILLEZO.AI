@@ -399,7 +399,7 @@ export class AdminService {
     const job = await JobModel.findByIdAndUpdate(
       jobId,
       { $set: { status, updatedAt: new Date() } },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!job) {

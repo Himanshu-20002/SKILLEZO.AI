@@ -31,6 +31,10 @@ export const globalRateLimiter = rateLimit({
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false,
+  },
   skip: (req: Request) => {
     if (process.env.NODE_ENV === "test") return true;
     const path = req.path.toLowerCase();
@@ -59,6 +63,10 @@ export const authRateLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false,
+  },
   skip: (req: Request) => {
     if (process.env.NODE_ENV === "test") return true;
     // Allow non-mutating session check requests (GET /api/auth/session, etc.)
@@ -82,6 +90,10 @@ export const heavyOpsRateLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false,
+  },
   skip: (req: Request) => {
     if (process.env.NODE_ENV === "test") return true;
     return req.method === "GET";

@@ -59,7 +59,7 @@ export class JobMatchResultRepository extends BaseRepository<IJobMatchResult> {
             overallMatch: data.overallMatch || null,
           },
         },
-        { new: true, upsert: true, runValidators: true }
+        { returnDocument: "after", upsert: true, runValidators: true }
       )
       .exec();
 

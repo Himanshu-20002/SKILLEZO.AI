@@ -54,7 +54,7 @@ export class CompanyMemberRepository extends BaseRepository<ICompanyMember> {
       .findOneAndUpdate(
         { userId, companyId: cId },
         { $set: { role } },
-        { new: true, runValidators: true }
+        { returnDocument: "after", runValidators: true }
       )
       .exec();
   }
@@ -69,7 +69,7 @@ export class CompanyMemberRepository extends BaseRepository<ICompanyMember> {
       .findOneAndUpdate(
         { userId, companyId: cId },
         { $set: { status } },
-        { new: true, runValidators: true }
+        { returnDocument: "after", runValidators: true }
       )
       .exec();
   }

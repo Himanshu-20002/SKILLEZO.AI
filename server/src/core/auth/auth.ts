@@ -192,8 +192,8 @@ export function getAuth() {
           partitioned: isProduction,
         },
         ipAddress: {
-          ipAddressHeaders: ["x-forwarded-for", "cf-connecting-ip", "x-real-ip"],
-          trustedProxies: ["127.0.0.1", "::1", "0.0.0.0/0", "::/0"],
+          ipAddressHeaders: ["cf-connecting-ip", "x-real-ip", "x-forwarded-for"],
+          trustedProxies: ["127.0.0.1", "::1"],
         },
       },
       databaseHooks: {

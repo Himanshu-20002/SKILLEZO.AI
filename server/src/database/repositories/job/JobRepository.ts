@@ -57,7 +57,7 @@ export class JobRepository extends BaseRepository<IJob> {
         .findOneAndUpdate(
           { _id: existing._id },
           { $set: data },
-          { new: true, runValidators: true }
+          { returnDocument: "after", runValidators: true }
         )
         .exec();
       return { job: updated || existing, isNew: false };

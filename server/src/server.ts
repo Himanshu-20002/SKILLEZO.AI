@@ -30,7 +30,8 @@ import { Server } from "http";
 
 const app: Application = express();
 
-app.set("trust proxy", true);
+// Trust the first reverse proxy hop (Railway, Vercel, Render, Cloudflare)
+app.set("trust proxy", 1);
 
 const allowedOrigins = [
   env.CLIENT_URL,

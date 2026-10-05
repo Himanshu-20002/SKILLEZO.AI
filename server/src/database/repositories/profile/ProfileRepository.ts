@@ -17,37 +17,37 @@ export class ProfileRepository extends BaseRepository<IProfile> {
 
   async updateByUserId(userId: string, updateData: UpdateQuery<IProfile>): Promise<IProfile | null> {
     return await this.model
-      .findOneAndUpdate({ userId }, updateData, { new: true, runValidators: true })
+      .findOneAndUpdate({ userId }, updateData, { returnDocument: "after", runValidators: true })
       .exec();
   }
 
   async updateSkills(userId: string, skills: IProfileSkill[]): Promise<IProfile | null> {
     return await this.model
-      .findOneAndUpdate({ userId }, { $set: { skills }, $inc: { profileVersion: 1 } }, { new: true, runValidators: true })
+      .findOneAndUpdate({ userId }, { $set: { skills }, $inc: { profileVersion: 1 } }, { returnDocument: "after", runValidators: true })
       .exec();
   }
 
   async updateEducation(userId: string, education: IProfileEducation[]): Promise<IProfile | null> {
     return await this.model
-      .findOneAndUpdate({ userId }, { $set: { education }, $inc: { profileVersion: 1 } }, { new: true, runValidators: true })
+      .findOneAndUpdate({ userId }, { $set: { education }, $inc: { profileVersion: 1 } }, { returnDocument: "after", runValidators: true })
       .exec();
   }
 
   async updateExperience(userId: string, experience: IProfileExperience[]): Promise<IProfile | null> {
     return await this.model
-      .findOneAndUpdate({ userId }, { $set: { experience }, $inc: { profileVersion: 1 } }, { new: true, runValidators: true })
+      .findOneAndUpdate({ userId }, { $set: { experience }, $inc: { profileVersion: 1 } }, { returnDocument: "after", runValidators: true })
       .exec();
   }
 
   async updateTargetRole(userId: string, targetRoleId: Types.ObjectId | null): Promise<IProfile | null> {
     return await this.model
-      .findOneAndUpdate({ userId }, { $set: { targetRoleId }, $inc: { profileVersion: 1 } }, { new: true, runValidators: true })
+      .findOneAndUpdate({ userId }, { $set: { targetRoleId }, $inc: { profileVersion: 1 } }, { returnDocument: "after", runValidators: true })
       .exec();
   }
 
   async updateLinks(userId: string, links: IProfileLinks): Promise<IProfile | null> {
     return await this.model
-      .findOneAndUpdate({ userId }, { $set: { links }, $inc: { profileVersion: 1 } }, { new: true, runValidators: true })
+      .findOneAndUpdate({ userId }, { $set: { links }, $inc: { profileVersion: 1 } }, { returnDocument: "after", runValidators: true })
       .exec();
   }
 
@@ -57,7 +57,7 @@ export class ProfileRepository extends BaseRepository<IProfile> {
 
   async addProject(userId: string, project: any): Promise<IProfile | null> {
     return await this.model
-      .findOneAndUpdate({ userId }, { $push: { projects: project }, $inc: { profileVersion: 1 } }, { new: true, runValidators: true })
+      .findOneAndUpdate({ userId }, { $push: { projects: project }, $inc: { profileVersion: 1 } }, { returnDocument: "after", runValidators: true })
       .exec();
   }
 
@@ -79,7 +79,7 @@ export class ProfileRepository extends BaseRepository<IProfile> {
           },
           $inc: { profileVersion: 1 },
         },
-        { new: true, runValidators: true }
+        { returnDocument: "after", runValidators: true }
       )
       .exec();
   }
@@ -94,7 +94,7 @@ export class ProfileRepository extends BaseRepository<IProfile> {
       .findOneAndUpdate(
         { userId },
         { $pull: { projects: pullCondition }, $inc: { profileVersion: 1 } },
-        { new: true, runValidators: true }
+        { returnDocument: "after", runValidators: true }
       )
       .exec();
   }

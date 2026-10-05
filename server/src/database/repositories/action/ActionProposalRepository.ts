@@ -53,7 +53,7 @@ export class ActionProposalRepository extends BaseRepository<IActionProposal> {
       .findOneAndUpdate(
         { proposalId, status: expectedStatus },
         updateDoc,
-        { new: true, runValidators: true }
+        { returnDocument: "after", runValidators: true }
       )
       .exec();
   }

@@ -69,7 +69,7 @@ export class RecruiterApplicationService {
           status: CompanyMemberStatus.ACTIVE,
           joinedAt: new Date(),
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: "after" }
       );
 
       memberships = await this.companyMemberRepository.findMembershipsByUser(userId);

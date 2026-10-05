@@ -58,7 +58,7 @@ export class ResumeRepository extends BaseRepository<IResume> {
       .findOneAndUpdate(
         { _id: resumeId, userId },
         { $set: { isDefault: true } },
-        { new: true }
+        { returnDocument: "after" }
       )
       .exec();
   }
