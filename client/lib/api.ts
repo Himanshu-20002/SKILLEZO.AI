@@ -34,7 +34,16 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
   // calls use this shared fetcher, so forward that token when cookies are not
   // available (for example, during local cross-port development).
   if (typeof window !== "undefined") {
-    const token = window.localStorage.getItem("skillezo_token");
+    let token = window.localStorage.getItem("skillezo_token");
+    if (!token) {
+      const match = document.cookie.match(/(?:^|;\s*)skillezo_token=([^;]+)/);
+      if (match && match[1]) {
+        token = decodeURIComponent(match[1]);
+        try {
+          window.localStorage.setItem("skillezo_token", token);
+        } catch {}
+      }
+    }
     if (token) {
       defaultHeaders.Authorization = `Bearer ${token}`;
     }

@@ -67,6 +67,7 @@ export const UserMenu: React.FC = () => {
     try {
       if (typeof window !== "undefined") {
         localStorage.removeItem("skillezo_token");
+        document.cookie = "skillezo_token=; path=/; max-age=0; SameSite=Lax";
         // Clear all cached career GPS roadmap and target keys so subsequent users start fresh
         try {
           Object.keys(localStorage).forEach((key) => {

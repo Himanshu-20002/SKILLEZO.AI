@@ -70,11 +70,39 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       return;
     }
 
+    if (rawUser?.role === 'recruiter') {
+      router.replace('/recruiter/applications');
+      return;
+    }
+
     // Unauthenticated guest users cannot view the dashboard
     if (!session?.user && !isSuspended && typeof window !== 'undefined' && window.sessionStorage.getItem('account_suspended') !== 'true') {
+      const localToken = window.localStorage.getItem('skillezo_token');
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlToken =
+        searchParams.get('bearer_token') ||
+        searchParams.get('skillezo_token') ||
+        searchParams.get('token');
+      const cookieMatch = document.cookie.match(/(?:^|;\s*)skillezo_token=([^;]+)/);
+      const hasToken = Boolean(localToken || urlToken || cookieMatch);
+
+      if (hasToken) {
+        // Token is present (e.g. from OAuth redirect): verify session directly before taking any redirect action
+        authClient.getSession().then((res) => {
+          if (!res?.data?.user) {
+            window.localStorage.removeItem('skillezo_token');
+            router.replace('/login');
+          }
+        }).catch(() => {
+          window.localStorage.removeItem('skillezo_token');
+          router.replace('/login');
+        });
+        return;
+      }
+
       router.replace('/login');
     }
-  }, [isAdmin, pathname, isPending, router, session?.user, isSuspended]);
+  }, [isAdmin, pathname, isPending, router, session?.user, isSuspended, rawUser?.role]);
 
   // Real-time check for account suspension
   useEffect(() => {

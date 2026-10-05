@@ -56,6 +56,11 @@ const oauthRoleSyncPlugin: BetterAuthPlugin = {
         matcher: (ctx) => typeof ctx?.path === "string" && ctx.path.includes("/callback/"),
         handler: createAuthMiddleware(async (ctx: any) => {
           const user = ctx.context.newSession?.user || ctx.context.session?.user;
+          const session = ctx.context.newSession?.session || ctx.context.session?.session;
+          if (session?.token && typeof ctx.setHeader === "function") {
+            ctx.setHeader("x-auth-session-token", session.token);
+            ctx.setHeader("set-auth-token", session.token);
+          }
           if (!user?.id && !user?.email) return;
 
           const isRecruiter = await detectRecruiterIntent(ctx.context);
@@ -151,7 +156,12 @@ const suspensionGuardPlugin: BetterAuthPlugin = {
 // Browsers reject Secure cookies on http://localhost. Keep the production
 // cross-site cookie policy, but use a local-development cookie that can be sent
 // between the Next.js app (localhost:3000) and API (localhost:5000).
-const isProduction = env.NODE_ENV === "production";
+const isProduction =
+  env.NODE_ENV === "production" ||
+  env.BETTER_AUTH_URL.startsWith("https://") ||
+  Boolean(process.env.RAILWAY_ENVIRONMENT) ||
+  Boolean(process.env.RAILWAY_PROJECT_ID) ||
+  Boolean(process.env.VERCEL);
 
 export function getAuth() {
   if (!_auth) {
@@ -165,9 +175,11 @@ export function getAuth() {
       baseURL: env.BETTER_AUTH_URL,
       trustedOrigins: [
         env.CLIENT_URL,
+        "https://*.vercel.app",
         "https://skillezo-ai-rho.vercel.app",
         "https://skillezo-ai.vercel.app",
         "https://skillezoai-production.up.railway.app",
+        "*.up.railway.app",
         "http://localhost:3000",
         "http://localhost:5000",
       ].filter(Boolean),
@@ -177,6 +189,7 @@ export function getAuth() {
         defaultCookieAttributes: {
           sameSite: isProduction ? "none" : "lax",
           secure: isProduction,
+          partitioned: isProduction,
         },
         ipAddress: {
           ipAddressHeaders: ["x-forwarded-for", "cf-connecting-ip", "x-real-ip"],
