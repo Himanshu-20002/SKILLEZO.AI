@@ -236,17 +236,18 @@ export function useResumeStudio(initialResumeId?: string | null) {
       let activeResume: ResumeRecord | null = null;
 
       if (masterRes?.resume) {
+        const masterResumeRecord = masterRes.resume;
         setIsMasterStale(masterRes.isStale);
-        if (masterRes.resume.resumeDocument) {
-          setMasterResumeDoc(masterRes.resume.resumeDocument as any);
+        if (masterResumeRecord.resumeDocument) {
+          setMasterResumeDoc(masterResumeRecord.resumeDocument as any);
         }
-        const masterIdx = allResumes.findIndex((r) => r._id === masterRes.resume._id);
+        const masterIdx = allResumes.findIndex((r) => r._id === masterResumeRecord._id);
         if (masterIdx >= 0) {
-          allResumes[masterIdx] = masterRes.resume;
+          allResumes[masterIdx] = masterResumeRecord;
         } else {
-          allResumes.unshift(masterRes.resume);
+          allResumes.unshift(masterResumeRecord);
         }
-        activeResume = masterRes.resume;
+        activeResume = masterResumeRecord;
       }
 
       // Ensure single master invariant across allResumes in frontend state
@@ -700,10 +701,18 @@ export function useResumeStudio(initialResumeId?: string | null) {
     const toastId = toast.loading(`Uploading and analyzing ${file.name}...`);
 
     try {
-      // Safe upload as a new portfolio variant (preserves Master Resume & Profile)
+      const isFirst = resumes.length === 0;
       const cleanTitle = file.name.replace(/\.pdf$/i, '').trim();
-      const newResume = await resumeService.uploadResume(file, cleanTitle, { asVariant: true });
-      toast.success('Resume added to your Portfolio as a new variant!', { id: toastId });
+      const newResume = await resumeService.uploadResume(file, cleanTitle, {
+        asVariant: !isFirst,
+        syncProfile: isFirst,
+      });
+      toast.success(
+        isFirst
+          ? 'Master Resume uploaded and facts synchronized!'
+          : 'Resume added to your Portfolio as a new variant!',
+        { id: toastId }
+      );
 
       setResumes((prev) => [newResume, ...prev]);
       handleSelectResume(newResume._id, newResume);

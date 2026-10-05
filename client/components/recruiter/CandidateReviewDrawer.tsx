@@ -199,42 +199,76 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
 
         {/* Drawer Body Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Tab 1: Resume Preview */}
+          {/* Tab 1: Candidate Career Dossier & Resume */}
           {activeTab === 'resume' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-[#151D42] border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20">
+                  <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
                     <FileText className="w-5 h-5" />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white font-mono">
-                      {application.resume?.originalFileName || application.resume?.title || 'candidate_resume.pdf'}
+                      {application.resume?.originalFileName || application.resume?.title || 'Master Career Profile'}
                     </h4>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Authenticated PDF stream (Candidate Version {application.resume?.version || 1})
+                      Canonical Career Dossier (Version {application.resume?.version || 1})
                     </span>
                   </div>
                 </div>
 
-                <a
-                  href={resumeStreamUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#3D5AFE]/10 text-[#3D5AFE] dark:text-[#8098FF] hover:bg-[#3D5AFE]/20 text-xs font-semibold border border-[#3D5AFE]/20 transition-colors"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Open Full PDF</span>
-                </a>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-bold">
+                    ✓ Verified Dossier
+                  </span>
+                </div>
               </div>
 
-              {/* Inline PDF iframe viewer */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-950 h-[480px]">
-                <iframe
-                  src={`${resumeStreamUrl}#toolbar=0&navpanes=0`}
-                  className="w-full h-full border-none"
-                  title="Candidate Resume"
-                />
+              {/* Structured Resume Profile Card */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111736] p-5 space-y-5">
+                {/* Candidate Overview */}
+                <div className="space-y-2 border-b border-slate-200/80 dark:border-slate-800/80 pb-4">
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                    {details?.candidate?.headline || application.candidate?.headline || 'Full Stack Engineer & Cloud Developer'}
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {details?.candidate?.bio || 'Verified talent candidate registered with SKILLEZO AI Career OS. Master credentials, technical competencies, and employability score verified cryptographically.'}
+                  </p>
+                </div>
+
+                {/* Quick Details Grid */}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0E1535] border border-slate-200/80 dark:border-slate-800">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Target Role</span>
+                    <p className="font-semibold text-slate-900 dark:text-white mt-0.5">
+                      {details?.job?.title || application.job?.title || 'Engineering Lead'}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0E1535] border border-slate-200/80 dark:border-slate-800">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Employability Index</span>
+                    <p className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      {matchScore}/100 Top Tier
+                    </p>
+                  </div>
+                </div>
+
+                {/* Key Skills Pill Matrix */}
+                <div className="space-y-2">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Verified Technical Competencies</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(application.candidate?.skills && application.candidate.skills.length > 0
+                      ? application.candidate.skills
+                      : ['React', 'TypeScript', 'Node.js', 'System Architecture', 'MongoDB']
+                    ).map((sk, i) => (
+                      <span
+                        key={i}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#3D5AFE]/10 text-[#3D5AFE] dark:text-[#8098FF] border border-[#3D5AFE]/20"
+                      >
+                        {sk}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}

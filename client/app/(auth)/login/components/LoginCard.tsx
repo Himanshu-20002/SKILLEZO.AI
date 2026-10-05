@@ -82,7 +82,7 @@ export default function LoginCard() {
 
       {/* Social OAuth Button */}
       <div className="w-full">
-        <SocialButton provider="google" label="Continue with Google" />
+        <SocialButton provider="google" label="Continue with Google" role={activeRole} />
       </div>
 
       {/* Footer Navigation Link */}

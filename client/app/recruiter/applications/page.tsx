@@ -44,7 +44,7 @@ export default function RecruiterApplicationsPage() {
         const jList = await recruiterService.getCompanyJobs();
         setJobs(jList);
       } catch {
-        setJobs(recruiterService.getFallbackJobs());
+        setJobs([]);
       }
     }
     fetchJobs();
@@ -58,120 +58,9 @@ export default function RecruiterApplicationsPage() {
         search: search ? search : undefined,
         limit: 100,
       });
-      if (data && data.items && data.items.length > 0) {
-        setApplications(data.items);
-      } else {
-        // Fallback demo dataset if no live applications in database yet
-        setApplications([
-          {
-            id: 'app_1',
-            status: 'applied',
-            job: { id: 'job_1', title: 'Senior Full Stack Engineer', companyName: 'TechFlow' },
-            candidate: {
-              id: 'cand_1',
-              name: 'Sarah Chen',
-              email: 'sarah.chen@example.com',
-              headline: 'Full Stack Engineer | React, Node.js & Cloud Architecture',
-              employabilityScore: 94,
-              skills: ['React', 'TypeScript', 'Node.js'],
-            },
-            resume: {
-              id: 'res_1',
-              title: 'Sarah_Chen_Staff_Engineer_Resume.pdf',
-              originalFileName: 'Sarah_Chen_Staff_Engineer_Resume.pdf',
-              version: 1,
-            },
-            appliedAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: 'app_2',
-            status: 'under_review',
-            job: { id: 'job_2', title: 'Cloud Infrastructure Lead', companyName: 'TechFlow' },
-            candidate: {
-              id: 'cand_2',
-              name: 'David Miller',
-              email: 'david.miller@example.com',
-              headline: 'Kubernetes & AWS Cloud Architect',
-              employabilityScore: 91,
-              skills: ['Kubernetes', 'AWS', 'Docker'],
-            },
-            resume: {
-              id: 'res_2',
-              title: 'David_Miller_Cloud_Architect.pdf',
-              originalFileName: 'David_Miller_Cloud_Architect.pdf',
-              version: 1,
-            },
-            appliedAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: 'app_3',
-            status: 'shortlisted',
-            job: { id: 'job_1', title: 'Senior Full Stack Engineer', companyName: 'TechFlow' },
-            candidate: {
-              id: 'cand_3',
-              name: 'Alex Rivera',
-              email: 'alex.rivera@skillezo.ai',
-              headline: 'Next.js 15 & Distributed Systems Specialist',
-              employabilityScore: 96,
-              skills: ['Next.js', 'TypeScript', 'PostgreSQL'],
-            },
-            resume: {
-              id: 'res_3',
-              title: 'Alex_Rivera_Senior_Resume.pdf',
-              originalFileName: 'Alex_Rivera_Senior_Resume.pdf',
-              version: 2,
-            },
-            appliedAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: 'app_4',
-            status: 'interview',
-            job: { id: 'job_3', title: 'AI Platform Engineer', companyName: 'TechFlow' },
-            candidate: {
-              id: 'cand_4',
-              name: 'Elena Rostova',
-              email: 'elena.rostova@example.com',
-              headline: 'Python, LLM Agents & Vector Search Specialist',
-              employabilityScore: 95,
-              skills: ['Python', 'FastAPI', 'ChromaDB'],
-            },
-            resume: {
-              id: 'res_4',
-              title: 'Elena_Rostova_AI_Engineer.pdf',
-              originalFileName: 'Elena_Rostova_AI_Engineer.pdf',
-              version: 1,
-            },
-            appliedAt: new Date(Date.now() - 3600000 * 72).toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: 'app_5',
-            status: 'offered',
-            job: { id: 'job_1', title: 'Senior Full Stack Engineer', companyName: 'TechFlow' },
-            candidate: {
-              id: 'cand_5',
-              name: 'Marcus Vance',
-              email: 'marcus.vance@example.com',
-              headline: 'Lead Frontend Architect | Micro-frontends',
-              employabilityScore: 98,
-              skills: ['React', 'TypeScript', 'GraphQL'],
-            },
-            resume: {
-              id: 'res_5',
-              title: 'Marcus_Vance_Staff_Architect.pdf',
-              originalFileName: 'Marcus_Vance_Staff_Architect.pdf',
-              version: 1,
-            },
-            appliedAt: new Date(Date.now() - 3600000 * 120).toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ]);
-      }
+      setApplications(data?.items || []);
     } catch {
-      // Fallback
+      setApplications([]);
     } finally {
       setLoading(false);
     }

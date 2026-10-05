@@ -20,6 +20,11 @@ router.get(
 );
 
 router.get(
+  "/talent",
+  asyncHandler(controller.getTalentPool)
+);
+
+router.get(
   "/",
   validate({ query: getRecruiterApplicationsQueryValidator }),
   asyncHandler(controller.getCompanyApplications)

@@ -253,9 +253,9 @@ describe("Phase 3: Master Resume Generation & UI Integration Unit Tests", () => 
       const result = await resumeService.getOrCreateMasterResume("user_test_lifecycle");
 
       expect(result.resume).toBeDefined();
-      expect(result.resume.variantType).toBe("MASTER");
-      expect(result.resume.isDefault).toBe(true);
-      expect(result.resume.sourceProfileVersion).toBe(4);
+      expect(result.resume!.variantType).toBe("MASTER");
+      expect(result.resume!.isDefault).toBe(true);
+      expect(result.resume!.sourceProfileVersion).toBe(4);
       expect(result.isStale).toBe(false);
       expect(result.profileVersion).toBe(4);
       expect(mockResumeRepository.create).toHaveBeenCalledWith(
@@ -281,7 +281,7 @@ describe("Phase 3: Master Resume Generation & UI Integration Unit Tests", () => 
 
       const result = await resumeService.getOrCreateMasterResume("user_test_lifecycle");
 
-      expect(result.resume._id).toBe("res_master_existing");
+      expect(result.resume!._id).toBe("res_master_existing");
       expect(result.isStale).toBe(false);
       expect(mockResumeRepository.create).not.toHaveBeenCalled();
     });
@@ -323,7 +323,7 @@ describe("Phase 3: Master Resume Generation & UI Integration Unit Tests", () => 
 
       const result = await resumeService.getOrCreateMasterResume("user_test_lifecycle");
 
-      expect(result.resume._id).toBe("res_master_winner");
+      expect(result.resume!._id).toBe("res_master_winner");
       expect(result.isStale).toBe(false);
     });
 
@@ -422,9 +422,28 @@ describe("Phase 3: Master Resume Generation & UI Integration Unit Tests", () => 
       // All 5 must resolve to the identical single Master Resume
       expect(results).toHaveLength(5);
       for (const res of results) {
-        expect(res.resume._id).toBe("res_master_concurrent_single");
-        expect(res.resume.variantType).toBe("MASTER");
+        expect(res.resume!._id).toBe("res_master_concurrent_single");
+        expect(res.resume!.variantType).toBe("MASTER");
       }
+    });
+
+    it("should return resume: null and not create master resume if candidate has no uploaded resume and profile has no substantial facts", async () => {
+      mockProfileService.getMyProfile.mockResolvedValueOnce({
+        userId: "user_fresh_signup",
+        profileVersion: 1,
+        skills: [],
+        experience: [],
+        education: [],
+        projects: [],
+      });
+      mockResumeRepository.findMasterByUserId.mockResolvedValueOnce(null);
+      mockResumeRepository.findByUserId = vi.fn().mockResolvedValueOnce([]);
+
+      const result = await resumeService.getOrCreateMasterResume("user_fresh_signup");
+
+      expect(result.resume).toBeNull();
+      expect(result.isStale).toBe(false);
+      expect(mockResumeRepository.create).not.toHaveBeenCalled();
     });
   });
 });

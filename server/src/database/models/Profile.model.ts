@@ -89,6 +89,8 @@ export interface IProfile extends Document {
   phone?: string | null;
   targetRole?: string | null;
   targetRoleId?: Types.ObjectId | null;
+  targetSalary?: string | null;
+  targetTimeline?: string | null;
   bio?: string | null;
   skills: IProfileSkill[];
   education: IProfileEducation[];
@@ -215,6 +217,16 @@ const profileSchema = new Schema<IProfile>(
       ref: "Role",
       default: null,
       index: true,
+    },
+    targetSalary: {
+      type: String,
+      default: "1 - 3 LPA",
+      trim: true,
+    },
+    targetTimeline: {
+      type: String,
+      default: "8 Weeks",
+      trim: true,
     },
     bio: {
       type: String,

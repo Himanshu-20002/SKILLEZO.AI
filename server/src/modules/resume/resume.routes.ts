@@ -2,6 +2,7 @@ import { Router } from "express";
 import { ResumeController } from "./resume.controller";
 import { requireAuth } from "@/core/auth/middleware/requireAuth";
 import { resumeUploadMiddleware } from "@/core/middleware/upload.middleware";
+import { heavyOpsRateLimiter } from "@/core/middleware/rate-limit.middleware";
 import { validate } from "@/core/middleware/validate.middleware";
 import {
   uploadResumeValidator,
@@ -18,6 +19,7 @@ router.use(requireAuth);
 
 router.post(
   "/upload",
+  heavyOpsRateLimiter,
   resumeUploadMiddleware.single("file"),
   validate({ body: uploadResumeValidator }),
   asyncHandler(controller.uploadResume)

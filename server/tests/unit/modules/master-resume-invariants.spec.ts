@@ -134,7 +134,7 @@ describe("Phase 4: Master Resume Domain & Invariant Tests", () => {
 
       expect(result.isStale).toBe(true);
       expect(result.profileVersion).toBe(3);
-      expect(result.resume.sourceProfileVersion).toBe(2);
+      expect(result.resume!.sourceProfileVersion).toBe(2);
     });
 
     it("should flag isStale false when Master Resume sourceProfileVersion matches ProfileModel version", async () => {
@@ -232,8 +232,8 @@ describe("Phase 4: Master Resume Domain & Invariant Tests", () => {
 
       const result = await resumeService.getOrCreateMasterResume("usr_invariants_999");
 
-      expect(result.resume._id).toBe("res_master_inv_winner");
-      expect(result.resume.variantType).toBe("MASTER");
+      expect(result.resume!._id).toBe("res_master_inv_winner");
+      expect(result.resume!.variantType).toBe("MASTER");
       expect(result.isStale).toBe(false);
     });
   });

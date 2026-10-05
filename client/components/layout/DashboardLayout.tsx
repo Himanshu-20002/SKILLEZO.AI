@@ -40,6 +40,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   useEffect(() => {
     if (isPending) return;
 
+    // If user intended recruiter role, redirect to recruiter applications
+    if (typeof window !== 'undefined') {
+      const pendingRole = window.localStorage.getItem('auth_pending_role');
+      if (pendingRole === 'recruiter') {
+        window.localStorage.removeItem('auth_pending_role');
+        router.replace('/recruiter/applications');
+        return;
+      }
+    }
+
     // Check if URL has error from OAuth suspension
     const searchError = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('error') : null;
     if (searchError === 'FORBIDDEN' || searchError?.toLowerCase().includes('suspend')) {

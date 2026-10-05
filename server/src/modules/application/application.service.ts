@@ -109,19 +109,7 @@ export class ApplicationService {
       }
     }
 
-    // 3. Verify physical file presence on storage if storageKey present
-    if (targetResume.storageKey && targetResume.storageKey !== "profile-generated") {
-      const fileExists = await this.storageService.exists(targetResume.storageKey);
-      if (!fileExists) {
-        throw new AppError(
-          "Resume file not found on storage",
-          HTTP_STATUS.NOT_FOUND,
-          ERROR_CODES.APPLICATION_RESUME_FILE_NOT_FOUND
-        );
-      }
-    }
-
-    // 4. Build Resume Snapshot (legacy file format)
+    // 3. Build Resume Snapshot (stateless metadata)
     const capturedAt = new Date();
     const resumeSnapshot: IResumeSnapshot = {
       resumeId: targetResume._id,

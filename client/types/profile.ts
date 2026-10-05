@@ -36,6 +36,8 @@ export interface ExtendedUserProfile {
   phone?: string;
   role: string;
   headline: string;
+  targetSalary?: string;
+  targetTimeline?: string;
   bio: string;
   location: string;
   avatarUrl?: string;

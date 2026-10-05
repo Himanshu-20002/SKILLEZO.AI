@@ -9,6 +9,8 @@ import { IResumeStorageService, resumeStorageService } from "@/core/storage/stor
 import { CompanyModel } from "@/database/models/Company.model";
 import { CompanyMemberModel } from "@/database/models/CompanyMember.model";
 import { JobModel } from "@/database/models/Job.model";
+import { UserModel } from "@/database/models/User.model";
+import { ProfileModel } from "@/database/models/Profile.model";
 import { Readable } from "stream";
 import {
   UpdateRecruiterApplicationStatusDTO,
@@ -70,12 +72,6 @@ export class RecruiterApplicationService {
         { upsert: true, new: true }
       );
 
-      // Link any unassigned jobs to this company so applications populate
-      await JobModel.updateMany(
-        { companyId: null },
-        { companyId: company._id, companyName: company.name }
-      );
-
       memberships = await this.companyMemberRepository.findMembershipsByUser(userId);
       activeMemberships = memberships.filter(
         (m) =>
@@ -86,13 +82,14 @@ export class RecruiterApplicationService {
 
     const companyIds = activeMemberships.map((m) => m.companyId.toString());
 
-    // Find all jobs owned by these companies (or all jobs)
-    const jobs = await this.jobRepository.findMany({ companyId: { $in: companyIds } });
-    let companyJobIds = jobs.map((j) => j._id.toString());
-    if (companyJobIds.length === 0) {
-      const allJobs = await this.jobRepository.findMany({});
-      companyJobIds = allJobs.map((j) => j._id.toString());
-    }
+    // Find only jobs belonging to these companies or created directly by this recruiter
+    const jobs = await this.jobRepository.findMany({
+      $or: [
+        { companyId: { $in: companyIds } },
+        { createdBy: userId }
+      ]
+    });
+    const companyJobIds = jobs.map((j) => j._id.toString());
 
     return { companyIds, companyJobIds };
   }
@@ -105,6 +102,20 @@ export class RecruiterApplicationService {
     const { companyJobIds } = await this.assertRecruiterAuthorization(userId);
     const page = query.page || 1;
     const limit = query.limit || 20;
+
+    if (companyJobIds.length === 0) {
+      return {
+        items: [],
+        meta: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      };
+    }
 
     const result = await this.applicationRepository.findCompanyApplications(companyJobIds, query);
 
@@ -267,6 +278,29 @@ export class RecruiterApplicationService {
 
   async getDashboardStats(userId: string) {
     const { companyJobIds, companyIds } = await this.assertRecruiterAuthorization(userId);
+
+    const emptyStats = {
+      totalCandidates: 0,
+      activeJobsCount: 0,
+      underReviewCount: 0,
+      interviewCount: 0,
+      offerCount: 0,
+      hiredCount: 0,
+      stageCounts: {
+        applied: 0,
+        under_review: 0,
+        shortlisted: 0,
+        interview: 0,
+        offered: 0,
+        hired: 0,
+        rejected: 0,
+      },
+      recentApplications: [],
+    };
+
+    if (companyJobIds.length === 0) {
+      return emptyStats;
+    }
     
     // Aggregation of applications across statuses
     const apps = await this.applicationRepository.findCompanyApplications(companyJobIds, { limit: 500 });
@@ -298,11 +332,17 @@ export class RecruiterApplicationService {
       ]
     });
 
+    const recentCandidateIds = [...new Set(allItems.slice(0, 5).map((app) => app.userId).filter(Boolean))];
+    const candidateUsers = recentCandidateIds.length > 0
+      ? await UserModel.find({ _id: { $in: recentCandidateIds } }).lean()
+      : [];
+    const candidateMap = new Map(candidateUsers.map((u: any) => [u._id.toString(), u.name || u.email]));
+
     const recentApplications = allItems.slice(0, 5).map((app) => ({
       id: app._id.toString(),
       status: app.status,
-      jobTitle: (app.jobId as any)?.title || "Engineering Role",
-      candidateName: (app as any).candidateName || "Candidate Applicant",
+      jobTitle: (app.jobId as any)?.title || "Position",
+      candidateName: candidateMap.get(app.userId) || "Applicant",
       appliedAt: app.appliedAt || app.createdAt,
     }));
 
@@ -394,5 +434,86 @@ export class RecruiterApplicationService {
     await application.save();
 
     return await this.getCompanyApplicationDetails(userId, applicationId);
+  }
+
+  async getTalentPool(
+    userId: string,
+    query: { search?: string; skill?: string; minScore?: number }
+  ) {
+    await this.assertRecruiterAuthorization(userId);
+
+    // Fetch real candidates from database
+    const candidateUsers = await UserModel.find({ role: "candidate" }).lean();
+    const candidateIds = candidateUsers.map((u: any) => u._id.toString());
+
+    const profiles = await ProfileModel.find({ userId: { $in: candidateIds } }).lean();
+    const profileMap = new Map(profiles.map((p) => [p.userId, p]));
+
+    let talentList = candidateUsers.map((user: any) => {
+      const profile = profileMap.get(user._id.toString());
+      const rawSkills = profile?.skills || [];
+      const verifiedSkills = rawSkills.map((s: any) => ({
+        name: s.name,
+        proficiency: s.level >= 4 ? "Expert" : s.level === 3 ? "Advanced" : "Intermediate",
+        score: s.score || (s.level ? s.level * 20 : 85),
+        credentialHash: s.verified ? `SKZ-V${s.score || 90}-${s.name.slice(0, 3).toUpperCase()}` : undefined,
+      }));
+
+      // Calculate employability match index
+      const hasHeadline = Boolean(profile?.headline);
+      const hasBio = Boolean(profile?.bio);
+      const skillCount = verifiedSkills.length;
+      let employabilityScore = 78;
+      if (hasHeadline) employabilityScore += 8;
+      if (hasBio) employabilityScore += 4;
+      if (skillCount >= 3) employabilityScore += 8;
+      else if (skillCount > 0) employabilityScore += 4;
+      employabilityScore = Math.min(99, employabilityScore);
+
+      const locationStr = profile?.location?.city
+        ? `${profile.location.city}${profile.location.country ? `, ${profile.location.country}` : ""}`
+        : "Remote";
+
+      return {
+        id: user._id.toString(),
+        name: user.name || user.email.split("@")[0],
+        headline: profile?.headline || `${profile?.targetRole || "Software Engineer"} Candidate`,
+        location: locationStr,
+        employabilityScore,
+        verifiedSkills,
+        targetRole: profile?.targetRole || undefined,
+        bio: profile?.bio || undefined,
+        socialLinks: profile?.links
+          ? {
+              github: profile.links.github || undefined,
+              linkedin: profile.links.linkedin || undefined,
+              portfolio: profile.links.portfolio || undefined,
+            }
+          : undefined,
+      };
+    });
+
+    if (query.search) {
+      const s = query.search.toLowerCase();
+      talentList = talentList.filter(
+        (t) =>
+          t.name.toLowerCase().includes(s) ||
+          t.headline.toLowerCase().includes(s) ||
+          t.location.toLowerCase().includes(s)
+      );
+    }
+
+    if (query.skill && query.skill !== "All Skills") {
+      const sk = query.skill.toLowerCase();
+      talentList = talentList.filter((t) =>
+        t.verifiedSkills.some((s: any) => s.name.toLowerCase().includes(sk))
+      );
+    }
+
+    if (query.minScore) {
+      talentList = talentList.filter((t) => t.employabilityScore >= Number(query.minScore));
+    }
+
+    return talentList;
   }
 }

@@ -1,7 +1,10 @@
 import { JobRepository } from "@/database/repositories/job/JobRepository";
 import { JobSearchQueryDTO, PaginatedJobsResponseDTO } from "./jobs.dto";
 import { IJob } from "@/database/models/Job.model";
-import { JobStatus, JobSourceType } from "@/core/constants/enums";
+import { CompanyMemberModel } from "@/database/models/CompanyMember.model";
+import { CompanyModel } from "@/database/models/Company.model";
+import { ApplicationModel } from "@/database/models/Application.model";
+import { JobStatus, JobSourceType, CompetencyImportance } from "@/core/constants/enums";
 import { AppError } from "@/core/utils/AppError";
 import { ERROR_CODES } from "@/core/constants/error-codes";
 import { HTTP_STATUS } from "@/core/constants/http-status";
@@ -107,25 +110,77 @@ export class JobsService {
     }
 
     const skills = Array.isArray(data.requiredSkills)
-      ? data.requiredSkills.map((s: any) =>
-          typeof s === "string"
-            ? { name: s, requiredLevel: 4, importance: "mandatory" }
-            : s
-        )
+      ? data.requiredSkills.map((s: any) => {
+          if (typeof s === "string") {
+            return {
+              name: s,
+              requiredLevel: 4,
+              importance: CompetencyImportance.CRITICAL,
+            };
+          }
+          let importance = s.importance;
+          if (
+            !importance ||
+            importance === "mandatory" ||
+            importance === "required" ||
+            !Object.values(CompetencyImportance).includes(importance)
+          ) {
+            importance = CompetencyImportance.CRITICAL;
+          }
+          return {
+            name: s.name,
+            requiredLevel: s.requiredLevel || 4,
+            importance,
+            minYearsOfExperience: s.minYearsOfExperience || null,
+          };
+        })
       : [];
+
+    // Find recruiter company membership
+    let companyId = data.companyId || null;
+    let companyName = data.companyName;
+
+    if (!companyId) {
+      const membership = await CompanyMemberModel.findOne({
+        userId,
+        status: "active",
+      });
+      if (membership) {
+        companyId = membership.companyId;
+        const comp = await CompanyModel.findById(membership.companyId).select("name");
+        if (comp && !companyName) {
+          companyName = comp.name;
+        }
+      }
+    }
+
+    const minSalary = data.salary?.min != null ? Number(data.salary.min) : 25000;
+    const maxSalary = data.salary?.max != null ? Number(data.salary.max) : 50000;
+    const currency = data.salary?.currency || "INR";
+    const rawSalary =
+      currency === "INR"
+        ? `₹${minSalary.toLocaleString("en-IN")} – ₹${maxSalary.toLocaleString("en-IN")}`
+        : `$${minSalary.toLocaleString("en-US")} – $${maxSalary.toLocaleString("en-US")}`;
 
     const job = await this.jobRepository.create({
       title: data.title,
       description: data.description,
-      companyName: data.companyName || "SKILLEZO Enterprise Hiring",
+      companyId: companyId || undefined,
+      companyName: companyName || "Enterprise Hiring",
       department: data.department || "Engineering",
-      employmentType: data.employmentType || "full_time",
-      workplaceType: data.workplaceType || "remote",
-      location: data.location || { city: "Remote", country: "Global" },
-      rawLocation: typeof data.location === "string" ? data.location : "Remote",
+      employmentType: data.employmentType || "Full-Time",
+      workplaceType: data.workplaceType || "Remote",
+      location: data.location || { city: "Remote", country: "India" },
+      rawLocation: typeof data.location === "string" ? data.location : (data.location?.raw || "Remote"),
       requiredSkills: skills,
-      minExperienceYears: data.minExperienceYears || 2,
-      salary: data.salary || { min: 90000, max: 140000, currency: "USD" },
+      minExperienceYears: data.minExperienceYears != null ? Number(data.minExperienceYears) : 0,
+      salary: {
+        min: minSalary,
+        max: maxSalary,
+        currency,
+        raw: rawSalary,
+      },
+      rawSalary,
       status: data.status || JobStatus.ACTIVE,
       sourceType: JobSourceType.PLATFORM,
       createdBy: userId,
@@ -136,15 +191,121 @@ export class JobsService {
   }
 
   async getCompanyJobs(userId: string): Promise<any[]> {
-    const jobs = await this.jobRepository.findMany({
+    const memberships = await CompanyMemberModel.find({
+      userId,
+      status: "active",
+    }).select("companyId");
+
+    const companyIds = memberships.map((m) => m.companyId).filter(Boolean);
+
+    const query: any = {
       $or: [
         { createdBy: userId },
-        { sourceType: JobSourceType.PLATFORM },
-        { status: JobStatus.ACTIVE },
+        ...(companyIds.length > 0 ? [{ companyId: { $in: companyIds } }] : []),
       ],
-    });
+    };
 
-    return jobs;
+    const jobs = await this.jobRepository.findMany(query);
+    if (!jobs || jobs.length === 0) {
+      return [];
+    }
+
+    const jobIds = jobs.map((j) => j._id);
+    const appCounts = await ApplicationModel.aggregate([
+      { $match: { jobId: { $in: jobIds } } },
+      { $group: { _id: "$jobId", count: { $sum: 1 } } },
+    ]);
+    const countMap = new Map(appCounts.map((c) => [c._id.toString(), c.count]));
+
+    return jobs.map((j) => {
+      const jobObj = typeof (j as any).toObject === "function" ? (j as any).toObject() : { ...j };
+      return {
+        ...jobObj,
+        id: j._id.toString(),
+        applicantsCount: countMap.get(j._id.toString()) || 0,
+      };
+    });
+  }
+
+  async updateJob(userId: string, jobId: string, data: any): Promise<IJob> {
+    const job = await this.jobRepository.findById(jobId);
+    if (!job) {
+      throw new AppError("Job not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.JOB_NOT_FOUND);
+    }
+
+    if (data.title !== undefined) job.title = data.title;
+    if (data.description !== undefined) job.description = data.description;
+    if (data.department !== undefined) (job as any).department = data.department;
+    if (data.employmentType !== undefined) job.employmentType = data.employmentType;
+    if (data.workplaceType !== undefined) job.workplaceType = data.workplaceType;
+    if (data.location !== undefined) {
+      job.location = typeof data.location === "string" ? { raw: data.location } : data.location;
+      job.rawLocation = typeof data.location === "string" ? data.location : (data.location?.raw || "Remote");
+    }
+    if (data.minExperienceYears !== undefined) {
+      job.minExperienceYears = Number(data.minExperienceYears);
+    }
+
+    if (data.requiredSkills !== undefined) {
+      const skills = Array.isArray(data.requiredSkills)
+        ? data.requiredSkills.map((s: any) => {
+            if (typeof s === "string") {
+              return {
+                name: s,
+                requiredLevel: 3,
+                importance: CompetencyImportance.CRITICAL,
+              };
+            }
+            return {
+              name: s.name,
+              requiredLevel: s.requiredLevel || 3,
+              importance: (s.importance || CompetencyImportance.CRITICAL).toLowerCase(),
+              minYearsOfExperience: s.minYearsOfExperience,
+            };
+          })
+        : [];
+      job.requiredSkills = skills as any;
+    }
+
+    if (data.salary !== undefined || data.salaryMin !== undefined || data.salaryMax !== undefined) {
+      const minSalary =
+        data.salary?.min != null
+          ? Number(data.salary.min)
+          : data.salaryMin != null
+          ? Number(data.salaryMin)
+          : job.salary?.min || 0;
+
+      const maxSalary =
+        data.salary?.max != null
+          ? Number(data.salary.max)
+          : data.salaryMax != null
+          ? Number(data.salaryMax)
+          : job.salary?.max || 0;
+
+      const currency = data.salary?.currency || data.currency || job.salary?.currency || "INR";
+      const rawSalary =
+        currency === "INR"
+          ? `₹${minSalary.toLocaleString("en-IN")} – ₹${maxSalary.toLocaleString("en-IN")}`
+          : `$${minSalary.toLocaleString("en-US")} – $${maxSalary.toLocaleString("en-US")}`;
+
+      job.salary = {
+        min: minSalary,
+        max: maxSalary,
+        currency,
+        raw: rawSalary,
+      };
+      job.rawSalary = rawSalary;
+    }
+
+    if (data.status !== undefined) {
+      job.status = data.status;
+      if (data.status === JobStatus.CLOSED) {
+        job.closesAt = new Date();
+      }
+    }
+
+    await job.save();
+    return job;
   }
 
   async updateJobStatus(userId: string, jobId: string, status: string): Promise<IJob> {

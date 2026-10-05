@@ -49,6 +49,13 @@ export class JobsController {
     res.status(HTTP_STATUS.OK).json(successResponse(jobs));
   };
 
+  updateJob = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const jobId = req.params.jobId as string;
+    const job = await this.jobsService.updateJob(userId, jobId, req.body);
+    res.status(HTTP_STATUS.OK).json(successResponse(job));
+  };
+
   updateJobStatus = async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const jobId = req.params.jobId as string;

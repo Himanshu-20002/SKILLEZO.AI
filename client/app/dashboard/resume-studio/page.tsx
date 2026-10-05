@@ -23,6 +23,7 @@ import {
   ResumeStudioWorkspace,
   ResumeSwitchConfirmDialog,
   ResumeComparisonDialog,
+  ResumeStudioUploadGateway,
 } from '@/components/resume-studio';
 
 // Code-split optimization review modal (only loaded when user triggers optimization)
@@ -48,7 +49,6 @@ function ResumeStudioPageContent() {
   });
 
   const studio = useResumeStudio(initialResumeId);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Programmatic navigation tracking ref to eliminate search-param loops
   const programmaticNavigationTokenRef = useRef<ProgrammaticNavigationToken | null>(null);
@@ -171,16 +171,6 @@ function ResumeStudioPageContent() {
     return entries.sort((a, b) => a.score - b.score)[0] || null;
   }, [studio.scoreResult]);
 
-  // Handle Drag & Drop File Upload
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      studio.handleFileUpload(file);
-    }
-  };
-
   // 1. LOADING SKELETON
   if (studio.loading) {
     return (
@@ -217,17 +207,20 @@ function ResumeStudioPageContent() {
     );
   }
 
-  const isLocked = !studio.loading && studio.resumes.length === 0;
+  // 3. ZERO RESUMES GATEWAY (Lightweight, instant initial load for new users without a resume)
+  if (!studio.loading && studio.resumes.length === 0) {
+    return (
+      <ResumeStudioUploadGateway
+        onFileUpload={studio.handleFileUpload}
+        isUploading={studio.isUploading}
+      />
+    );
+  }
 
   return (
     <div className="relative min-h-screen w-full bg-[#F8FAFC] dark:bg-[#0B1130] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-indigo-500/20 overflow-x-hidden">
-      {/* Background Dashboard & Studio Workspace (Blurred when locked) */}
-      <div
-        className={`flex flex-col lg:flex-row flex-1 min-w-0 transition-all duration-500 ${isLocked
-          ? 'filter blur-[7px] opacity-40 dark:opacity-30 pointer-events-none select-none scale-[0.995] origin-top'
-          : ''
-          }`}
-      >
+      {/* Background Dashboard & Studio Workspace */}
+      <div className="flex flex-col lg:flex-row flex-1 min-w-0 transition-all duration-500">
         {/* 1. Mobile Slide-Over Sidebar Drawer (< lg) */}
         <ResumeStudioSidebar
           className="lg:hidden"

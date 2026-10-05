@@ -1,27 +1,16 @@
 import multer, { FileFilterCallback } from "multer";
 import path from "path";
-import fs from "fs";
 import { Request } from "express";
 import { AppError } from "@/core/utils/AppError";
 import { HTTP_STATUS } from "@/core/constants/http-status";
 import { ERROR_CODES } from "@/core/constants/error-codes";
 
-const uploadDir = path.join(process.cwd(), "uploads", "resumes");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req: Request, _file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
-    cb(null, uploadDir);
-  },
-  filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
-    const userId = (req as any).user?.id || "anonymous";
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `resume-${userId}-${uniqueSuffix}${ext}`);
-  },
-});
+/**
+ * In-Memory Multer Storage (100% Stateless & Zero Disk I/O)
+ * Files are streamed directly into memory buffer (file.buffer) for instant extraction.
+ * No raw files are ever written to local disk.
+ */
+const storage = multer.memoryStorage();
 
 const fileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
   const ext = path.extname(file.originalname).toLowerCase();

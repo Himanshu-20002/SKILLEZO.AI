@@ -88,7 +88,7 @@ const salarySchema = new Schema<IJobSalary>(
   {
     min: { type: Number, default: null, min: 0 },
     max: { type: Number, default: null, min: 0 },
-    currency: { type: String, default: "USD", trim: true },
+    currency: { type: String, default: "INR", trim: true },
     raw: { type: String, default: null, trim: true },
   },
   { _id: false }

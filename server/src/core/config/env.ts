@@ -33,6 +33,7 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional().default(""),
   EMAIL_FROM: z.string().default("SKILLEZO <onboarding@resend.dev>"),
   AI_CONTEXT_CACHE_TTL_SECONDS: z.string().optional().default("600"),
+  REDIS_URL: z.string().optional().default(""),
 });
 
 const parseEnv = () => {

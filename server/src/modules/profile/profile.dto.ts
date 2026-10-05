@@ -75,6 +75,8 @@ export interface CreateProfileDTO {
   phone?: string | null;
   targetRole?: string | null;
   targetRoleId?: string | null;
+  targetSalary?: string | null;
+  targetTimeline?: string | null;
   bio?: string | null;
   skills?: ProfileSkillDTO[];
   education?: ProfileEducationDTO[];
@@ -88,6 +90,8 @@ export interface UpdateProfileDTO {
   phone?: string | null;
   targetRole?: string | null;
   targetRoleId?: string | null;
+  targetSalary?: string | null;
+  targetTimeline?: string | null;
   bio?: string | null;
   skills?: ProfileSkillDTO[];
   education?: ProfileEducationDTO[];

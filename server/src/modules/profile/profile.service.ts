@@ -300,6 +300,8 @@ export class ProfileService {
       phone: data.phone || "",
       targetRole: data.targetRole || "",
       targetRoleId,
+      targetSalary: data.targetSalary || "1 - 3 LPA",
+      targetTimeline: data.targetTimeline || "2 Weeks",
       bio: data.bio || "",
       skills: (data.skills as IProfileSkill[]) || [],
       education: (data.education as IProfileEducation[]) || [],
@@ -371,6 +373,8 @@ export class ProfileService {
     if (data.targetRoleId !== undefined) {
       updatePayload.targetRoleId = data.targetRoleId ? new Types.ObjectId(data.targetRoleId) : null;
     }
+    if (data.targetSalary !== undefined) updatePayload.targetSalary = data.targetSalary;
+    if (data.targetTimeline !== undefined) updatePayload.targetTimeline = data.targetTimeline;
     if (data.bio !== undefined) updatePayload.bio = data.bio;
     if (data.skills !== undefined) updatePayload.skills = data.skills;
     if (data.education !== undefined) updatePayload.education = data.education;
@@ -645,8 +649,8 @@ export class ProfileService {
           (parts.length > 2
             ? parts.slice(2).join(", ")
             : parts.length === 2 && parts[1].length > 3
-            ? parts[1]
-            : ""),
+              ? parts[1]
+              : ""),
       };
     }
 
@@ -961,10 +965,10 @@ export class ProfileService {
 
       const matched = instNorm
         ? profile.education.find((e) => {
-            const eInst = (e.institution || "").trim().toLowerCase();
-            const eDeg = (e.degree || "").trim().toLowerCase();
-            return eInst === instNorm && (!degNorm || !eDeg || degNorm === eDeg);
-          })
+          const eInst = (e.institution || "").trim().toLowerCase();
+          const eDeg = (e.degree || "").trim().toLowerCase();
+          return eInst === instNorm && (!degNorm || !eDeg || degNorm === eDeg);
+        })
         : null;
 
       if (matched) {
@@ -995,10 +999,10 @@ export class ProfileService {
 
       const matched = instNorm
         ? profile.education.find((e) => {
-            const eInst = (e.institution || "").trim().toLowerCase();
-            const eDeg = (e.degree || "").trim().toLowerCase();
-            return eInst === instNorm && (!degNorm || !eDeg || degNorm === eDeg);
-          })
+          const eInst = (e.institution || "").trim().toLowerCase();
+          const eDeg = (e.degree || "").trim().toLowerCase();
+          return eInst === instNorm && (!degNorm || !eDeg || degNorm === eDeg);
+        })
         : null;
 
       if (matched) {

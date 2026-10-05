@@ -69,8 +69,7 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
   isDownloadingPdf: _isDownloadingPdf,
   portfolioVersion,
 }) => {
-  const [showPillars, setShowPillars] = React.useState(false); // Hidden by default
-  const [showDetails, setShowDetails] = React.useState(false); // Hidden by default
+  const [isDetailsExpanded, setIsDetailsExpanded] = React.useState(false); // Unified expansion state
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-fadeIn">
@@ -201,8 +200,8 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
           targetRole={targetRole}
           activePillar={activePillar}
           onSelectPillar={onSelectPillar}
-          isExpanded={showPillars}
-          onToggleExpanded={() => setShowPillars((prev) => !prev)}
+          isExpanded={isDetailsExpanded}
+          onToggleExpanded={() => setIsDetailsExpanded((prev) => !prev)}
         />
 
         <PillarDetailInspector
@@ -210,8 +209,8 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
           analysis={analysis}
           targetRole={targetRole}
           onSelectPillar={onSelectPillar}
-          isExpanded={showDetails}
-          onToggleExpanded={() => setShowDetails((prev) => !prev)}
+          isExpanded={isDetailsExpanded}
+          hideExpandButton={true}
         />
       </div>
     </div>

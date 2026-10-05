@@ -111,36 +111,19 @@ export class ResumeService {
 
     const uniqueId = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const ext = path.extname(file.originalname);
-    const storageKey = `resumes/${userId}/${uniqueId}${ext}`;
+    const storageKey = `in-memory/${userId}/${uniqueId}${ext}`;
     const title = isMasterVariant ? (titleRequested || "Master Resume") : (titleRequested || file.originalname);
 
-    console.log("[ResumeService] Ingestion started for file:", file.originalname);
-
-    let savedStorageKey: string;
-    try {
-      savedStorageKey = await this.storageService.save(file, storageKey);
-    } catch (err: any) {
-      throw new AppError(
-        "Failed to save resume file to storage",
-        HTTP_STATUS.INTERNAL_SERVER_ERROR,
-        ERROR_CODES.RESUME_STORAGE_ERROR
-      );
-    }
+    console.log("[ResumeService] In-memory ingestion started for file:", file.originalname);
 
     try {
-      // Extract structured data from uploaded resume buffer
+      // Extract structured data directly from in-memory file buffer (100% stateless)
       let extractedData: IResumeExtractedData | null = null;
       let rawText: string | null = null;
       let status: ResumeStatus = ResumeStatus.UPLOADED;
       let parsingError: string | null = null;
 
-      let fileBuffer: Buffer | null = file.buffer || null;
-      if (!fileBuffer && savedStorageKey) {
-        const absPath = this.storageService.getAbsolutePath(savedStorageKey);
-        if (fs.existsSync(absPath)) {
-          fileBuffer = fs.readFileSync(absPath);
-        }
-      }
+      const fileBuffer: Buffer | null = file.buffer || null;
 
       const isPdf =
         file.mimetype === "application/pdf" ||
@@ -151,7 +134,7 @@ export class ResumeService {
           rawText = await this.parserService.extractRawTextFromBuffer(fileBuffer);
           extractedData = await this.parserService.parseResumeBuffer(fileBuffer);
           status = ResumeStatus.PARSED;
-          console.log("[ResumeService] PDF parse succeeded. Text length:", rawText?.length);
+          console.log("[ResumeService] In-memory PDF parse succeeded. Text length:", rawText?.length);
         } catch (parseErr: any) {
           parsingError = parseErr?.message || "Failed to parse resume text";
           status = ResumeStatus.UPLOADED;
@@ -185,7 +168,7 @@ export class ResumeService {
         await this.resumeRepository.clearDefaultFlag(userId);
       }
 
-      const fileUrl = `/api/resumes/download-ref/${path.basename(storageKey)}`;
+      const fileUrl = null;
 
       const isMasterVariant = isFirstResume && !options?.asVariant;
       const variantType = isMasterVariant ? "MASTER" : "TAILORED";
@@ -194,8 +177,8 @@ export class ResumeService {
         userId,
         title,
         originalFileName: file.originalname,
-        fileName: path.basename(storageKey),
-        storageKey: savedStorageKey,
+        fileName: file.originalname,
+        storageKey,
         fileUrl,
         mimeType: file.mimetype,
         fileSize: file.size,
@@ -228,8 +211,6 @@ export class ResumeService {
 
       return newResume;
     } catch (err: any) {
-      // Clean up orphan file if DB creation or processing fails
-      await this.storageService.delete(savedStorageKey);
       if (err instanceof AppError) {
         throw err;
       }
@@ -893,10 +874,12 @@ export class ResumeService {
 
   /**
    * Lazily retrieves or generates the Master Resume for a user from their Career Profile.
+   * If the candidate has no uploaded resume and has not completed profile facts, returns null
+   * instead of eagerly synthesizing a phantom Master Resume in MongoDB.
    * Concurrency-safe: handles duplicate key races if multiple creation calls occur simultaneously.
    */
   async getOrCreateMasterResume(userId: string): Promise<{
-    resume: IResume;
+    resume: IResume | null;
     isStale: boolean;
     profileVersion: number;
   }> {
@@ -926,6 +909,29 @@ export class ResumeService {
       return {
         resume: existingMaster,
         isStale,
+        profileVersion,
+      };
+    }
+
+    // Check if user has ANY uploaded resume before creating a profile-generated one
+    const userUploadedResumes =
+      typeof this.resumeRepository.findByUserId === "function"
+        ? await this.resumeRepository.findByUserId(userId)
+        : [];
+    const hasUploaded = Array.isArray(userUploadedResumes) && userUploadedResumes.length > 0;
+
+    const hasSubstantialFacts =
+      (profile?.experience?.length ?? 0) > 0 ||
+      (profile?.education?.length ?? 0) > 0 ||
+      (profile?.skills?.length ?? 0) > 0 ||
+      (profile?.projects?.length ?? 0) > 0;
+
+    // If candidate has no existing resume AND has not filled substantial profile facts,
+    // do NOT auto-create a phantom master resume. Return null so frontend can show upload prompt.
+    if (!hasUploaded && !hasSubstantialFacts) {
+      return {
+        resume: null,
+        isStale: false,
         profileVersion,
       };
     }
@@ -1027,7 +1033,19 @@ export class ResumeService {
 
     const existingMaster = await this.resumeRepository.findMasterByUserId(userId);
     if (!existingMaster) {
-      return this.getOrCreateMasterResume(userId);
+      const res = await this.getOrCreateMasterResume(userId);
+      if (!res.resume) {
+        throw new AppError(
+          "No master resume or profile facts found to sync. Please upload a resume first.",
+          HTTP_STATUS.NOT_FOUND,
+          ERROR_CODES.RESUME_NOT_FOUND
+        );
+      }
+      return {
+        resume: res.resume,
+        isStale: res.isStale,
+        profileVersion: res.profileVersion,
+      };
     }
 
     // Preserve presentation customizations
@@ -1069,24 +1087,27 @@ export class ResumeService {
     const profile = await this.profileService.getMyProfile(userId);
     const currentProfileVersion = profile.profileVersion || 1;
 
-    let masterItem: ResumePortfolioItemDTO = {
-      id: masterResume._id.toString(),
-      displayName: masterResume.title || "Master Resume",
-      variantType: "MASTER",
-      targetJobTitle: masterResume.targetJobTitle || null,
-      targetCompany: masterResume.targetCompany || null,
-      parentResumeId: null,
-      updatedAt: (masterResume.updatedAt || masterResume.createdAt || new Date()).toISOString(),
-      createdAt: (masterResume.createdAt || new Date()).toISOString(),
-      sourceProfileVersion: masterResume.sourceProfileVersion ?? null,
-      isMasterStale: (masterResume.sourceProfileVersion ?? 0) < currentProfileVersion,
-      isDefault: true,
-    };
+    let masterItem: ResumePortfolioItemDTO | null = null;
+    if (masterResume) {
+      masterItem = {
+        id: masterResume._id.toString(),
+        displayName: masterResume.title || "Master Resume",
+        variantType: "MASTER",
+        targetJobTitle: masterResume.targetJobTitle || null,
+        targetCompany: masterResume.targetCompany || null,
+        parentResumeId: null,
+        updatedAt: (masterResume.updatedAt || masterResume.createdAt || new Date()).toISOString(),
+        createdAt: (masterResume.createdAt || new Date()).toISOString(),
+        sourceProfileVersion: masterResume.sourceProfileVersion ?? null,
+        isMasterStale: (masterResume.sourceProfileVersion ?? 0) < currentProfileVersion,
+        isDefault: true,
+      };
+    }
 
     const variants: ResumePortfolioItemDTO[] = [];
 
     for (const res of userResumes) {
-      if (res._id.toString() === masterResume._id.toString()) {
+      if (masterResume && res._id.toString() === masterResume._id.toString()) {
         masterItem = {
           id: res._id.toString(),
           displayName: res.title || "Master Resume",
@@ -1108,7 +1129,7 @@ export class ResumeService {
           variantType: "TAILORED",
           targetJobTitle: res.targetJobTitle || null,
           targetCompany: res.targetCompany || null,
-          parentResumeId: res.parentResumeId ? res.parentResumeId.toString() : masterResume._id.toString(),
+          parentResumeId: res.parentResumeId ? res.parentResumeId.toString() : (masterResume ? masterResume._id.toString() : null),
           updatedAt: (res.updatedAt || res.createdAt || new Date()).toISOString(),
           createdAt: (res.createdAt || new Date()).toISOString(),
           sourceProfileVersion: res.sourceProfileVersion ?? null,
@@ -1135,11 +1156,11 @@ export class ResumeService {
     const masterData = await this.getOrCreateMasterResume(userId);
     const master = masterData.resume;
 
-    if (!master.resumeDocument) {
+    if (!master || !master.resumeDocument) {
       throw new AppError(
-        "Master Resume presentation document is not initialized",
-        HTTP_STATUS.INTERNAL_SERVER_ERROR,
-        ERROR_CODES.INTERNAL_SERVER_ERROR
+        "Please upload or initialize your Master Resume first before creating role variants",
+        HTTP_STATUS.BAD_REQUEST,
+        ERROR_CODES.BAD_REQUEST
       );
     }
 

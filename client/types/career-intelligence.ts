@@ -96,13 +96,14 @@ export interface RoadmapStage {
 }
 
 export interface SalaryProgressionItem {
-  level: 'Current' | 'Next Target' | 'Target Role';
+  level: 'Current' | 'Next Target' | 'Target Role' | 'Target Baseline' | 'Role Alignment' | 'Market Standard' | string;
   label: string;
   salaryText: string; // e.g. ₹6 LPA
   numericSalary: number;
 }
 
 export interface CareerGPSData {
+  userId?: string;
   targetRole: string;
   targetSalary: string;
   targetTimeline: string; // e.g. "6 Months"

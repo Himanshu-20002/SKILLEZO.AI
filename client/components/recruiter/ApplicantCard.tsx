@@ -43,7 +43,7 @@ export const ApplicantCard: React.FC<ApplicantCardProps> = ({
     application.candidate?.employabilityScore ||
     Math.floor(82 + (application.id.charCodeAt(0) % 16));
 
-  const candidateSkills = application.candidate?.skills || ['React', 'TypeScript', 'Node.js'];
+  const candidateSkills = application.candidate?.skills || [];
 
   return (
     <div
@@ -68,22 +68,24 @@ export const ApplicantCard: React.FC<ApplicantCardProps> = ({
       </div>
 
       {/* Verified Skills Pill Row */}
-      <div className="flex flex-wrap gap-1">
-        {candidateSkills.slice(0, 3).map((skill, idx) => (
-          <span
-            key={idx}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-[#182046] text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/50"
-          >
-            <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />
-            <span>{skill}</span>
-          </span>
-        ))}
-        {candidateSkills.length > 3 && (
-          <span className="text-[10px] text-slate-400 font-medium self-center">
-            +{candidateSkills.length - 3}
-          </span>
-        )}
-      </div>
+      {candidateSkills.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {candidateSkills.slice(0, 3).map((skill, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-[#182046] text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/50"
+            >
+              <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />
+              <span>{skill}</span>
+            </span>
+          ))}
+          {candidateSkills.length > 3 && (
+            <span className="text-[10px] text-slate-400 font-medium self-center">
+              +{candidateSkills.length - 3}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Resume File Snippet */}
       {application.resume && (

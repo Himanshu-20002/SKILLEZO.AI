@@ -1,8 +1,8 @@
 # 📊 SKILLEZO AI — Project Status Dashboard
 
-> **Last Updated:** September 29, 2026 (Phase 6F Application Workflow, Immutable SHA-256 Snapshot Engine, Atlas Index Remediation, Canvas Viewport Auto-Wrapping & Portfolio Badge Integrity, Monorepo 100% Green, 0 TypeScript Errors)  
-> **Active Sprint:** Sprint 2 (Week 2) — Phase 6F Application Workflow, Studio Polish & Diagnostics Suite  
-> **Target Soft MVP:** September 30, 2026  
+> **Last Updated:** September 30, 2026 (Soft MVP Milestone Reached: Career GPS Constellation Engine, User Storage Isolation, Connected Salary Steppers, Master Resume Single Sync Button, Unified ATS Audit Single Expand Controller, 0 TypeScript Errors)  
+> **Active Sprint:** Sprint 2 (Week 2) — Soft MVP Milestone Reached & Verified  
+> **Target Soft MVP:** September 30, 2026 (✅ Reached & Verified)  
 > **Target Release:** October 10, 2026  
 
 ---
@@ -11,14 +11,14 @@
 
 ```text
 ========================================================================================
-OVERALL MVP PLATFORM PROGRESS: [███████████████████░] 97% (Resume Studio & Tailoring Live)
+OVERALL MVP PLATFORM PROGRESS: [███████████████████½] 98% (Soft MVP Reached & Verified)
 ========================================================================================
 Candidate Core Experience & Auth    : [████████████████████] 100% (Working & Verified)
 Resume Studio & Deterministic ATS   : [████████████████████] 100% (Refactored, Tested & Verified)
 Career Profile Single Source of Truth: [████████████████████] 100% (Phase 2 & 3 Architecture Live)
 AI Career Coach (Phases 1 to 7)     : [████████████████████] 100% (Core, UI, Actions, Widget Complete)
+Career GPS & Roadmaps               : [███████████████████░]  95% (Constellation Engine, Isolation & Salary Stepper Live)
 Recruiter Review Portal             : [██████████████░░░░░░]  70% (Kanban & Jobs Live, Data Hydration Next)
-Career GPS & Roadmaps               : [███████████████░░░░░]  75% (Core Taxonomies Live, Salary Bands Next)
 Cloud Infrastructure & Prod Hardening: [██████░░░░░░░░░░░░░░]  35% (Dev/Docker Live, Prod Hardening Next)
 AI Auto-Apply Engine                : [░░░░░░░░░░░░░░░░░░░░]   0% (In Sprint 3 Priority)
 ========================================================================================

@@ -40,15 +40,16 @@ export default function RecruiterDashboardPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [statsData, jobsData] = await Promise.all([
+        const [statsData, jobsData, talentData] = await Promise.all([
           recruiterService.getDashboardStats(),
           recruiterService.getCompanyJobs(),
+          recruiterService.getTalentPool(),
         ]);
         setStats(statsData);
         setJobs(jobsData);
-        setTopTalent(recruiterService.getFallbackTalentPool());
+        setTopTalent(talentData);
       } catch {
-        // Fallback
+        // Handled cleanly by services
       } finally {
         setLoading(false);
       }
@@ -56,26 +57,56 @@ export default function RecruiterDashboardPage() {
     loadData();
   }, []);
 
-  const totalCandidates = stats?.totalCandidates || 28;
-  const activeJobs = stats?.activeJobsCount || jobs.length || 4;
-  const interviewCount = stats?.interviewCount || 6;
-  const offerCount = stats?.offerCount || 3;
-  const stageCounts = stats?.stageCounts || {
-    applied: 9,
-    under_review: 8,
-    shortlisted: 5,
-    interview: 6,
-    offered: 3,
-    hired: 2,
+  const totalCandidates = stats?.totalCandidates ?? 0;
+  const activeJobs = stats?.activeJobsCount ?? jobs.length;
+  const interviewCount = stats?.interviewCount ?? 0;
+  const offerCount = stats?.offerCount ?? 0;
+  const stageCounts = stats?.stageCounts ?? {
+    applied: 0,
+    under_review: 0,
+    shortlisted: 0,
+    interview: 0,
+    offered: 0,
+    hired: 0,
   };
 
   const funnelStages = [
-    { label: 'Applied Inflow', count: stageCounts.applied || 9, color: 'bg-blue-500', width: '100%' },
-    { label: 'Under Review', count: stageCounts.under_review || 8, color: 'bg-amber-500', width: '85%' },
-    { label: 'Shortlisted', count: stageCounts.shortlisted || 5, color: 'bg-purple-500', width: '68%' },
-    { label: 'Technical Interview', count: stageCounts.interview || 6, color: 'bg-indigo-500', width: '50%' },
-    { label: 'Offers Extended', count: stageCounts.offered || 3, color: 'bg-emerald-500', width: '32%' },
-    { label: 'Hired & Onboarded', count: stageCounts.hired || 2, color: 'bg-teal-500', width: '22%' },
+    {
+      label: 'Applied Inflow',
+      count: stageCounts.applied ?? 0,
+      color: 'bg-blue-500',
+      width: totalCandidates > 0 ? `${Math.max(10, Math.round(((stageCounts.applied ?? 0) / totalCandidates) * 100))}%` : '0%',
+    },
+    {
+      label: 'Under Review',
+      count: stageCounts.under_review ?? 0,
+      color: 'bg-amber-500',
+      width: totalCandidates > 0 ? `${Math.max(10, Math.round(((stageCounts.under_review ?? 0) / totalCandidates) * 100))}%` : '0%',
+    },
+    {
+      label: 'Shortlisted',
+      count: stageCounts.shortlisted ?? 0,
+      color: 'bg-purple-500',
+      width: totalCandidates > 0 ? `${Math.max(10, Math.round(((stageCounts.shortlisted ?? 0) / totalCandidates) * 100))}%` : '0%',
+    },
+    {
+      label: 'Technical Interview',
+      count: stageCounts.interview ?? 0,
+      color: 'bg-indigo-500',
+      width: totalCandidates > 0 ? `${Math.max(10, Math.round(((stageCounts.interview ?? 0) / totalCandidates) * 100))}%` : '0%',
+    },
+    {
+      label: 'Offers Extended',
+      count: stageCounts.offered ?? 0,
+      color: 'bg-emerald-500',
+      width: totalCandidates > 0 ? `${Math.max(10, Math.round(((stageCounts.offered ?? 0) / totalCandidates) * 100))}%` : '0%',
+    },
+    {
+      label: 'Hired & Onboarded',
+      count: stageCounts.hired ?? 0,
+      color: 'bg-teal-500',
+      width: totalCandidates > 0 ? `${Math.max(10, Math.round(((stageCounts.hired ?? 0) / totalCandidates) * 100))}%` : '0%',
+    },
   ];
 
   return (
@@ -123,9 +154,15 @@ export default function RecruiterDashboardPage() {
                 <Users className="w-6 h-6" />
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-              <TrendingUp className="w-3 h-3" />
-              <span>+18% from last week</span>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              {totalCandidates > 0 ? (
+                <>
+                  <TrendingUp className="w-3 h-3 text-emerald-500" />
+                  <span className="text-emerald-600 dark:text-emerald-400">{totalCandidates} active applicants</span>
+                </>
+              ) : (
+                <span>No applicants received yet</span>
+              )}
             </div>
           </div>
 
@@ -145,7 +182,7 @@ export default function RecruiterDashboardPage() {
             </div>
             <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
               <ShieldCheck className="w-3 h-3 text-emerald-500" />
-              <span>100% verified requirement matching</span>
+              <span>{activeJobs > 0 ? `${activeJobs} active requisitions` : "No requisitions created"}</span>
             </div>
           </div>
 
@@ -163,8 +200,8 @@ export default function RecruiterDashboardPage() {
                 <Clock className="w-6 h-6" />
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
-              <span>Next interview in 3 hours</span>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              <span>{interviewCount > 0 ? `${interviewCount} interviews queued` : "No interviews scheduled"}</span>
             </div>
           </div>
 
@@ -182,8 +219,8 @@ export default function RecruiterDashboardPage() {
                 <CheckCircle2 className="w-6 h-6" />
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-              <span>92% Offer acceptance rate</span>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              <span>{offerCount > 0 ? `${offerCount} offers awaiting decision` : "No active offers pending"}</span>
             </div>
           </div>
         </div>
@@ -198,7 +235,7 @@ export default function RecruiterDashboardPage() {
                   Hiring Pipeline Velocity & Conversion
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Stage progression for current quarter
+                  Stage progression for current requisitions
                 </p>
               </div>
 
@@ -291,7 +328,7 @@ export default function RecruiterDashboardPage() {
                       Review Pending Applications
                     </h4>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      8 candidates awaiting initial qualification review
+                      {stageCounts.under_review ?? 0} candidates awaiting initial qualification review
                     </span>
                   </div>
                 </div>
@@ -323,33 +360,54 @@ export default function RecruiterDashboardPage() {
               </Link>
             </div>
 
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {jobs.slice(0, 3).map((job) => (
-                <div key={job.id || job._id} className="py-3.5 flex items-center justify-between gap-4">
-                  <div className="space-y-1 min-w-0">
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                      {job.title}
-                    </h4>
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-                      <span>{job.department || 'Engineering'}</span>
-                      <span>•</span>
-                      <span>{job.workplaceType || 'Remote'}</span>
-                      <span>•</span>
-                      <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                        {job.applicantsCount || 12} Applicants
-                      </span>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={`/recruiter/applications?jobId=${job.id || job._id}`}
-                    className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#151D42] hover:bg-[#3D5AFE]/10 hover:text-[#3D5AFE] text-slate-700 dark:text-slate-300 text-xs font-bold transition shrink-0"
-                  >
-                    View Pipeline
-                  </Link>
+            {jobs.length === 0 ? (
+              <div className="py-8 text-center space-y-3">
+                <Briefcase className="w-8 h-8 text-slate-400 mx-auto" />
+                <div className="space-y-1">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                    No active job requisitions
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                    Create your first job posting to define required verified skills and start receiving candidate applications.
+                  </p>
                 </div>
-              ))}
-            </div>
+                <button
+                  onClick={() => setCreateJobOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Post Requisition</span>
+                </button>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {jobs.slice(0, 3).map((job) => (
+                  <div key={job.id || job._id} className="py-3.5 flex items-center justify-between gap-4">
+                    <div className="space-y-1 min-w-0">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {job.title}
+                      </h4>
+                      <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+                        <span>{job.department || 'Engineering'}</span>
+                        <span>•</span>
+                        <span>{job.workplaceType || 'Remote'}</span>
+                        <span>•</span>
+                        <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                          {job.applicantsCount || 0} Applicants
+                        </span>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/recruiter/applications?jobId=${job.id || job._id}`}
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#151D42] hover:bg-[#3D5AFE]/10 hover:text-[#3D5AFE] text-slate-700 dark:text-slate-300 text-xs font-bold transition shrink-0"
+                    >
+                      View Pipeline
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Top Talent Spotlight */}
@@ -360,7 +418,7 @@ export default function RecruiterDashboardPage() {
                   Verified Top Talent
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Pre-screened candidates with 95%+ score
+                  Pre-screened candidates from directory
                 </p>
               </div>
 
@@ -372,35 +430,47 @@ export default function RecruiterDashboardPage() {
               </Link>
             </div>
 
-            <div className="space-y-3">
-              {topTalent.slice(0, 3).map((talent) => (
-                <div
-                  key={talent.id}
-                  className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#151D42] border border-slate-200/60 dark:border-slate-800 flex items-center justify-between gap-3"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                        {talent.name}
-                      </h4>
-                      <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold">
-                        {talent.employabilityScore}% Match
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                      {talent.targetRole || talent.headline}
-                    </p>
-                  </div>
-
-                  <Link
-                    href={`/recruiter/talent?highlight=${talent.id}`}
-                    className="px-3 py-1.5 rounded-xl bg-[#00D9C0]/10 text-[#00A896] dark:text-[#00D9C0] hover:bg-[#00D9C0]/20 text-xs font-bold transition shrink-0"
+            {topTalent.length === 0 ? (
+              <div className="py-8 text-center space-y-2">
+                <Compass className="w-8 h-8 text-slate-400 mx-auto" />
+                <p className="text-xs font-bold text-slate-900 dark:text-white">
+                  No verified candidates yet
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  New verified candidates will appear here as their skills are evaluated.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {topTalent.slice(0, 3).map((talent) => (
+                  <div
+                    key={talent.id}
+                    className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#151D42] border border-slate-200/60 dark:border-slate-800 flex items-center justify-between gap-3"
                   >
-                    Direct Invite
-                  </Link>
-                </div>
-              ))}
-            </div>
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {talent.name}
+                        </h4>
+                        <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold">
+                          {talent.employabilityScore}% Match
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {talent.targetRole || talent.headline}
+                      </p>
+                    </div>
+
+                    <Link
+                      href={`/recruiter/talent?highlight=${talent.id}`}
+                      className="px-3 py-1.5 rounded-xl bg-[#00D9C0]/10 text-[#00A896] dark:text-[#00D9C0] hover:bg-[#00D9C0]/20 text-xs font-bold transition shrink-0"
+                    >
+                      Direct Invite
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

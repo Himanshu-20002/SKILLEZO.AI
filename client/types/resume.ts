@@ -291,7 +291,7 @@ export interface ResumeRecord {
 }
 
 export interface MasterResumeResponse {
-  resume: ResumeRecord;
+  resume: ResumeRecord | null;
   isStale: boolean;
   profileVersion: number;
 }
@@ -316,7 +316,7 @@ export interface ResumePortfolioItem {
 }
 
 export interface ResumePortfolioResponse {
-  master: ResumePortfolioItem;
+  master: ResumePortfolioItem | null;
   variants: ResumePortfolioItem[];
 }
 

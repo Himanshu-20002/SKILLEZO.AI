@@ -65,4 +65,14 @@ export class RecruiterApplicationController {
     const result = await this.service.updateApplicationStatus(userId, applicationId, req.body);
     res.status(HTTP_STATUS.OK).json(successResponse(result));
   };
+
+  getTalentPool = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const search = req.query.search as string | undefined;
+    const skill = req.query.skill as string | undefined;
+    const minScore = req.query.minScore ? parseInt(req.query.minScore as string, 10) : undefined;
+
+    const result = await this.service.getTalentPool(userId, { search, skill, minScore });
+    res.status(HTTP_STATUS.OK).json(successResponse(result));
+  };
 }

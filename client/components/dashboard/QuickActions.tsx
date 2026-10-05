@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BarChart3, Compass, Briefcase, Target, ArrowUpRight, Zap } from 'lucide-react';
+import { FileText, Compass, Briefcase, Target, ArrowUpRight, Zap } from 'lucide-react';
 import { mockQuickActions } from '@/mock/dashboard';
 import { CardHeader } from '@/components/dashboard/common/CardHeader';
 
@@ -15,7 +15,7 @@ interface ActionMetadata {
 
 const actionMetadataMap: Record<string, ActionMetadata> = {
   'qa-1': {
-    icon: <BarChart3 className="w-5 h-5 text-[#3D5AFE] dark:text-indigo-400" />,
+    icon: <FileText className="w-5 h-5 text-[#3D5AFE] dark:text-indigo-400" />,
     badgeColor: 'bg-[#3D5AFE]/10 text-[#3D5AFE] dark:text-indigo-300 border-[#3D5AFE]/20',
     iconBg: 'bg-[#3D5AFE]/10 dark:bg-[#3D5AFE]/20',
     hoverBorder: 'hover:border-[#3D5AFE]/50 dark:hover:border-[#3D5AFE]/40'

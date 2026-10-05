@@ -10,6 +10,7 @@ import { AppError } from "@/core/utils/AppError";
 import { HTTP_STATUS } from "@/core/constants/http-status";
 import { ERROR_CODES } from "@/core/constants/error-codes";
 import { SUPER_ADMIN_EMAIL } from "@/core/auth/middleware/requireRole";
+import { cacheService } from "@/core/cache";
 import {
   AdminUserQuery,
   AdminJobQuery,
@@ -233,6 +234,19 @@ export class AdminService {
       query,
       { $set: { accountStatus: newStatus, updatedAt: new Date() } }
     );
+
+    // Invalidate cached auth status so changes take effect immediately
+    try {
+      await cacheService.del(`auth:status:${userId}`);
+      if (targetUser._id) {
+        await cacheService.del(`auth:status:${targetUser._id.toString()}`);
+      }
+      if (targetUser.id) {
+        await cacheService.del(`auth:status:${targetUser.id}`);
+      }
+    } catch (err) {
+      console.warn("[AdminService] Cache invalidation warning:", err);
+    }
 
     // Revoke active sessions if account is suspended or deactivated
     if (newStatus !== AccountStatus.ACTIVE && mongoose.connection.db) {

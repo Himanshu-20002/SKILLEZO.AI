@@ -3,6 +3,7 @@ import { UserRole, AccountStatus } from "@/core/constants/enums";
 
 export interface IUser extends Document<string> {
   _id: string;
+  name?: string;
   email: string;
   role: UserRole;
   emailVerified: boolean;
@@ -17,6 +18,11 @@ const userSchema = new Schema<IUser>(
     _id: {
       type: String,
       required: true,
+    },
+    name: {
+      type: String,
+      trim: true,
+      default: null,
     },
     email: {
       type: String,
@@ -52,7 +58,7 @@ const userSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
-    collection: "users",
+    collection: "user",
     _id: false,
   }
 );

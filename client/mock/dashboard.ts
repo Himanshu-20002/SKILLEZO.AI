@@ -55,11 +55,11 @@ export const mockStatMetrics: StatMetric[] = [
 export const mockQuickActions: QuickAction[] = [
   {
     id: 'qa-1',
-    label: 'Employability Score',
-    description: 'Assess market readiness, salary benchmarks & recruiter index',
-    href: '/dashboard/employability-index',
-    iconName: 'BarChart3',
-    badge: 'AI Index 88%',
+    label: 'Resume Studio',
+    description: 'AI-tailored resumes, deterministic ATS scoring & live visual editor',
+    href: '/dashboard/resume-studio',
+    iconName: 'FileText',
+    badge: 'AI Studio',
     variant: 'primary'
   },
   {

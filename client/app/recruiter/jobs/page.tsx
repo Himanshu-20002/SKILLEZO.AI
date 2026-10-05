@@ -9,21 +9,33 @@ import {
   Plus,
   Building2,
   MapPin,
-  DollarSign,
   Users,
-  MoreVertical,
-  CheckCircle2,
-  Clock,
-  PauseCircle,
-  XCircle,
-  ExternalLink,
   ShieldCheck,
+  Edit3,
+  CheckCircle2,
+  PauseCircle,
 } from 'lucide-react';
 import { RecruiterLayout } from '@/components/layout/RecruiterLayout';
 import { PageHeader } from '@/components/dashboard/common/PageHeader';
 import { CreateJobModal } from '@/components/recruiter/CreateJobModal';
 import { recruiterService, RecruiterJobItem } from '@/services/recruiter.service';
 import { toast } from 'sonner';
+
+function formatSalaryDisplay(salary: any): string {
+  if (salary?.min != null && salary?.max != null) {
+    if (salary.currency === 'USD') {
+      return `$${Number(salary.min).toLocaleString('en-US')} – $${Number(salary.max).toLocaleString('en-US')}`;
+    }
+    return `₹${Number(salary.min).toLocaleString('en-IN')} – ₹${Number(salary.max).toLocaleString('en-IN')}`;
+  }
+  if (salary?.min != null) {
+    return `₹${Number(salary.min).toLocaleString('en-IN')}+`;
+  }
+  if (salary?.raw && !salary.raw.includes('LPA')) {
+    return salary.raw;
+  }
+  return 'Competitive';
+}
 
 export default function RecruiterJobsPage() {
   const [jobs, setJobs] = useState<RecruiterJobItem[]>([]);
@@ -32,6 +44,7 @@ export default function RecruiterJobsPage() {
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<RecruiterJobItem | null>(null);
 
   useEffect(() => {
     async function loadJobs() {
@@ -40,7 +53,7 @@ export default function RecruiterJobsPage() {
         const data = await recruiterService.getCompanyJobs();
         setJobs(data);
       } catch {
-        setJobs(recruiterService.getFallbackJobs());
+        setJobs([]);
       } finally {
         setLoading(false);
       }
@@ -87,7 +100,10 @@ export default function RecruiterJobsPage() {
           badge="Enterprise ATS"
           actions={
             <button
-              onClick={() => setCreateModalOpen(true)}
+              onClick={() => {
+                setEditingJob(null);
+                setCreateModalOpen(true);
+              }}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 text-white text-xs font-bold shadow-md shadow-[#3D5AFE]/20 transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -190,7 +206,10 @@ export default function RecruiterJobsPage() {
                 Adjust search keywords or post a new job opening.
               </p>
               <button
-                onClick={() => setCreateModalOpen(true)}
+                onClick={() => {
+                  setEditingJob(null);
+                  setCreateModalOpen(true);
+                }}
                 className="px-4 py-2 rounded-xl bg-[#3D5AFE] text-white text-xs font-bold hover:bg-[#3D5AFE]/90 transition"
               >
                 Post New Opening
@@ -200,10 +219,7 @@ export default function RecruiterJobsPage() {
             filteredJobs.map((job) => {
               const jobId = job.id || job._id || '';
               const isActive = job.status === 'active';
-              const salaryText =
-                job.salary?.min && job.salary?.max
-                  ? `$${(job.salary.min / 1000).toFixed(0)}k – $${(job.salary.max / 1000).toFixed(0)}k`
-                  : 'Competitive';
+              const salaryText = formatSalaryDisplay(job.salary);
 
               const skillsList = Array.isArray(job.requiredSkills)
                 ? job.requiredSkills.map((s) => (typeof s === 'string' ? s : s.name))
@@ -252,11 +268,23 @@ export default function RecruiterJobsPage() {
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/recruiter/applications?jobId=${jobId}`}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 text-xs font-bold border border-indigo-500/20 transition"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 text-xs font-bold border border-indigo-500/20 transition"
                       >
                         <Users className="w-3.5 h-3.5" />
-                        <span>{job.applicantsCount || 12} Applicants</span>
+                        <span>{job.applicantsCount ?? 0} Applicants</span>
                       </Link>
+
+                      <button
+                        onClick={() => {
+                          setEditingJob(job);
+                          setCreateModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 hover:border-[#3D5AFE]/40 hover:text-[#3D5AFE] dark:hover:text-[#8098FF] bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 transition cursor-pointer"
+                        title="Edit Job Requisition"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </button>
 
                       <button
                         onClick={() => handleStatusToggle(jobId, job.status)}
@@ -294,13 +322,25 @@ export default function RecruiterJobsPage() {
           )}
         </div>
 
-        {/* Create Job Modal */}
+        {/* Create / Edit Job Modal */}
         <CreateJobModal
           isOpen={createModalOpen}
-          onClose={() => setCreateModalOpen(false)}
+          jobToEdit={editingJob}
+          onClose={() => {
+            setCreateModalOpen(false);
+            setEditingJob(null);
+          }}
           onJobCreated={(newJob) => {
             setJobs([newJob, ...jobs]);
             setCreateModalOpen(false);
+          }}
+          onJobUpdated={(updatedJob) => {
+            const updatedId = updatedJob.id || updatedJob._id;
+            setJobs((prev) =>
+              prev.map((j) => ((j.id || j._id) === updatedId ? { ...j, ...updatedJob } : j))
+            );
+            setCreateModalOpen(false);
+            setEditingJob(null);
           }}
         />
       </div>

@@ -22,6 +22,18 @@ router.post(
 );
 
 router.patch(
+  "/:jobId",
+  requireAuth,
+  asyncHandler(controller.updateJob)
+);
+
+router.put(
+  "/:jobId",
+  requireAuth,
+  asyncHandler(controller.updateJob)
+);
+
+router.patch(
   "/:jobId/status",
   requireAuth,
   asyncHandler(controller.updateJobStatus)

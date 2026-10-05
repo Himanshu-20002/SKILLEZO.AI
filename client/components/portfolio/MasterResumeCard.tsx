@@ -7,8 +7,6 @@ import {
   Star,
   RefreshCw,
   ArrowUpRight,
-  Check,
-  AlertCircle,
   Calendar,
   ShieldCheck,
 } from 'lucide-react';
@@ -65,17 +63,6 @@ export const MasterResumeCard: React.FC<MasterResumeCardProps> = ({
               </span>
             )}
 
-            {/* Stale Status / Sync Badge */}
-            {master.isMasterStale ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                Out of Sync
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/80 dark:bg-slate-800/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                <Check className="w-2.5 h-2.5" />
-                Synced
-              </span>
-            )}
           </div>
 
           {/* Sync CTA Button */}

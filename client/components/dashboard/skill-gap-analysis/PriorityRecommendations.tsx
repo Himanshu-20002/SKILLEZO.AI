@@ -15,10 +15,12 @@ interface PriorityRecommendationItem {
 
 interface PriorityRecommendationsProps {
   recommendations: PriorityRecommendationItem[];
+  onAddToRoadmap?: (skillName: string) => void;
 }
 
 export const PriorityRecommendations: React.FC<PriorityRecommendationsProps> = ({
   recommendations,
+  onAddToRoadmap,
 }) => {
   return (
     <div className="rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-sm">
@@ -64,8 +66,14 @@ export const PriorityRecommendations: React.FC<PriorityRecommendationsProps> = (
             </div>
 
             <button
-              onClick={() => toast.success(`Added ${rec.skill} action to Learning Hub roadmap`)}
-              className="inline-flex items-center justify-center gap-1.5 w-full py-2 rounded-xl bg-slate-200/70 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold cursor-pointer transition-colors"
+              onClick={() => {
+                if (onAddToRoadmap) {
+                  onAddToRoadmap(rec.skill);
+                } else {
+                  toast.success(`Added ${rec.skill} action to Career GPS roadmap`);
+                }
+              }}
+              className="inline-flex items-center justify-center gap-1.5 w-full py-2 rounded-xl bg-indigo-50 hover:bg-[#3D5AFE] text-[#3D5AFE] hover:text-white dark:bg-slate-800 dark:hover:bg-[#3D5AFE] text-slate-800 dark:text-slate-200 dark:hover:text-white text-xs font-semibold cursor-pointer transition-all"
             >
               <span>{rec.suggestedAction}</span>
               <ArrowRight className="w-3.5 h-3.5" />

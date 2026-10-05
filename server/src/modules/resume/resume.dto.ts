@@ -34,7 +34,7 @@ export interface ResumePortfolioItemDTO {
 }
 
 export interface ResumePortfolioResponseDTO {
-  master: ResumePortfolioItemDTO;
+  master: ResumePortfolioItemDTO | null;
   variants: ResumePortfolioItemDTO[];
 }
 

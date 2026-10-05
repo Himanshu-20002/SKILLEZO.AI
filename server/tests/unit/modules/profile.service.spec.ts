@@ -209,4 +209,38 @@ describe('ProfileService — Clean Slate Onboarding & Real Profile Completion', 
     expect(hydrated.skills.find((s) => s.name === 'Rust')?.verified).toBe(true);
     expect(hydrated.skills.find((s) => s.name === 'Python')?.source).toBe(SkillSource.RESUME);
   });
+
+  it('should persistently update targetSalary and targetTimeline in candidate profile', async () => {
+    const userId = 'user_target_goals';
+    const mockProfileDoc: any = {
+      userId,
+      targetSalary: '1 - 3 LPA',
+      targetTimeline: '8 Weeks',
+      toObject: function () {
+        return { ...this };
+      },
+    };
+
+    mockRepo.findByUserId.mockResolvedValue(mockProfileDoc);
+    mockRepo.updateByUserId.mockImplementation((_uid: string, update: any) =>
+      Promise.resolve({ ...mockProfileDoc, ...(update.$set || update) })
+    );
+
+    const updated = await profileService.updateProfile(userId, {
+      targetSalary: '4 - 6 LPA',
+      targetTimeline: '4 Weeks',
+    });
+
+    expect(mockRepo.updateByUserId).toHaveBeenCalledWith(
+      userId,
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          targetSalary: '4 - 6 LPA',
+          targetTimeline: '4 Weeks',
+        }),
+      })
+    );
+    expect(updated.targetSalary).toBe('4 - 6 LPA');
+    expect(updated.targetTimeline).toBe('4 Weeks');
+  });
 });

@@ -3,6 +3,7 @@ import { bearer } from "better-auth/plugins";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { toNodeHandler } from "better-auth/node";
 import { createAuthMiddleware } from "@better-auth/core/api";
+import { getOAuthState } from "better-auth/api";
 import mongoose from "mongoose";
 import { env } from "@/core/config/env";
 import { UserRole, AccountStatus } from "@/core/constants/enums";
@@ -10,6 +11,85 @@ import { connectDatabase } from "@/database/connection/db";
 import { sendPasswordResetEmail } from "@/core/email/email.service";
 
 let _auth: any = null;
+
+// Helper to determine if the OAuth request originated from a recruiter signup/login flow
+async function detectRecruiterIntent(context?: any): Promise<boolean> {
+  try {
+    const oauthState = await getOAuthState().catch(() => null);
+    if (oauthState) {
+      const stateRole = oauthState.role || oauthState.additionalData?.role;
+      if (stateRole === UserRole.RECRUITER || stateRole === "recruiter") {
+        return true;
+      }
+      const cb = typeof oauthState.callbackURL === "string" ? oauthState.callbackURL : "";
+      const nu = typeof oauthState.newUserURL === "string" ? oauthState.newUserURL : "";
+      if (
+        cb.includes("/recruiter") ||
+        nu.includes("/recruiter") ||
+        cb.includes("role=recruiter") ||
+        nu.includes("role=recruiter")
+      ) {
+        return true;
+      }
+    }
+
+    if (context) {
+      const headers = context.headers || (typeof context.request?.headers?.get === "function" ? context.request.headers : null);
+      const cookieHeader =
+        (typeof headers?.get === "function" ? headers.get("cookie") : headers?.cookie || headers?.Cookie) || "";
+      if (typeof cookieHeader === "string" && cookieHeader.includes("auth_preferred_role=recruiter")) {
+        return true;
+      }
+    }
+  } catch (err) {
+    console.error("[OAuth detectRecruiterIntent Error]:", err);
+  }
+  return false;
+}
+
+// OAuth Role Sync Plugin: Ensures users authenticating via Google with recruiter intent are assigned UserRole.RECRUITER
+const oauthRoleSyncPlugin: BetterAuthPlugin = {
+  id: "oauth-role-sync",
+  hooks: {
+    after: [
+      {
+        matcher: (ctx) => typeof ctx?.path === "string" && ctx.path.includes("/callback/"),
+        handler: createAuthMiddleware(async (ctx: any) => {
+          const user = ctx.context.newSession?.user || ctx.context.session?.user;
+          if (!user?.id && !user?.email) return;
+
+          const isRecruiter = await detectRecruiterIntent(ctx.context);
+          if (isRecruiter && mongoose.connection.db) {
+            const queries: any[] = [];
+            if (user.id) {
+              queries.push({ id: user.id }, { _id: user.id });
+              if (mongoose.Types.ObjectId.isValid(user.id)) {
+                queries.push({ _id: new mongoose.Types.ObjectId(user.id) });
+              }
+            }
+            if (user.email) {
+              queries.push({ email: user.email.toLowerCase() });
+            }
+
+            // Upgrade role to recruiter in DB unless user is admin
+            await mongoose.connection.db.collection("user").updateOne(
+              { $or: queries, role: { $ne: UserRole.ADMIN } },
+              { $set: { role: UserRole.RECRUITER } }
+            );
+
+            // Also update in-memory session user object
+            if (ctx.context.newSession?.user && ctx.context.newSession.user.role !== UserRole.ADMIN) {
+              ctx.context.newSession.user.role = UserRole.RECRUITER;
+            }
+            if (ctx.context.session?.user && ctx.context.session.user.role !== UserRole.ADMIN) {
+              ctx.context.session.user.role = UserRole.RECRUITER;
+            }
+          }
+        }),
+      },
+    ],
+  },
+};
 
 // Suspension Guard Plugin: Prevents suspended users from authenticating or establishing active sessions
 const suspensionGuardPlugin: BetterAuthPlugin = {
@@ -130,6 +210,23 @@ export function getAuth() {
           },
         },
         user: {
+          create: {
+            before: async (userData: any, context: any) => {
+              try {
+                const isRecruiter = await detectRecruiterIntent(context);
+                if (isRecruiter) {
+                  userData.role = UserRole.RECRUITER;
+                  return {
+                    data: {
+                      role: UserRole.RECRUITER,
+                    },
+                  };
+                }
+              } catch (err) {
+                console.error("[OAuth user.create.before Hook Error]:", err);
+              }
+            },
+          },
           update: {
             before: async (updateData: any, context: any) => {
               const userId = context?.params?.id || context?.body?.userId;
@@ -154,7 +251,7 @@ export function getAuth() {
           },
         },
       },
-      plugins: [bearer(), suspensionGuardPlugin],
+      plugins: [bearer(), suspensionGuardPlugin, oauthRoleSyncPlugin],
       checkOrigin: () => true,
       emailAndPassword: {
         enabled: true,

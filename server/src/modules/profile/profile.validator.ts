@@ -42,20 +42,28 @@ export const profileLocationSchema = z.object({
   country: z.string().trim().nullable().optional(),
 });
 
-export const createProfileValidator = z.object({
+const baseProfileSchema = z.object({
   headline: z.string().trim().max(300).nullable().optional(),
   phone: z.string().trim().max(50).nullable().optional(),
   targetRole: z.string().trim().max(100).nullable().optional(),
   targetRoleId: objectIdSchema.nullable().optional(),
+  targetSalary: z.string().trim().max(100).nullable().optional(),
+  targetTimeline: z.string().trim().max(100).nullable().optional(),
   bio: z.string().trim().max(2000, "Bio cannot exceed 2000 characters").nullable().optional(),
-  skills: z.array(profileSkillSchema).optional().default([]),
-  education: z.array(profileEducationSchema).optional().default([]),
-  experience: z.array(profileExperienceSchema).optional().default([]),
+  skills: z.array(profileSkillSchema).optional(),
+  education: z.array(profileEducationSchema).optional(),
+  experience: z.array(profileExperienceSchema).optional(),
   links: profileLinksSchema.nullable().optional(),
   location: profileLocationSchema.nullable().optional(),
 });
 
-export const updateProfileValidator = createProfileValidator.partial();
+export const createProfileValidator = baseProfileSchema.extend({
+  skills: z.array(profileSkillSchema).optional().default([]),
+  education: z.array(profileEducationSchema).optional().default([]),
+  experience: z.array(profileExperienceSchema).optional().default([]),
+});
+
+export const updateProfileValidator = baseProfileSchema.partial();
 
 export const addSkillValidator = profileSkillSchema;
 

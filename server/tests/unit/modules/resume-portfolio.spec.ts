@@ -174,10 +174,10 @@ describe("Phase 5: Resume Portfolio & Variant Management Unit Tests", () => {
       const portfolio = await resumeService.getResumePortfolio(userA);
 
       expect(portfolio.master).toBeDefined();
-      expect(portfolio.master.id).toBe(masterResumeRecord._id.toString());
-      expect(portfolio.master.displayName).toBe("Master Resume");
-      expect(portfolio.master.variantType).toBe("MASTER");
-      expect(portfolio.master.isMasterStale).toBe(false);
+      expect(portfolio.master!.id).toBe(masterResumeRecord._id.toString());
+      expect(portfolio.master!.displayName).toBe("Master Resume");
+      expect(portfolio.master!.variantType).toBe("MASTER");
+      expect(portfolio.master!.isMasterStale).toBe(false);
 
       // Invariant: Portfolio items must NOT leak heavy ASTs or builderConfig
       expect((portfolio.master as any).resumeDocument).toBeUndefined();
@@ -218,7 +218,7 @@ describe("Phase 5: Resume Portfolio & Variant Management Unit Tests", () => {
       ]);
 
       const portfolio = await resumeService.getResumePortfolio(userA);
-      expect(portfolio.master.isMasterStale).toBe(true);
+      expect(portfolio.master!.isMasterStale).toBe(true);
     });
 
     it("should enforce strict user isolation and never return another user's resumes", async () => {

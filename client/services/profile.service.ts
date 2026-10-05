@@ -47,6 +47,8 @@ export interface CandidateProfile {
   phone?: string;
   targetRole?: string;
   targetRoleId?: string;
+  targetSalary?: string;
+  targetTimeline?: string;
   bio?: string;
   skills: CandidateSkill[];
   education: CandidateEducation[];

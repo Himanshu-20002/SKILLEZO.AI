@@ -240,9 +240,20 @@ export function mapBackendJobToUiJob(job: BackendJob, userSkills: string[] = [])
     salaryMin: job.salary?.min || 0,
     salaryMax: job.salary?.max || 0,
     salaryText,
-    experienceMin: job.minExperienceYears || 0,
-    experienceMax: (job.minExperienceYears || 0) + 3,
-    experienceText: (job.minExperienceYears || 0) === 0 ? "Fresher / 0-1 Years" : `${job.minExperienceYears}+ Years`,
+    experienceMin: job.minExperienceYears != null ? Number(job.minExperienceYears) : 0,
+    experienceMax: (job.minExperienceYears != null && Number(job.minExperienceYears) > 1) ? Number(job.minExperienceYears) + 2 : 1,
+    experienceText:
+      (job.minExperienceYears == null || Number(job.minExperienceYears) === 0)
+        ? "0-1 Years"
+        : Number(job.minExperienceYears) === 1
+        ? "1-2 Years"
+        : Number(job.minExperienceYears) === 2
+        ? "2-3 Years"
+        : Number(job.minExperienceYears) === 3
+        ? "3-4 Years"
+        : Number(job.minExperienceYears) === 4
+        ? "4-5 Years"
+        : `${job.minExperienceYears}+ Years`,
     skills: jobSkills.length > 0 ? jobSkills : (userSkills.length > 0 ? userSkills.slice(0, 3) : ["General Engineering"]),
     description: cleanDescription,
     responsibilities: [

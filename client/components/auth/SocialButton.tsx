@@ -11,9 +11,10 @@ interface SocialButtonProps {
   provider: "google" | "linkedin";
   label?: string;
   className?: string;
+  role?: "candidate" | "recruiter";
 }
 
-export function SocialButton({ provider, label, className }: SocialButtonProps) {
+export function SocialButton({ provider, label, className, role = "candidate" }: SocialButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleClick = async () => {
@@ -22,13 +23,27 @@ export function SocialButton({ provider, label, className }: SocialButtonProps) 
         setIsLoading(true);
         toast.loading("Redirecting to Google Sign-In...", { id: "google-auth" });
         const origin = typeof window !== "undefined" ? window.location.origin : "";
-        const callbackURL = origin ? `${origin}/dashboard` : "/dashboard";
+        const targetRole = role === "recruiter" ? "recruiter" : "candidate";
+        const redirectPath = targetRole === "recruiter" ? "/recruiter/applications" : "/dashboard";
+        const callbackURL = origin ? `${origin}${redirectPath}` : redirectPath;
+        const newUserCallbackURL = callbackURL;
         const errorCallbackURL = origin ? `${origin}/account-suspended` : "/account-suspended";
+
+        // Store role hint in localStorage/cookie so client and server can also recover it
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem("auth_pending_role", targetRole);
+          document.cookie = `auth_preferred_role=${targetRole}; path=/; max-age=600; SameSite=Lax`;
+        }
+
         await authClient.signIn.social({
           provider: "google",
           callbackURL,
+          newUserCallbackURL,
           errorCallbackURL,
-        });
+          additionalData: {
+            role: targetRole,
+          },
+        } as any);
       } catch (err: any) {
         toast.error(err?.message || "Google sign-in failed. Please try again.", { id: "google-auth" });
         setIsLoading(false);

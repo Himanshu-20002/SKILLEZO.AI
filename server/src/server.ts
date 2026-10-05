@@ -24,6 +24,8 @@ import { notFoundMiddleware } from "@/core/middleware/notFound.middleware";
 import { errorMiddleware } from "@/core/middleware/error.middleware";
 import { env } from "@/core/config/env";
 import { connectDatabase, disconnectDatabase } from "@/database/connection/db";
+import { globalRateLimiter, authRateLimiter, heavyOpsRateLimiter } from "@/core/middleware/rate-limit.middleware";
+import { cacheService } from "@/core/cache";
 import { Server } from "http";
 
 const app: Application = express();
@@ -56,7 +58,7 @@ app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
 
 // Better Auth handler mounted BEFORE express.json() for raw body access
-app.use("/api/auth", (req, res, next) => {
+app.use("/api/auth", authRateLimiter, (req, res, next) => {
   if (!req.headers.origin && !req.headers.Origin) {
     req.headers.origin = env.CLIENT_URL || "https://skillezo-ai.vercel.app";
   }
@@ -64,6 +66,9 @@ app.use("/api/auth", (req, res, next) => {
 });
 
 app.use(express.json({ limit: "1mb" }));
+
+// Tier 1: Global API rate limiting protection (protects against traffic bursts and scraping)
+app.use("/api", globalRateLimiter);
 
 // Routes
 app.use("/api", healthRouter);
@@ -83,6 +88,7 @@ app.use("/api/skill-gap", skillGapRoutes);
 app.use("/api/career-plan", careerPlanRoutes);
 app.use("/api/verification", verificationRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/ai", heavyOpsRateLimiter);
 app.use("/api/ai/coach", careerCoachRouter);
 app.use("/api/ai/actions", actionRouter);
 
@@ -101,9 +107,14 @@ app.get("/api/user/status", async (req: Request, res: Response) => {
     }
 
     const userId = session.user.id;
+    const cacheKey = `auth:status:${userId}`;
     let accountStatus = (session.user as any).accountStatus || "active";
 
-    if (mongoose.connection.db) {
+    // Check fast cache first (<0.1ms)
+    const cachedStatus = await cacheService.get<string>(cacheKey);
+    if (cachedStatus) {
+      accountStatus = cachedStatus;
+    } else if (mongoose.connection.db) {
       const queries: any[] = [{ id: userId }, { email: session.user.email?.toLowerCase() }, { _id: userId }];
       if (mongoose.Types.ObjectId.isValid(userId)) {
         queries.push({ _id: new mongoose.Types.ObjectId(userId) });
@@ -112,6 +123,7 @@ app.get("/api/user/status", async (req: Request, res: Response) => {
       if (userDoc?.accountStatus) {
         accountStatus = userDoc.accountStatus;
       }
+      await cacheService.set(cacheKey, accountStatus, 60);
     }
 
     const isSuspended = accountStatus === "suspended";
