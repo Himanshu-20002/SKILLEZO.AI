@@ -104,7 +104,11 @@ export const StatCard: React.FC<StatCardProps> = ({ metric }) => {
           </span>
         ) : (
           <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08]">
-            <Minus className="w-3 h-3 mr-0.5" /> Static
+            {metric.badgeText || (
+              <>
+                <Minus className="w-3 h-3 mr-0.5" /> Active
+              </>
+            )}
           </span>
         )}
       </div>
@@ -113,7 +117,7 @@ export const StatCard: React.FC<StatCardProps> = ({ metric }) => {
       <div className="w-full bg-slate-100 dark:bg-white/[0.06] h-1.5 rounded-full overflow-hidden mb-2.5">
         <div
           className="h-full rounded-full bg-gradient-to-r from-[#3D5AFE] to-[#00D9C0] transition-all duration-700 ease-out"
-          style={{ width: `${config.progressPercent}%` }}
+          style={{ width: `${metric.progress !== undefined ? metric.progress : config.progressPercent}%` }}
         />
       </div>
 

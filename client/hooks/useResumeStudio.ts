@@ -310,19 +310,26 @@ export function useResumeStudio(initialResumeId?: string | null) {
             }
           })?.catch?.(() => {});
         }
-        await fetchScore(activeResume._id);
-        await fetchAtsIntelligence(activeResume._id, targetRole);
+
+        // Fast Paint: unblock full-page loading skeleton immediately so candidate sees their resume right away!
+        setLoading(false);
+
+        // Fetch score and ATS intelligence in parallel without blocking initial page render
+        Promise.allSettled([
+          fetchScore(activeResume._id),
+          fetchAtsIntelligence(activeResume._id, targetRole),
+        ]).catch(() => {});
       } else {
         setResumeDoc(null);
         setScoreResult(null);
         setAnalysis(EMPTY_RESUME_ANALYSIS);
+        setLoading(false);
       }
     } catch (err: any) {
       console.warn("Could not load candidate resumes", err);
       setResumeDoc(null);
       setScoreResult(null);
       setAnalysis(EMPTY_RESUME_ANALYSIS);
-    } finally {
       setLoading(false);
     }
   }, [initialResumeId, targetRole, fetchScore, fetchAtsIntelligence]);
@@ -953,6 +960,7 @@ export function useResumeStudio(initialResumeId?: string | null) {
     scoreResult,
     loading,
     refreshing,
+    isScoreLoading: refreshing || (!scoreResult && !!selectedResumeId),
     error,
     isMasterStale,
     isSyncingMaster,

@@ -9,6 +9,7 @@ interface ResumeScoreCardProps {
   contentScore?: number;
   targetRole?: string;
   hasJobDescription?: boolean;
+  isLoading?: boolean;
 }
 
 export const ResumeScoreCard: React.FC<ResumeScoreCardProps> = ({
@@ -17,6 +18,7 @@ export const ResumeScoreCard: React.FC<ResumeScoreCardProps> = ({
   contentScore = 70,
   targetRole = 'Full-Stack Engineer',
   hasJobDescription = false,
+  isLoading = false,
 }) => {
   const getScoreBadge = (score: number) => {
     if (score >= 85) return { label: 'Optimal', color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/30' };
@@ -99,8 +101,17 @@ export const ResumeScoreCard: React.FC<ResumeScoreCardProps> = ({
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{atsScore}</span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">/ 100</span>
+              {isLoading ? (
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-bold text-slate-400 dark:text-slate-500 animate-pulse">Calculating</span>
+                  <span className="text-[9px] text-slate-400 animate-pulse font-medium">ATS score...</span>
+                </div>
+              ) : (
+                <>
+                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{atsScore}</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">/ 100</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -117,7 +128,7 @@ export const ResumeScoreCard: React.FC<ResumeScoreCardProps> = ({
               <span>Match Score</span>
             </div>
             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${matchBadge.bg} ${matchBadge.color}`}>
-              {matchBadge.label}
+              {isLoading ? '...' : matchBadge.label}
             </span>
           </div>
 
@@ -146,8 +157,17 @@ export const ResumeScoreCard: React.FC<ResumeScoreCardProps> = ({
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{matchScore}</span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">/ 100</span>
+              {isLoading ? (
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-bold text-slate-400 dark:text-slate-500 animate-pulse">Calculating</span>
+                  <span className="text-[9px] text-slate-400 animate-pulse font-medium">Role match...</span>
+                </div>
+              ) : (
+                <>
+                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{matchScore}</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">/ 100</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -164,7 +184,7 @@ export const ResumeScoreCard: React.FC<ResumeScoreCardProps> = ({
               <span>Content Score</span>
             </div>
             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${contentBadge.bg} ${contentBadge.color}`}>
-              {contentBadge.label}
+              {isLoading ? '...' : contentBadge.label}
             </span>
           </div>
 
@@ -193,8 +213,17 @@ export const ResumeScoreCard: React.FC<ResumeScoreCardProps> = ({
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{contentScore}</span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">/ 100</span>
+              {isLoading ? (
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-bold text-slate-400 dark:text-slate-500 animate-pulse">Calculating</span>
+                  <span className="text-[9px] text-slate-400 animate-pulse font-medium">Content impact...</span>
+                </div>
+              ) : (
+                <>
+                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{contentScore}</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">/ 100</span>
+                </>
+              )}
             </div>
           </div>
 

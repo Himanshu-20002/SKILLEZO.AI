@@ -7,11 +7,26 @@ import { CardHeader } from '@/components/dashboard/common/CardHeader';
 import { verificationService } from '@/services/verification.service';
 import { SkillVerificationRecord } from '@/types/verification';
 
-export const ActivityTimeline: React.FC = () => {
-  const [records, setRecords] = useState<SkillVerificationRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+interface ActivityTimelineProps {
+  records?: SkillVerificationRecord[];
+  isLoading?: boolean;
+}
+
+export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
+  records: recordsProp,
+  isLoading: isLoadingProp,
+}) => {
+  const [records, setRecords] = useState<SkillVerificationRecord[]>(recordsProp || []);
+  const [loading, setLoading] = useState(isLoadingProp !== undefined ? isLoadingProp : !recordsProp);
 
   useEffect(() => {
+    if (recordsProp !== undefined) setRecords(recordsProp);
+    if (isLoadingProp !== undefined) setLoading(isLoadingProp);
+  }, [recordsProp, isLoadingProp]);
+
+  useEffect(() => {
+    if (recordsProp !== undefined) return;
+
     let isMounted = true;
 
     async function loadActivity() {
@@ -32,7 +47,7 @@ export const ActivityTimeline: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [recordsProp]);
 
   return (
     <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.4)] flex flex-col justify-between">

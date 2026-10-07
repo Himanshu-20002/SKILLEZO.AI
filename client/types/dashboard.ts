@@ -7,6 +7,8 @@ export interface StatMetric {
   timeframe: string;
   iconName: string;
   description?: string;
+  progress?: number;
+  badgeText?: string;
 }
 
 export interface QuickAction {

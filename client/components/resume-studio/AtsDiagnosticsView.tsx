@@ -61,7 +61,7 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
   scoreResult,
   prioritySection: _prioritySection,
   onSectionFixWithAi: _onSectionFixWithAi,
-  currentResume: _currentResume,
+  currentResume,
   onDeleteClick: _onDeleteClick,
   selectedResumeId,
   onSelectResume,
@@ -70,6 +70,7 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
   portfolioVersion,
 }) => {
   const [isDetailsExpanded, setIsDetailsExpanded] = React.useState(false); // Unified expansion state
+  const isScoreCalculating = !scoreResult && Boolean(currentResume || selectedResumeId);
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-fadeIn">
@@ -133,8 +134,8 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
         </div>
       </div>
 
-      {/* Upload Callout if no resume analyzed yet */}
-      {scoreResult === null && (
+      {/* Upload Callout ONLY if user truly has no resume loaded yet */}
+      {scoreResult === null && !currentResume && !selectedResumeId && (
         <div className="p-6 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-indigo-600/10 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
@@ -166,6 +167,7 @@ export const AtsDiagnosticsView: React.FC<AtsDiagnosticsViewProps> = React.memo(
         matchScore={scoreResult ? (analysis.matchScore ?? 0) : 0}
         contentScore={scoreResult ? (analysis.contentScore ?? 0) : 0}
         targetRole={targetRole}
+        isLoading={isScoreCalculating}
       />
 
       {/* 3. Resume Portfolio & Variants Cards Section */}

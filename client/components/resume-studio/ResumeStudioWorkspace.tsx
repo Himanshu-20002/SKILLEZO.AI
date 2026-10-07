@@ -42,60 +42,33 @@ export const ResumeStudioWorkspace: React.FC<ResumeStudioWorkspaceProps> = ({
       ) : (
         /* CASE 2: 3-ZONE RESUME WORKSPACE */
         <div className="w-full">
-          {/* DESKTOP 3-ZONE LAYOUT (xl+: Col 1 Nav + Col 2 Hero Canvas + Col 3 Context AI) */}
-          <div className="hidden xl:grid xl:grid-cols-12 gap-6 items-start">
+          {/* DESKTOP & TABLET UNIFIED RESPONSIVE GRID (lg+) */}
+          <div className="hidden lg:grid lg:grid-cols-12 gap-6 items-start">
             {effectiveNavigation && (
-              <div className="xl:col-span-3 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto no-scrollbar">
+              <div className="hidden xl:block xl:col-span-3 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto no-scrollbar">
                 {effectiveNavigation}
               </div>
             )}
 
-            <div className={`${effectiveNavigation ? 'xl:col-span-5 2xl:col-span-5' : 'xl:col-span-7'} min-w-0 flex justify-center`}>
+            <div className={`${effectiveNavigation ? 'lg:col-span-7 xl:col-span-5 2xl:col-span-5' : 'lg:col-span-7 xl:col-span-7'} min-w-0 flex justify-center`}>
               {effectiveCanvas}
             </div>
 
-            <div className={`${effectiveNavigation ? 'xl:col-span-4 2xl:col-span-4' : 'xl:col-span-5'} sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto no-scrollbar`}>
+            <div className={`${effectiveNavigation ? 'lg:col-span-5 xl:col-span-4 2xl:col-span-4' : 'lg:col-span-5 xl:col-span-5'} sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto no-scrollbar`}>
               {effectiveContext}
             </div>
           </div>
 
-          {/* TABLET 2-ZONE LAYOUT (lg: 2-column Canvas + Context AI) */}
-          <div className="hidden lg:grid xl:hidden lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-7 min-w-0 flex justify-center">
-              {effectiveCanvas}
-            </div>
-            <div className="lg:col-span-5 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto no-scrollbar">
-              {effectiveContext}
-            </div>
-          </div>
-
-          {/* MOBILE & TABLET PROGRESSIVE VIEW (< lg) */}
+          {/* MOBILE PROGRESSIVE VIEW (< lg) - Only renders active tab to minimize DOM & memory */}
           <div className="lg:hidden pb-24">
-            {mobileView === 'navigation' && effectiveNavigation && (
-              <div className="animate-fadeIn">
-                {effectiveNavigation}
-              </div>
-            )}
-            {mobileView === 'preview' && (
-              <div className="animate-fadeIn">
-                {effectiveCanvas}
-              </div>
-            )}
-            {mobileView === 'editor' && (
-              <div className="animate-fadeIn">
-                {effectiveContext}
-              </div>
-            )}
-            {mobileView === 'insights' && (
-              <div className="animate-fadeIn">
-                {insightsPanel || effectiveContext}
-              </div>
-            )}
-            {/* Fallback if mobileView is unrecognized or navigation was requested without navigationPanel */}
-            {mobileView === 'navigation' && !effectiveNavigation && (
-              <div className="animate-fadeIn">
-                {effectiveContext}
-              </div>
+            {mobileView === 'navigation' && effectiveNavigation ? (
+              <div className="animate-fadeIn">{effectiveNavigation}</div>
+            ) : mobileView === 'preview' ? (
+              <div className="animate-fadeIn">{effectiveCanvas}</div>
+            ) : mobileView === 'insights' && insightsPanel ? (
+              <div className="animate-fadeIn">{insightsPanel}</div>
+            ) : (
+              <div className="animate-fadeIn">{effectiveContext}</div>
             )}
           </div>
 

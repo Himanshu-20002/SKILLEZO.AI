@@ -9,11 +9,32 @@ import { SkillVerificationRecord, VerificationStatus } from '@/types/verificatio
 import { CardHeader } from '@/components/dashboard/common/CardHeader';
 import { verificationService } from '@/services/verification.service';
 
-export const RecentVerificationTable: React.FC = () => {
-  const [records, setRecords] = useState<SkillVerificationRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface RecentVerificationTableProps {
+  records?: SkillVerificationRecord[];
+  isLoading?: boolean;
+}
+
+export const RecentVerificationTable: React.FC<RecentVerificationTableProps> = ({
+  records: recordsProp,
+  isLoading: isLoadingProp,
+}) => {
+  const [records, setRecords] = useState<SkillVerificationRecord[]>(() => {
+    return recordsProp ? recordsProp.slice(0, 5) : [];
+  });
+  const [isLoading, setIsLoading] = useState(isLoadingProp !== undefined ? isLoadingProp : !recordsProp);
 
   useEffect(() => {
+    if (recordsProp !== undefined) {
+      setRecords(recordsProp.slice(0, 5));
+    }
+    if (isLoadingProp !== undefined) {
+      setIsLoading(isLoadingProp);
+    }
+  }, [recordsProp, isLoadingProp]);
+
+  useEffect(() => {
+    if (recordsProp !== undefined) return;
+
     let isMounted = true;
 
     async function loadRecentVerifications() {
@@ -40,7 +61,7 @@ export const RecentVerificationTable: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [recordsProp]);
 
   const columns: Column<SkillVerificationRecord>[] = [
     {

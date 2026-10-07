@@ -22,9 +22,17 @@ import {
   ResumeSectionNavigator,
   ResumeStudioWorkspace,
   ResumeSwitchConfirmDialog,
-  ResumeComparisonDialog,
   ResumeStudioUploadGateway,
 } from '@/components/resume-studio';
+
+// Code-split heavy comparison dialog to reduce initial bundle footprint
+const ResumeComparisonDialog = dynamic(
+  () =>
+    import('@/components/resume-studio/comparison/ResumeComparisonDialog').then(
+      (mod) => mod.ResumeComparisonDialog
+    ),
+  { ssr: false }
+);
 
 // Code-split optimization review modal (only loaded when user triggers optimization)
 const OptimizationReviewModal = dynamic(
@@ -287,69 +295,75 @@ function ResumeStudioPageContent() {
               mobileView={studio.mobileEditorView}
               onMobileViewChange={studio.setMobileEditorView}
               navigationPanel={
-                <ResumeSectionNavigator
-                  document={studio.resumeDoc}
-                  scoreResult={studio.scoreResult}
-                  currentResume={studio.currentResume}
-                  activeSectionKey={studio.activeSectionKey}
-                  onSelectSection={(secId) => {
-                    studio.setActiveSectionKey(secId as any);
-                    studio.setPreviewHighlightSection(secId);
-                    studio.setActiveView('detail');
-                    studio.setViewMode('editor');
-                    studio.setMobileEditorView('editor');
-                  }}
-                  onViewAtsAndPortfolio={() => studio.setViewMode('audit')}
-                />
-              }
-              editorPanel={
-                <ResumeEditorPanel
-                  viewMode={studio.viewMode}
-                  onViewModeChange={studio.setViewMode}
-                  activeView={studio.activeView}
-                  onActiveViewChange={studio.setActiveView}
-                  activeSectionKey={studio.activeSectionKey}
-                  onSelectSection={(key: keyof import('@/types/resume-scoring.types').ResumeScoreResult['sections']) => studio.setActiveSectionKey(key)}
-                  scoreResult={studio.scoreResult}
-                  analysis={studio.analysis}
-                  builderConfig={studio.builderConfig}
-                  onBuilderConfigChange={studio.handleBuilderConfigChange}
-                  isGenerating={studio.isGenerating}
-                  isApplying={studio.isApplying}
-                  currentSuggestion={studio.currentSuggestion}
-                  scoreDeltaNotice={studio.scoreDeltaNotice}
-                  onGenerateSuggestion={studio.handleGenerateSuggestion}
-                  onApproveSuggestion={studio.handleApproveSuggestion}
-                  onRejectSuggestion={studio.handleRejectSuggestion}
-                  onTriggerUpload={() => studio.fileInputRef.current?.click()}
-                  isUploading={studio.isUploading}
-                  currentResume={studio.currentResume}
-                  diffResult={studio.diffSummary}
-                  onOpenComparison={comparison.openComparison}
-                  onNavigateToSection={(_category, sectionKey) => {
-                    if (sectionKey) {
-                      studio.setActiveSectionKey(sectionKey as any);
-                      studio.setPreviewHighlightSection(sectionKey);
+                studio.viewMode !== 'audit' && studio.viewMode !== 'analysis' ? (
+                  <ResumeSectionNavigator
+                    document={studio.resumeDoc}
+                    scoreResult={studio.scoreResult}
+                    currentResume={studio.currentResume}
+                    activeSectionKey={studio.activeSectionKey}
+                    onSelectSection={(secId) => {
+                      studio.setActiveSectionKey(secId as any);
+                      studio.setPreviewHighlightSection(secId);
                       studio.setActiveView('detail');
                       studio.setViewMode('editor');
                       studio.setMobileEditorView('editor');
-                    }
-                  }}
-                />
+                    }}
+                    onViewAtsAndPortfolio={() => studio.setViewMode('audit')}
+                  />
+                ) : undefined
+              }
+              editorPanel={
+                studio.viewMode !== 'audit' && studio.viewMode !== 'analysis' ? (
+                  <ResumeEditorPanel
+                    viewMode={studio.viewMode}
+                    onViewModeChange={studio.setViewMode}
+                    activeView={studio.activeView}
+                    onActiveViewChange={studio.setActiveView}
+                    activeSectionKey={studio.activeSectionKey}
+                    onSelectSection={(key: keyof import('@/types/resume-scoring.types').ResumeScoreResult['sections']) => studio.setActiveSectionKey(key)}
+                    scoreResult={studio.scoreResult}
+                    analysis={studio.analysis}
+                    builderConfig={studio.builderConfig}
+                    onBuilderConfigChange={studio.handleBuilderConfigChange}
+                    isGenerating={studio.isGenerating}
+                    isApplying={studio.isApplying}
+                    currentSuggestion={studio.currentSuggestion}
+                    scoreDeltaNotice={studio.scoreDeltaNotice}
+                    onGenerateSuggestion={studio.handleGenerateSuggestion}
+                    onApproveSuggestion={studio.handleApproveSuggestion}
+                    onRejectSuggestion={studio.handleRejectSuggestion}
+                    onTriggerUpload={() => studio.fileInputRef.current?.click()}
+                    isUploading={studio.isUploading}
+                    currentResume={studio.currentResume}
+                    diffResult={studio.diffSummary}
+                    onOpenComparison={comparison.openComparison}
+                    onNavigateToSection={(_category, sectionKey) => {
+                      if (sectionKey) {
+                        studio.setActiveSectionKey(sectionKey as any);
+                        studio.setPreviewHighlightSection(sectionKey);
+                        studio.setActiveView('detail');
+                        studio.setViewMode('editor');
+                        studio.setMobileEditorView('editor');
+                      }
+                    }}
+                  />
+                ) : undefined
               }
               previewPanel={
-                <ResumePreviewPanel
-                  document={studio.resumeDoc}
-                  config={studio.builderConfig}
-                  highlightSectionId={studio.previewHighlightSection}
-                  onSectionClick={(secId: string) => {
-                    studio.setActiveSectionKey(secId as any);
-                    studio.setPreviewHighlightSection(secId);
-                    studio.setActiveView('detail');
-                    studio.setViewMode('editor');
-                    studio.setMobileEditorView('editor');
-                  }}
-                />
+                studio.viewMode !== 'audit' && studio.viewMode !== 'analysis' ? (
+                  <ResumePreviewPanel
+                    document={studio.resumeDoc}
+                    config={studio.builderConfig}
+                    highlightSectionId={studio.previewHighlightSection}
+                    onSectionClick={(secId: string) => {
+                      studio.setActiveSectionKey(secId as any);
+                      studio.setPreviewHighlightSection(secId);
+                      studio.setActiveView('detail');
+                      studio.setViewMode('editor');
+                      studio.setMobileEditorView('editor');
+                    }}
+                  />
+                ) : undefined
               }
               insightsPanel={
                 <ResumeInsightsPanel

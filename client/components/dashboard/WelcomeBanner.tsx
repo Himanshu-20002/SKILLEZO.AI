@@ -7,13 +7,41 @@ import { useSession } from '@/lib/auth-client';
 import { profileService, CandidateProfile } from '@/services/profile.service';
 import { verificationService } from '@/services/verification.service';
 
-export const WelcomeBanner: React.FC = () => {
+interface WelcomeBannerProps {
+  profile?: CandidateProfile | null;
+  records?: import('@/types/verification').SkillVerificationRecord[];
+  isLoading?: boolean;
+}
+
+export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
+  profile: profileProp,
+  records: recordsProp,
+  isLoading: isLoadingProp,
+}) => {
   const { data: session } = useSession();
-  const [profile, setProfile] = useState<CandidateProfile | null>(null);
-  const [verifiedCount, setVerifiedCount] = useState<number>(0);
-  const [totalSkillsCount, setTotalSkillsCount] = useState<number>(0);
+  const [profile, setProfile] = useState<CandidateProfile | null>(profileProp || null);
+  const [verifiedCount, setVerifiedCount] = useState<number>(() => {
+    return (recordsProp || []).filter((r) => r.status === 'verified').length;
+  });
+  const [totalSkillsCount, setTotalSkillsCount] = useState<number>(() => {
+    return profileProp?.skills?.length || 0;
+  });
 
   useEffect(() => {
+    if (profileProp !== undefined) {
+      setProfile(profileProp);
+      setTotalSkillsCount(profileProp?.skills?.length || 0);
+    }
+    if (recordsProp !== undefined) {
+      const count = recordsProp.filter((r) => r.status === 'verified').length;
+      setVerifiedCount(count);
+    }
+  }, [profileProp, recordsProp]);
+
+  useEffect(() => {
+    // Skip local fetch if parent component already passed data
+    if (profileProp !== undefined && recordsProp !== undefined) return;
+
     let isMounted = true;
 
     async function loadBannerData() {
@@ -27,7 +55,6 @@ export const WelcomeBanner: React.FC = () => {
 
         if (profileData) setProfile(profileData);
 
-        // Use real live records only - no mock fallbacks
         const countVerified = (liveRecords || []).filter((r) => r.status === 'verified').length;
         const totalCount = profileData?.skills?.length || 0;
 
@@ -43,7 +70,7 @@ export const WelcomeBanner: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [profileProp, recordsProp]);
 
   const displayName = session?.user?.name
     ? session.user.name.trim().split(' ')[0]

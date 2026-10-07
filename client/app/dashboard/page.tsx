@@ -16,14 +16,16 @@ import { verificationService } from '@/services/verification.service';
 export default function DashboardPage() {
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
   const [resumesCount, setResumesCount] = useState<number>(0);
+  const [records, setRecords] = useState<any[]>([]);
   const [verifiedSkillsCount, setVerifiedSkillsCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadData() {
       try {
-        const [profileData, userResumes, records] = await Promise.all([
+        const [profileData, userResumes, recordsData] = await Promise.all([
           profileService.getMyProfile().catch(() => null),
           resumeService.getUserResumes().catch(() => []),
           verificationService.getUserRecords().catch(() => []),
@@ -33,10 +35,13 @@ export default function DashboardPage() {
 
         if (profileData) setProfile(profileData);
         setResumesCount(userResumes?.length || 0);
-        const verified = (records || []).filter((r) => r.status === 'verified').length;
+        setRecords(recordsData || []);
+        const verified = (recordsData || []).filter((r: any) => r.status === 'verified').length;
         setVerifiedSkillsCount(verified);
       } catch (err) {
         console.error('Error loading dashboard onboarding data:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     }
 
@@ -51,7 +56,7 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Welcome Banner */}
-        <WelcomeBanner />
+        <WelcomeBanner profile={profile} records={records} isLoading={isLoading} />
 
         {/* Profile Completion Onboarding Guide */}
         <ProfileCompletionGuide
@@ -61,19 +66,19 @@ export default function DashboardPage() {
         />
 
         {/* Top Summary Metrics */}
-        <DashboardSummary />
+        <DashboardSummary profile={profile} records={records} isLoading={isLoading} />
 
         {/* 4 Core Stat Cards */}
-        <StatsGrid />
+        <StatsGrid profile={profile} records={records} isLoading={isLoading} />
 
         {/* Middle Section: Quick Actions & Live Activity Timeline */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <QuickActions />
-          <ActivityTimeline />
+          <ActivityTimeline records={records} isLoading={isLoading} />
         </div>
 
         {/* Bottom Section: Recent Verification Table */}
-        <RecentVerificationTable />
+        <RecentVerificationTable records={records} isLoading={isLoading} />
       </div>
     </DashboardLayout>
   );

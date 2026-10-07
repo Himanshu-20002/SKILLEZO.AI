@@ -7,12 +7,30 @@ import { profileService, CandidateProfile } from '@/services/profile.service';
 import { verificationService } from '@/services/verification.service';
 import { SkillVerificationRecord } from '@/types/verification';
 
-export const DashboardSummary: React.FC = () => {
-  const [profile, setProfile] = useState<CandidateProfile | null>(null);
-  const [records, setRecords] = useState<SkillVerificationRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface DashboardSummaryProps {
+  profile?: CandidateProfile | null;
+  records?: SkillVerificationRecord[];
+  isLoading?: boolean;
+}
+
+export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
+  profile: profileProp,
+  records: recordsProp,
+  isLoading: isLoadingProp,
+}) => {
+  const [profile, setProfile] = useState<CandidateProfile | null>(profileProp || null);
+  const [records, setRecords] = useState<SkillVerificationRecord[]>(recordsProp || []);
+  const [isLoading, setIsLoading] = useState(isLoadingProp !== undefined ? isLoadingProp : !profileProp);
 
   useEffect(() => {
+    if (profileProp !== undefined) setProfile(profileProp);
+    if (recordsProp !== undefined) setRecords(recordsProp);
+    if (isLoadingProp !== undefined) setIsLoading(isLoadingProp);
+  }, [profileProp, recordsProp, isLoadingProp]);
+
+  useEffect(() => {
+    if (profileProp !== undefined && recordsProp !== undefined) return;
+
     let isMounted = true;
 
     async function loadDashboardData() {
@@ -38,7 +56,7 @@ export const DashboardSummary: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [profileProp, recordsProp]);
 
   // 1. Dynamic Target Role
   const targetRoleName =

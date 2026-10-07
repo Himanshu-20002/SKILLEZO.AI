@@ -3,13 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { MobileSidebar } from './MobileSidebar';
 import { useSession, authClient } from '@/lib/auth-client';
 import { apiFetch } from '@/lib/api';
 import { Lock, LogOut } from 'lucide-react';
-import { CoachFloatingWidget } from '@/components/dashboard/ai-career-coach';
+
+// Code-split floating coach widget to keep dashboard bundle lightweight
+const CoachFloatingWidget = dynamic(
+  () =>
+    import('@/components/dashboard/ai-career-coach/CoachFloatingWidget').then(
+      (mod) => mod.CoachFloatingWidget
+    ),
+  { ssr: false }
+);
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
