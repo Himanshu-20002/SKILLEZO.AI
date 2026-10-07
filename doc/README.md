@@ -92,13 +92,9 @@ doc/
 
 ---
 
-### 4. Sprints, Roadmaps & Trackers
+### 4. Sprints & Phase Roadmaps
 
-All sprint backlogs, release roadmaps, and phase execution plans are located under [`sprints-and-plans/`](./sprints-and-plans/):
-- **MVP Deliverables Roadmap:** [`sprints-and-plans/DELIVERABLES_ROADMAP_MVP.md`](./sprints-and-plans/DELIVERABLES_ROADMAP_MVP.md)
-- **Project Status Dashboard:** [`sprints-and-plans/STATUS_DASHBOARD.md`](./sprints-and-plans/STATUS_DASHBOARD.md)
-- **Completed Deliverables Log:** [`sprints-and-plans/COMPLETED_LOG.md`](./sprints-and-plans/COMPLETED_LOG.md)
-- **Sprint Tracking Guide:** [`sprints-and-plans/SPRINT_TRACKING_GUIDE.md`](./sprints-and-plans/SPRINT_TRACKING_GUIDE.md)
-- **Sprints 1 through 8:** Tracked in [`sprints-and-plans/sprints/`](./sprints-and-plans/sprints/)
-- **Phase Implementation Roadmaps:** Detailed in [`sprints-and-plans/phase-plans/`](./sprints-and-plans/phase-plans/)
+Technical sprint specifications and engineering phase roadmaps are located under [`sprints-and-plans/`](./sprints-and-plans/):
+- **Sprint Specifications (Sprints 1 through 8):** [`sprints-and-plans/sprints/`](./sprints-and-plans/sprints/)
+- **Phase Implementation Roadmaps & Prompts:** [`sprints-and-plans/phase-plans/`](./sprints-and-plans/phase-plans/)
 
