@@ -62,6 +62,7 @@ doc/
 | **AI Coach Widget** | Global floating AI assistant, quick action chips | [`frontend/ai-coach/COACH_UI_WORKBENCH.md`](./frontend/ai-coach/COACH_UI_WORKBENCH.md) |
 | **Candidate Dashboard** | Employability index gauge, stats, quick actions | [`frontend/overview/STUDENT_PORTAL_CORE.md`](./frontend/overview/STUDENT_PORTAL_CORE.md) |
 | **Recruiter Portal & Kanban** | Candidate talent pipeline, review drawer, job builder | [`frontend/recruiter/RECRUITER_APPLICATION_MANAGEMENT.md`](./frontend/recruiter/RECRUITER_APPLICATION_MANAGEMENT.md) |
+| **Recruiter Portal Action Plan** | Critical hydration fixes, dynamic credentials & pipeline tasks | [`frontend/recruiter/RECRUITER_PORTAL_ACTION_PLAN.md`](./frontend/recruiter/RECRUITER_PORTAL_ACTION_PLAN.md) |
 | **External Job Discovery** | Job search, filtering, and tailoring intake dialog | [`frontend/job-portal/JOB_PORTAL_UI.md`](./job-portal/JOB_PORTAL_UI.md) |
 
 ---
@@ -70,6 +71,7 @@ doc/
 
 | Backend Subsystem | Description | Documentation |
 | :--- | :--- | :--- |
+| **AI Career Intelligence Spec**| Master 12-layer AI Career Intelligence architecture & prompt | [`backend/ai-orchestrator/AI_CAREER_INTELLIGENCE_SPEC.md`](./backend/ai-orchestrator/AI_CAREER_INTELLIGENCE_SPEC.md) |
 | **Deterministic Scoring** | 5-pillar mathematical ATS & resume scoring formula | [`backend/resume-intelligence/DETERMINISTIC_SCORING_ENGINE.md`](./backend/resume-intelligence/DETERMINISTIC_SCORING_ENGINE.md) |
 | **Resume Ingestion & AST** | PDF text extraction, section segmentation, normalization | [`backend/resume-intelligence/RESUME_INGESTION_ENGINE.md`](./backend/resume-intelligence/RESUME_INGESTION_ENGINE.md) |
 | **AI Tool Registry** | Strictly typed tool registry for LLM agents | [`backend/ai-orchestrator/CONTROLLED_TOOL_REGISTRY.md`](./backend/ai-orchestrator/CONTROLLED_TOOL_REGISTRY.md) |
