@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Bell, Award, Cpu, ShieldAlert, Info, ArrowRight, Check } from 'lucide-react';
-import { mockNotifications } from '@/mock/notifications';
 import { NotificationItem } from '@/types/notification';
 
 const iconCategoryMap: Record<string, React.ReactNode> = {
@@ -15,7 +14,7 @@ const iconCategoryMap: Record<string, React.ReactNode> = {
 
 export const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [items, setItems] = useState<NotificationItem[]>(mockNotifications);
+  const [items, setItems] = useState<NotificationItem[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = items.filter((n) => !n.read).length;
@@ -60,8 +59,10 @@ export const NotificationDropdown: React.FC = () => {
           <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Notifications</h3>
-              {unreadCount > 0 && (
+              {unreadCount > 0 ? (
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">{unreadCount} unread</p>
+              ) : (
+                <p className="text-[11px] text-slate-400">All caught up</p>
               )}
             </div>
             {unreadCount > 0 && (
@@ -72,8 +73,17 @@ export const NotificationDropdown: React.FC = () => {
           </div>
 
           {/* Notification Items */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-            {items.slice(0, 5).map((notification) => (
+          {items.length === 0 ? (
+            <div className="py-10 px-4 flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 flex items-center justify-center text-slate-400 mb-2.5">
+                <Bell className="w-5 h-5 text-slate-400" />
+              </div>
+              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">No notifications yet</p>
+              <p className="text-[11px] text-slate-400 max-w-[200px] mt-0.5">You&apos;re all caught up with your latest verifications and alerts.</p>
+            </div>
+          ) : (
+            <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+              {items.slice(0, 5).map((notification) => (
               <div
                 key={notification.id}
                 className={`p-3.5 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors ${
@@ -105,6 +115,7 @@ export const NotificationDropdown: React.FC = () => {
               </div>
             ))}
           </div>
+        )}
 
           {/* Footer - View All */}
           <div className="p-3 border-t border-slate-100 dark:border-slate-800/80">

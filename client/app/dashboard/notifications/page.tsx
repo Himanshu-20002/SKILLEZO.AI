@@ -7,12 +7,11 @@ import { PageHeader } from '@/components/dashboard/common/PageHeader';
 import { NotificationSearch } from '@/components/dashboard/notifications/NotificationSearch';
 import { NotificationFilter } from '@/components/dashboard/notifications/NotificationFilter';
 import { NotificationList } from '@/components/dashboard/notifications/NotificationList';
-import { mockNotifications } from '@/mock/notifications';
 import { NotificationItem } from '@/types/notification';
 import { toast } from 'sonner';
 
 export default function NotificationsPage() {
-  const [items, setItems] = useState<NotificationItem[]>(mockNotifications);
+  const [items, setItems] = useState<NotificationItem[]>([]);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');

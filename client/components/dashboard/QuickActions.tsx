@@ -3,8 +3,47 @@
 import React from 'react';
 import Link from 'next/link';
 import { FileText, Compass, Briefcase, Target, ArrowUpRight, Zap } from 'lucide-react';
-import { mockQuickActions } from '@/mock/dashboard';
 import { CardHeader } from '@/components/dashboard/common/CardHeader';
+import { QuickAction } from '@/types/dashboard';
+
+export const QUICK_ACTIONS: QuickAction[] = [
+  {
+    id: 'qa-1',
+    label: 'Resume Studio',
+    description: 'AI-tailored resumes, deterministic ATS scoring & live visual editor',
+    href: '/dashboard/resume-studio',
+    iconName: 'FileText',
+    badge: 'AI Studio',
+    variant: 'primary'
+  },
+  {
+    id: 'qa-2',
+    label: 'Career GPS',
+    description: 'Personalized step-by-step milestone & promotion navigator',
+    href: '/dashboard/career-gps',
+    iconName: 'Compass',
+    badge: 'Active Path',
+    variant: 'accent'
+  },
+  {
+    id: 'qa-3',
+    label: 'Smart Job Center',
+    description: 'Browse verified high-match roles & apply with 1-click',
+    href: '/dashboard/job-center',
+    iconName: 'Briefcase',
+    badge: '14+ Openings',
+    variant: 'outline'
+  },
+  {
+    id: 'qa-4',
+    label: 'Skill Gap Analysis',
+    description: 'Identify high-demand missing skills for your target role',
+    href: '/dashboard/skill-gap-analysis',
+    iconName: 'Target',
+    badge: 'Smart Audit',
+    variant: 'outline'
+  }
+];
 
 interface ActionMetadata {
   icon: React.ReactNode;
@@ -51,7 +90,7 @@ export const QuickActions: React.FC = () => {
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
-          {mockQuickActions.map((action) => {
+          {QUICK_ACTIONS.map((action) => {
             const meta = actionMetadataMap[action.id] || actionMetadataMap['qa-1'];
             return (
               <Link
