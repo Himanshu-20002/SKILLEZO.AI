@@ -9,16 +9,16 @@
 
 ## 📊 1. Overall QA Execution S| Total Test Cases Defined | Passed | Failed / Blocked | In Progress / Next | Current Pass Rate |
 | :---: | :---: | :---: | :---: | :---: |
-| **24** | **12** | **0** | **12** | **100% (of tested — 50% Platform Coverage)** |
+| **24** | **15** | **0** | **9** | **100% (of tested — 62.5% Platform Coverage)** |
 
 ### System Status Banner
 * **Authentication Subsystem**: 🟢 **VERIFIED & OPERATIONAL** (All 3 Roles Authenticate, Role Routing Exact, Duplicate Email Blocked)
 * **Candidate Dashboard & Profile**: 🟢 **VERIFIED & OPERATIONAL** (Widgets Render Cleanly, MongoDB Profile Persistence Verified)
-* **Resume Studio Engine**: 🟢 **VERIFIED & OPERATIONAL** (Missing Section Addition & PDF Export Verified)
+* **Resume Studio WYSIWYG & Autosave**: 🟢 **VERIFIED & OPERATIONAL** (Direct Canvas In-Place Editing, Debounced Autosave, Undo/Redo Engine, Section Addition, PDF Export 100% Verified)
 * **Recruiter Requisition Engine**: 🟢 **VERIFIED & OPERATIONAL** (Job Posting, Editing, and Pause/Close Lifecycle Verified)
 * **Admin Governance & Security**: 🟢 **VERIFIED & OPERATIONAL** (User Suspension Guard & `/account-suspended` Revocation Verified)
-* **Frontend Client (`:3000`)**: 🟢 Active (Next.js 16.3 App Router)
-* **Backend API (`:5000`)**: 🟢 Active (Express 5.2 + Better Auth + Mongoose)
+* **Frontend Client (`:3000` & Vercel)**: 🟢 Active (Next.js 16.3 App Router)
+* **Backend API (`:5000` & Railway)**: 🟢 Active (Express 5.2 + Better Auth + Mongoose)
 
 ---
 
@@ -40,6 +40,9 @@
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
 | **CAND-01** | Candidate Dashboard Overview | Load `/dashboard` with logged-in candidate session | Welcome banner, quick actions, profile completion bar, and recent activity render without hydration errors | **PASS** — All widgets loaded cleanly with zero console runtime crashes | <span style="color:green;font-weight:bold;">PASS ✅</span> | P0 (Critical) |
 | **CAND-02** | Profile Edit & Persistence | Update Headline, Bio, Location, and Skills at `/dashboard/profile` & hard refresh (`Ctrl+F5`) | Data persists permanently to MongoDB; changes remain visible after browser refresh | **PASS** — Success toast shown; hard refresh retained all updated fields & skills | <span style="color:green;font-weight:bold;">PASS ✅</span> | P0 (Critical) |
+| **CAND-03** | Resume Studio Canvas Load | Open resume editor at `/dashboard/resume-studio` or `/resume-studio` | Live A4 canvas, sidebar navigator, score meter, and zoom toolbar mount cleanly | **PASS** — Resume document rehydrated and rendered to canvas without flicker | <span style="color:green;font-weight:bold;">PASS ✅</span> | P0 (Critical) |
+| **CAND-04** | In-Place WYSIWYG Canvas Editing | Click and edit text directly on canvas (Summary, Job bullets, Skills, Projects) | Instant typing responsiveness, zero cursor jumping, upward state synchronization | **PASS** — Text edited seamlessly directly on live A4 preview | <span style="color:green;font-weight:bold;">PASS ✅</span> | P0 (Critical) |
+| **CAND-05** | Autosave & Undo/Redo Engine | Keystrokes autosave to MongoDB; test `Ctrl+Z` (Undo) and `Ctrl+Y` (Redo) | Autosave persists edits; undo restores previous state; redo reapplies changes | **PASS** — Autosave persists permanently; Undo/Redo history operates accurately | <span style="color:green;font-weight:bold;">PASS ✅</span> | P0 (Critical) |
 | **CAND-06** | Missing Section Addition | Click `+ Add to Canvas` for an unpopulated section (e.g., Work Experience / Projects) | Scaffolds starter section into canonical order, renders immediately on canvas, scrolls into view | **PASS** — Section scaffolded instantly onto live canvas and synced to document state | <span style="color:green;font-weight:bold;">PASS ✅</span> | P1 (High) |
 | **CAND-08** | PDF Export & Rendering | Click Download / Export PDF in Resume Studio | Triggers clean PDF generation, matching layout, font styling, and section alignment without page overflow | **PASS** — PDF exported cleanly with 100% visual fidelity | <span style="color:green;font-weight:bold;">PASS ✅</span> | P1 (High) |
 
@@ -77,10 +80,16 @@
 2. **Profile Persistence (CAND-02)**:
    - Updated Headline, Bio, and skills list saved via `PUT /api/profile`.
    - Hard refresh (`Ctrl + F5`) executed: state rehydrated from MongoDB Atlas without data rollback or loss.
-3. **Missing Section Scaffold (CAND-06)**:
+3. **Canvas Load & In-Place Direct Editing (CAND-03, CAND-04)**:
+   - Clean A4 layout with high-DPI typography and zero layout shift.
+   - InlineText component allows direct text alteration on any block (summary, bullets, skills categories) with native 0ms DOM response.
+4. **Autosave Persistence & Undo/Redo Engine (CAND-05)**:
+   - Atomic section persistence via `PUT /api/resumes/:resumeId/sections/:sectionId` with `sectionParamValidator`.
+   - 1-second keystroke coalescing history stack. `Ctrl+Z` reverses blocks of input; `Ctrl+Y` re-applies cleanly.
+5. **Missing Section Scaffold (CAND-06)**:
    - Clicking `+ Add to Canvas` in sidebar/panel automatically inserts structured starter template into `builderConfig.sectionOrder`.
    - Live canvas immediately renders newly added section ready for in-place text entry.
-4. **PDF Generation (CAND-08)**:
+6. **PDF Generation (CAND-08)**:
    - Export pipeline compiles the active resume model into print-ready A4 PDF without breaking margins or text wrapping.
 
 ### Module 3: Recruiter Portal
@@ -104,9 +113,6 @@
 ## 🎯 4. Upcoming Test Modules (Step-by-Step Queue)
 
 ### 📌 Remaining Tests in Candidate Flow
-* [ ] **CAND-03**: Resume Studio Canvas Load (`/dashboard/resume-studio`)
-* [ ] **CAND-04**: Direct WYSIWYG In-Place Canvas Editing (Summary, Bullets, Experience)
-* [ ] **CAND-05**: Autosave Persistence & Undo/Redo (`Ctrl+Z`, `Ctrl+Y`)
 * [ ] **CAND-07**: ATS Diagnostics & Real-time Scoring
 
 ### 📌 Remaining Tests in Recruiter Flow
@@ -118,5 +124,6 @@
 * [ ] **ADMN-01**: Admin Analytics Overview (`/admin/dashboard`)
 * [ ] **ADMN-02**: User Directory & Role Filtering
 * [ ] **ADMN-04**: Reactivation & Audit Logging
+
 
 
