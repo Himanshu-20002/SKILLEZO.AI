@@ -7,14 +7,13 @@
 
 ---
 
-## 📊 1. Overall QA Execution Summary
-
-| Total Test Cases Defined | Passed | Failed / Blocked | In Progress / Next | Current Pass Rate |
+## 📊 1. Overall QA Execution S| Total Test Cases Defined | Passed | Failed / Blocked | In Progress / Next | Current Pass Rate |
 | :---: | :---: | :---: | :---: | :---: |
-| **24** | **5** | **0** | **19** | **100% (of tested)** |
+| **24** | **7** | **0** | **17** | **100% (of tested)** |
 
 ### System Status Banner
 * **Authentication Subsystem**: 🟢 **VERIFIED & OPERATIONAL** (All 3 Roles Authenticate, Role Routing Exact, Duplicate Email Blocked)
+* **Candidate Dashboard & Profile**: 🟢 **VERIFIED & OPERATIONAL** (Widgets Render Cleanly, MongoDB Profile Persistence Verified)
 * **Frontend Client (`:3000`)**: 🟢 Active (Next.js 16.3 App Router)
 * **Backend API (`:5000`)**: 🟢 Active (Express 5.2 + Better Auth + Mongoose)
 
@@ -32,34 +31,40 @@
 | **AUTH-04** | Duplicate Email Guard | Attempt candidate registration at `/register` using an existing email (`webuxhimanshu@gmail.com`) | Registration blocked; non-crashing banner display: *"User already exists. Use another email."* | **PASS** — Clean validation toast/banner shown; database state remained untouched | <span style="color:green;font-weight:bold;">PASS ✅</span> | P1 (High) |
 | **AUTH-05** | Role Selector Switcher | Switching between Candidate and Recruiter toggles on Login and Register cards | UI dynamically reconfigures headings, descriptions, and role submission payload | **PASS** — Smooth toggle transition with role-tailored messaging | <span style="color:green;font-weight:bold;">PASS ✅</span> | P2 (Medium) |
 
+### 👤 Module 2: Candidate Dashboard & Profile
+
+| Test ID | Flow / Area | Description / Action | Expected Result | Actual Result | Status | Severity |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| **CAND-01** | Candidate Dashboard Overview | Load `/dashboard` with logged-in candidate session | Welcome banner, quick actions, profile completion bar, and recent activity render without hydration errors | **PASS** — All widgets loaded cleanly with zero console runtime crashes | <span style="color:green;font-weight:bold;">PASS ✅</span> | P0 (Critical) |
+| **CAND-02** | Profile Edit & Persistence | Update Headline, Bio, Location, and Skills at `/dashboard/profile` & hard refresh (`Ctrl+F5`) | Data persists permanently to MongoDB; changes remain visible after browser refresh | **PASS** — Success toast shown; hard refresh retained all updated fields & skills | <span style="color:green;font-weight:bold;">PASS ✅</span> | P0 (Critical) |
+
 ---
 
-## 🔍 3. Detailed Verification Notes: Module 1 (Auth)
+## 🔍 3. Detailed Verification Notes
 
-### 1. Duplicate Account Collision Prevention (AUTH-04)
-* **Observed Screen**: Registration Modal (`/register?role=candidate`)
-* **Test Input**:
-  * Name: `himanshu Kumar`
-  * Email: `webuxhimanshu@gmail.com`
-  * Password: Valid 8+ characters56
-  * Confirmation: Matched
-* **Behavior Verified**:
-  * Server rejected with HTTP 400 / Conflict message.
-  * Client surfaced inline alert banner: `User already exists. Use another email.`.
-  * Form maintained user inputs without blanking out fields or triggering a page crash.
+### Module 1: Authentication
+1. **Duplicate Account Collision Prevention (AUTH-04)**:
+   - Registration with `webuxhimanshu@gmail.com` properly intercepted.
+   - Inline alert banner displayed: *"User already exists. Use another email."*
+2. **Multi-Role Session Separation (AUTH-01, AUTH-02, AUTH-03)**:
+   - Candidate routes guarded ➔ `/dashboard`.
+   - Recruiter routes guarded ➔ `/recruiter`.
+   - Admin routes guarded ➔ `/admin/dashboard`.
 
-### 2. Multi-Role Session Separation (AUTH-01, AUTH-02, AUTH-03)
-* Candidate routes guarded: Direct landing on `/dashboard`.
-* Recruiter routes guarded: Direct landing on `/recruiter`.
-* Admin routes guarded: Direct landing on `/admin/dashboard`.
+### Module 2: Candidate Dashboard & Profile
+1. **Dashboard Overview (CAND-01)**:
+   - Welcome banner displays candidate name correctly.
+   - Quick action cards (Resume Studio, Job Center, Skill Verification) navigate cleanly.
+   - Profile completion meter tracks current profile progress.
+2. **Profile Persistence (CAND-02)**:
+   - Updated Headline, Bio, and skills list saved via `PUT /api/profile`.
+   - Hard refresh (`Ctrl + F5`) executed: state rehydrated from MongoDB Atlas without data rollback or loss.
 
 ---
 
 ## 🎯 4. Upcoming Test Modules (Step-by-Step Queue)
 
-### 📌 Module 2: Candidate Experience & Resume Studio (Next Up)
-* [ ] **CAND-01**: Candidate Dashboard KPI cards & Navigation state (`/dashboard`)
-* [ ] **CAND-02**: Profile View & Edit (Bio, Skills, Experience persistence) (`/dashboard/profile`)
+### 📌 Module 2: Resume Studio (Next Up)
 * [ ] **CAND-03**: Resume Studio Canvas Load (`/dashboard/resume-studio`)
 * [ ] **CAND-04**: Direct WYSIWYG In-Place Canvas Editing (Summary, Bullets, Experience)
 * [ ] **CAND-05**: Autosave Persistence & Undo/Redo (`Ctrl+Z`, `Ctrl+Y`)
