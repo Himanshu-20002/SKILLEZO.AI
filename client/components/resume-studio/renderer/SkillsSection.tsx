@@ -1,14 +1,16 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { ResumeSkillItem } from '@/types/resume-document';
 import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { resolveConfigClasses } from './templates';
-import { groupAndFormatSkills } from '../utils/resume-content.util';
+import { groupAndFormatSkills, CATEGORY_LABELS } from '../utils/resume-content.util';
+import { InlineText } from './InlineText';
 
 interface SkillsSectionProps {
   skills?: ResumeSkillItem[];
   isHighlighted?: boolean;
   onClick?: () => void;
   config?: ResumeBuilderConfig | null;
+  onUpdateSkills?: (updatedSkills: ResumeSkillItem[]) => void;
 }
 
 export const SkillsSection: React.FC<SkillsSectionProps> = React.memo(({
@@ -16,15 +18,64 @@ export const SkillsSection: React.FC<SkillsSectionProps> = React.memo(({
   isHighlighted,
   onClick,
   config,
+  onUpdateSkills,
 }) => {
   const formattedGroups = useMemo(() => {
     return groupAndFormatSkills(skills);
   }, [skills]);
 
-  if (!formattedGroups || formattedGroups.length === 0) return null;
-
   const { template, sectionSpacingClass, lineHeightClass } = resolveConfigClasses(config);
   const isCompact = config?.templateId === 'compact';
+
+  const handleSkillsChange = useCallback((groupLabel: string, categoryKey: string, newLine: string) => {
+    if (!onUpdateSkills) return;
+
+    // Split by dot/bullet/comma/pipe
+    const newNames = newLine
+      .split(/[·•,|/]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const currentSkills = skills || [];
+
+    // Filter out skills belonging to this group
+    const remainingSkills = currentSkills.filter((s) => {
+      const rawCat = (s.category || 'OTHER').toUpperCase();
+      const mappedLabel = CATEGORY_LABELS[rawCat] || 'Other Skills';
+      return mappedLabel !== groupLabel;
+    });
+
+    // Create updated skills for this category
+    const catEnum: ResumeSkillItem['category'] = (() => {
+      const l = groupLabel.toLowerCase();
+      if (l.includes('language')) return 'LANGUAGE';
+      if (l.includes('front')) return 'FRONTEND';
+      if (l.includes('back')) return 'BACKEND';
+      if (l.includes('data')) return 'DATABASE';
+      if (l.includes('cloud') || l.includes('devops')) return 'CLOUD';
+      if (l.includes('ai') || l.includes('tool')) return 'AI_ML';
+      if (l.includes('test')) return 'TESTING';
+      if (l.includes('mobile')) return 'MOBILE';
+      return 'OTHER';
+    })();
+
+    const updatedCategorySkills: ResumeSkillItem[] = newNames.map((name) => {
+      const existing = currentSkills.find(
+        (s) => s.name.toLowerCase() === name.toLowerCase()
+      );
+      return {
+        id: existing?.id || `skill-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        name,
+        category: catEnum,
+        proficiency: existing?.proficiency || 'INTERMEDIATE',
+        evidenceIds: existing?.evidenceIds || [],
+      };
+    });
+
+    onUpdateSkills([...remainingSkills, ...updatedCategorySkills]);
+  }, [skills, onUpdateSkills]);
+
+  if ((!formattedGroups || formattedGroups.length === 0) && !onUpdateSkills) return null;
 
   return (
     <section
@@ -48,9 +99,18 @@ export const SkillsSection: React.FC<SkillsSectionProps> = React.memo(({
             <span className="font-semibold text-slate-900 dark:text-slate-100 text-left shrink-0">
               {group.label}:
             </span>
-            <span className="text-slate-700 dark:text-slate-300 truncate sm:overflow-visible">
-              {group.formattedLine}
-            </span>
+            {onUpdateSkills ? (
+              <InlineText
+                value={group.formattedLine}
+                onChange={(newLine) => handleSkillsChange(group.label, group.categoryKey, newLine)}
+                placeholder="Skill 1 · Skill 2 · Skill 3..."
+                className="text-slate-700 dark:text-slate-300 w-full inline-block"
+              />
+            ) : (
+              <span className="text-slate-700 dark:text-slate-300 truncate sm:overflow-visible">
+                {group.formattedLine}
+              </span>
+            )}
           </div>
         ))}
       </div>

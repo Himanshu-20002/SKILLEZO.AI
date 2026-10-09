@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import { ResumeRecord } from "@/types/resume";
+import { ResumeDocument } from "@/types/resume-document";
 
 export const resumeService = {
   /**
@@ -213,6 +214,36 @@ export const resumeService = {
         body: JSON.stringify(payload),
       }
     );
+    return res.data;
+  },
+
+  /**
+   * Directly update a resume section's content (e.g. summary, contact, experience, etc.)
+   */
+  async updateResumeSection(
+    resumeId: string,
+    sectionId: string,
+    content: any
+  ): Promise<{
+    resumeDocument: ResumeDocument;
+    sectionId: string;
+    newScore: number;
+    scoreResult: import("@/types/resume-scoring.types").ResumeScoreResult;
+    updatedAt: string;
+  }> {
+    const res = await apiFetch<{
+      success: boolean;
+      data: {
+        resumeDocument: ResumeDocument;
+        sectionId: string;
+        newScore: number;
+        scoreResult: import("@/types/resume-scoring.types").ResumeScoreResult;
+        updatedAt: string;
+      };
+    }>(`/api/resumes/${resumeId}/sections/${sectionId}`, {
+      method: "PUT",
+      body: JSON.stringify({ content }),
+    });
     return res.data;
   },
 

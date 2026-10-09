@@ -58,6 +58,7 @@ interface ResumeSectionNavigatorProps {
   onSelectResume?: (id: string) => void;
   onViewAtsAndPortfolio?: () => void;
   className?: string;
+  onAddSectionToCanvas?: (key: keyof ResumeScoreResult['sections']) => void;
 }
 
 export const ResumeSectionNavigator: React.FC<ResumeSectionNavigatorProps> = ({
@@ -71,6 +72,7 @@ export const ResumeSectionNavigator: React.FC<ResumeSectionNavigatorProps> = ({
   onSelectResume,
   onViewAtsAndPortfolio,
   className = '',
+  onAddSectionToCanvas,
 }) => {
   // Dynamically derive section items based on active document and existing scoreResult
   const dynamicSections = useMemo<DynamicSectionItem[]>(() => {
@@ -220,75 +222,124 @@ export const ResumeSectionNavigator: React.FC<ResumeSectionNavigatorProps> = ({
             const isActive = activeSectionKey === section.key;
 
             return (
-              <button
+              <div
                 key={section.key}
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelectSection(section.key)}
-                className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer group ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectSection(section.key);
+                  }
+                }}
+                className={`w-full p-2.5 rounded-xl text-left transition-all cursor-pointer group ${
                   isActive
                     ? 'bg-indigo-50/80 dark:bg-indigo-950/50 border border-indigo-200/80 dark:border-indigo-800/60 shadow-xs'
                     : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-transparent'
                 }`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                      isActive
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p
-                      className={`text-xs font-semibold truncate ${
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                         isActive
-                          ? 'text-indigo-950 dark:text-indigo-200'
-                          : 'text-slate-700 dark:text-slate-300'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300'
                       }`}
                     >
-                      {section.title}
-                    </p>
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p
+                        className={`text-xs font-semibold truncate ${
+                          isActive
+                            ? 'text-indigo-950 dark:text-indigo-200'
+                            : 'text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {section.title}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Health Status Indicator or Add to Canvas Button */}
+                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                    {section.isPresent ? (
+                      <>
+                        {section.isOptimal ? (
+                          <span
+                            title="Section is well-structured and optimal"
+                            className="text-emerald-500 dark:text-emerald-400 p-0.5"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </span>
+                        ) : (
+                          <span
+                            title={`${section.issueCount || 1} item(s) need attention`}
+                            className="text-amber-500 dark:text-amber-400 p-0.5"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                          </span>
+                        )}
+                        {section.score !== undefined && (
+                          <span
+                            className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
+                              section.isOptimal
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
+                            }`}
+                          >
+                            {section.score}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      onAddSectionToCanvas && (
+                        <button
+                          type="button"
+                          title={`Add ${section.title} to Canvas`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddSectionToCanvas(section.key);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Add to Canvas</span>
+                        </button>
+                      )
+                    )}
+                    <ChevronRight
+                      className={`w-3.5 h-3.5 transition-transform ${
+                        isActive
+                          ? 'text-indigo-600 dark:text-indigo-400 translate-x-0.5'
+                          : 'text-slate-300 dark:text-slate-600 group-hover:translate-x-0.5'
+                      }`}
+                    />
                   </div>
                 </div>
 
-                {/* Health Status Indicator (derived from ScoreRatingTier & issues) */}
-                <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                  {section.isOptimal ? (
-                    <span
-                      title="Section is well-structured and optimal"
-                      className="text-emerald-500 dark:text-emerald-400 p-0.5"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                {/* Expanded Action Banner when active and not present on canvas */}
+                {isActive && !section.isPresent && onAddSectionToCanvas && (
+                  <div className="mt-2.5 pt-2 border-t border-indigo-200/60 dark:border-indigo-800/60 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                      Not on canvas yet
                     </span>
-                  ) : (
-                    <span
-                      title={`${section.issueCount || 1} item(s) need attention`}
-                      className="text-amber-500 dark:text-amber-400 p-0.5"
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddSectionToCanvas(section.key);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all active:scale-95 cursor-pointer"
                     >
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                    </span>
-                  )}
-                  {section.score !== undefined && (
-                    <span
-                      className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
-                        section.isOptimal
-                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
-                          : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
-                      }`}
-                    >
-                      {section.score}
-                    </span>
-                  )}
-                  <ChevronRight
-                    className={`w-3.5 h-3.5 transition-transform ${
-                      isActive
-                        ? 'text-indigo-600 dark:text-indigo-400 translate-x-0.5'
-                        : 'text-slate-300 dark:text-slate-600 group-hover:translate-x-0.5'
-                    }`}
-                  />
-                </div>
-              </button>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Section to Canvas</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

@@ -38,3 +38,8 @@ export const updateResumeValidator = z
 export const resumeIdParamValidator = z.object({
   resumeId: z.string().trim().regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId format"),
 });
+
+export const sectionParamValidator = z.object({
+  resumeId: z.string().trim().regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId format"),
+  sectionId: z.string().trim().min(1),
+});

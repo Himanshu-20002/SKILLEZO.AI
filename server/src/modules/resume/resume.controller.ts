@@ -173,6 +173,21 @@ export class ResumeController {
     res.status(HTTP_STATUS.OK).json(successResponse(result));
   };
 
+  updateSectionContent = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const resumeId = req.params.resumeId as string;
+    const sectionId = req.params.sectionId as any;
+    const { content } = req.body;
+    console.log(`[ResumeController] PUT /sections/${sectionId} for resume ${resumeId}`);
+    const result = await this.resumeService.updateSectionContent(
+      userId,
+      resumeId,
+      sectionId,
+      content
+    );
+    res.status(HTTP_STATUS.OK).json(successResponse(result));
+  };
+
   getBuilderConfig = async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const resumeId = req.params.resumeId as string;

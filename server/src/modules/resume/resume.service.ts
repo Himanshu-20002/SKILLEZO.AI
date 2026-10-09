@@ -20,6 +20,7 @@ import {
   optimizationIntelligenceService,
   jobIntelligenceService,
   resumeDocumentNormalizer,
+  ResumeDocument,
   ResumeDocumentSchema,
   resumeSectionEngine,
   ResumeSectionAnalysisResult,
@@ -373,6 +374,96 @@ export class ResumeService {
       newScore,
       scoreDelta: newScore - previousScore,
       newDocumentVersion: resume.version,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  async updateSectionContent(
+    userId: string,
+    resumeId: string,
+    sectionId: string,
+    content: any
+  ): Promise<{
+    resumeDocument: ResumeDocument;
+    sectionId: string;
+    newScore: number;
+    scoreResult: ResumeScoreResult;
+    updatedAt: string;
+  }> {
+    const resume = await this.getResumeById(userId, resumeId);
+    if (!resume.resumeDocument) {
+      resume.resumeDocument = resumeDocumentNormalizer.normalize(
+        resume.extractedData,
+        resume.rawText,
+        {
+          userId,
+          resumeId: resume._id.toString(),
+          title: resume.title,
+          fileName: resume.originalFileName,
+        }
+      );
+    }
+
+    // 1. Clone document immutably
+    const updatedDocument: ResumeDocument = cloneResumeDocument(resume.resumeDocument);
+
+    // 2. Direct mutation based on sectionId
+    if (sectionId === "contact") {
+      updatedDocument.contact = {
+        ...updatedDocument.contact,
+        ...content,
+      };
+    } else if (sectionId === "targetRole") {
+      const roleStr = typeof content === "string" ? content : content?.targetRole;
+      updatedDocument.targetRole = roleStr;
+      if (updatedDocument.summary) {
+        updatedDocument.summary.targetRole = roleStr;
+      }
+    } else if (sectionId === "summary") {
+      updatedDocument.summary =
+        typeof content === "string" ? { text: content } : { ...updatedDocument.summary, ...content };
+    } else if (sectionId === "skills") {
+      updatedDocument.skills = Array.isArray(content) ? content : updatedDocument.skills;
+    } else if (sectionId === "experience") {
+      updatedDocument.experience = Array.isArray(content) ? content : updatedDocument.experience;
+    } else if (sectionId === "projects") {
+      updatedDocument.projects = Array.isArray(content) ? content : updatedDocument.projects;
+    } else if (sectionId === "education") {
+      updatedDocument.education = Array.isArray(content) ? content : updatedDocument.education;
+    } else if (sectionId === "achievements") {
+      updatedDocument.achievements = Array.isArray(content) ? content : updatedDocument.achievements;
+    } else {
+      (updatedDocument as any)[sectionId] = content;
+    }
+
+    const currentVer = (updatedDocument as any).version || 1;
+    (updatedDocument as any).version = currentVer + 1;
+    updatedDocument.updatedAt = new Date().toISOString();
+
+    // 3. Persist to MongoDB directly
+    resume.resumeDocument = updatedDocument;
+    resume.version = (resume.version || 1) + 1;
+    await this.resumeRepository.updateById(resumeId, {
+      resumeDocument: updatedDocument,
+      version: resume.version,
+    });
+
+    // 4. Safely recalculate score if engines succeed
+    let newScore = 80;
+    let newScoreResult: any = null;
+    try {
+      const newSectionAnalysis = resumeSectionEngine.analyze(updatedDocument);
+      newScoreResult = resumeScoringEngine.scoreDocument(newSectionAnalysis, updatedDocument);
+      newScore = newScoreResult.sections[sectionId]?.score ?? 80;
+    } catch (e) {
+      console.warn("Could not re-score document after direct edit", e);
+    }
+
+    return {
+      resumeDocument: updatedDocument,
+      sectionId,
+      newScore,
+      scoreResult: newScoreResult,
       updatedAt: new Date().toISOString(),
     };
   }

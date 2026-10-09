@@ -169,11 +169,33 @@ export interface CleanedProjectContent {
   cleanBullets: string[];
 }
 
+function areProjectTextsSubstantiallyEqual(strA: string, strB: string): boolean {
+  const normalize = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[•\u2022\u25E6\u25AA\*\-\.]+/g, ' ')
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+
+  const a = normalize(strA);
+  const b = normalize(strB);
+
+  if (!a || !b) return false;
+  if (a === b) return true;
+  // If one string starts with or contains the other and length overlap is significant (>60% or min 25 chars)
+  if (a.startsWith(b) || b.startsWith(a) || a.includes(b) || b.includes(a)) {
+    const minLen = Math.min(a.length, b.length);
+    const maxLen = Math.max(a.length, b.length);
+    if (minLen >= 25 && minLen / maxLen > 0.6) return true;
+  }
+  return false;
+}
+
 /**
  * Normalizes project description and bullets for unified rendering in both DOM and PDF export.
  * - Extracts clean distinct bullet items (max 4).
  * - Strips leading bullet characters.
- * - Avoids duplicate summary if description is just a concatenation of bullets.
+ * - Avoids duplicate summary if description is just a concatenation or duplicate of bullets.
  */
 export function cleanProjectContent(proj: ResumeProjectItem): CleanedProjectContent {
   const rawDesc = proj.description?.trim() || '';
@@ -205,9 +227,12 @@ export function cleanProjectContent(proj: ResumeProjectItem): CleanedProjectCont
   // Only show description as summary if it's NOT a bullet list and NOT a duplicate of bullets
   let cleanSummary: string | null = null;
   if (rawDesc) {
-    const descNorm = cleanBulletText(rawDesc).toLowerCase();
     const isBulletList = rawDesc.includes('•') || rawDesc.startsWith('-') || rawDesc.includes('\n•');
-    const isDuplicate = cleanBullets.some((b) => b.toLowerCase() === descNorm);
+    const isAnyBulletDuplicate = cleanBullets.some((b) => areProjectTextsSubstantiallyEqual(b, rawDesc));
+    const allBulletsJoined = cleanBullets.join(' ');
+    const isConcatDuplicate = areProjectTextsSubstantiallyEqual(allBulletsJoined, rawDesc);
+    const isDuplicate = isAnyBulletDuplicate || isConcatDuplicate;
+
     if (!isBulletList && !isDuplicate) {
       cleanSummary = rawDesc;
     }

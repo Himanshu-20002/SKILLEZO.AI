@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ResumeExperienceItem } from '@/types/resume-document';
 import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { resolveConfigClasses } from './templates';
+import { InlineText } from './InlineText';
 
 interface ExperienceSectionProps {
   experience?: ResumeExperienceItem[];
   isHighlighted?: boolean;
   onClick?: () => void;
   config?: ResumeBuilderConfig | null;
+  onUpdateExperience?: (updatedExperience: ResumeExperienceItem[]) => void;
 }
 
 export const ExperienceSection: React.FC<ExperienceSectionProps> = React.memo(({
@@ -15,11 +17,42 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = React.memo(({
   isHighlighted,
   onClick,
   config,
+  onUpdateExperience,
 }) => {
   if (!experience || experience.length === 0) return null;
 
   const { template, sectionSpacingClass, lineHeightClass } = resolveConfigClasses(config);
   const isCompact = config?.templateId === 'compact';
+
+  const handleJobTitleChange = useCallback((itemId: string, newTitle: string) => {
+    if (!onUpdateExperience) return;
+    const updated = experience.map((item) =>
+      item.id === itemId ? { ...item, jobTitle: newTitle } : item
+    );
+    onUpdateExperience(updated);
+  }, [experience, onUpdateExperience]);
+
+  const handleCompanyChange = useCallback((itemId: string, newCompany: string) => {
+    if (!onUpdateExperience) return;
+    const updated = experience.map((item) =>
+      item.id === itemId ? { ...item, companyName: newCompany } : item
+    );
+    onUpdateExperience(updated);
+  }, [experience, onUpdateExperience]);
+
+  const handleBulletChange = useCallback((itemId: string, bulletId: string, newText: string) => {
+    if (!onUpdateExperience) return;
+    const updated = experience.map((item) => {
+      if (item.id !== itemId) return item;
+      return {
+        ...item,
+        bullets: item.bullets.map((b) =>
+          b.id === bulletId ? { ...b, text: newText } : b
+        ),
+      };
+    });
+    onUpdateExperience(updated);
+  }, [experience, onUpdateExperience]);
 
   return (
     <section
@@ -55,13 +88,31 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = React.memo(({
             >
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-0.5">
                 <div className="flex flex-wrap items-baseline gap-x-1.5">
-                  <span className="font-bold text-slate-900 dark:text-slate-100">
-                    {item.jobTitle}
-                  </span>
+                  {onUpdateExperience ? (
+                    <InlineText
+                      value={item.jobTitle}
+                      onChange={(val) => handleJobTitleChange(item.id, val)}
+                      placeholder="Job Title"
+                      className="font-bold text-slate-900 dark:text-slate-100"
+                    />
+                  ) : (
+                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                      {item.jobTitle}
+                    </span>
+                  )}
                   <span className="text-slate-400 dark:text-slate-500">|</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    {item.companyName}
-                  </span>
+                  {onUpdateExperience ? (
+                    <InlineText
+                      value={item.companyName}
+                      onChange={(val) => handleCompanyChange(item.id, val)}
+                      placeholder="Company Name"
+                      className="font-semibold text-slate-700 dark:text-slate-300"
+                    />
+                  ) : (
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {item.companyName}
+                    </span>
+                  )}
                   {item.location && (
                     <span className="text-slate-400 dark:text-slate-500 text-xs">
                       ({item.location})
@@ -79,7 +130,18 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = React.memo(({
                 <ul className={`list-disc list-outside pl-4 space-y-0.5 text-slate-700 dark:text-slate-300 ${lineHeightClass}`}>
                   {item.bullets.map((b) => (
                     <li key={b.id} className="leading-relaxed">
-                      <span>{b.text}</span>
+                      {onUpdateExperience ? (
+                        <InlineText
+                          as="span"
+                          multiline={true}
+                          value={b.text}
+                          onChange={(val) => handleBulletChange(item.id, b.id, val)}
+                          placeholder="Type achievement bullet point..."
+                          className="w-full inline-block"
+                        />
+                      ) : (
+                        <span>{b.text}</span>
+                      )}
                     </li>
                   ))}
                 </ul>

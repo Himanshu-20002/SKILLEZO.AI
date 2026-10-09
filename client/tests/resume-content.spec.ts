@@ -66,6 +66,28 @@ describe('Resume Content Normalizer & Deduplication', () => {
       );
     });
 
+    it('eliminates duplicated description when description has ellipsis or minor punctuation variance', () => {
+      const descWithEllipsis =
+        'Built and deployed a production-ready salon website with an admin dashboard for managing services.. Implemented technical SEO, sitemap improve search visibility and crawler accessibility.. Integrated GA4 and GTM to track user interactions, service engagement, and appointment...';
+      const bulletClean =
+        'Built and deployed a production-ready salon website with an admin dashboard for managing services.. Implemented technical SEO, sitemap improve search visibility and crawler accessibility.. Integrated GA4 and GTM to track user interactions, service engagement, and appointment';
+
+      const project: ResumeProjectItem = {
+        id: 'proj-salon',
+        title: "Habib's Hair & Beauty Salon Website",
+        description: descWithEllipsis,
+        bullets: [bulletClean],
+        technologies: ['Next.js', 'PostgreSQL'],
+      };
+
+      const { cleanSummary, cleanBullets } = cleanProjectContent(project);
+
+      // Duplicate description must be suppressed completely!
+      expect(cleanSummary).toBeNull();
+      expect(cleanBullets).toHaveLength(1);
+      expect(cleanBullets[0]).toBe(bulletClean);
+    });
+
     it('preserves genuine summaries that do not duplicate bullets', () => {
       const project: ResumeProjectItem = {
         id: 'proj-2',

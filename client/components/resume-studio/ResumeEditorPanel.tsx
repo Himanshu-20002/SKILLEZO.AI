@@ -17,7 +17,9 @@ import {
   FolderGit2,
   GraduationCap,
   Award,
+  Plus,
 } from 'lucide-react';
+import { ResumeDocument } from '@/types/resume-document';
 import { ResumeScoreResult, SectionScore } from '@/types/resume-scoring.types';
 import { SectionImprovementSuggestion } from '@/types/resume-editor.types';
 import { ResumeBuilderConfig } from '@/types/resume-builder.types';
@@ -108,6 +110,8 @@ interface ResumeEditorPanelProps {
     sectionKey: StudioSectionKey | null,
     entityId?: string
   ) => void;
+  document?: ResumeDocument | null;
+  onAddSectionToCanvas?: (key: keyof ResumeScoreResult['sections']) => void;
 }
 
 export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
@@ -137,9 +141,22 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
   diffResult,
   onOpenComparison,
   onNavigateToSection,
+  document,
+  onAddSectionToCanvas,
 }) => {
   const isTailored = currentResume?.variantType === 'TAILORED';
   const [overviewTab, setOverviewTab] = React.useState<'insights' | 'health'>('health');
+
+  const isSectionMissing = React.useMemo(() => {
+    if (!document) return false;
+    if (activeSectionKey === 'experience') return !document.experience || document.experience.length === 0;
+    if (activeSectionKey === 'projects') return !document.projects || document.projects.length === 0;
+    if (activeSectionKey === 'skills') return !document.skills || document.skills.length === 0;
+    if (activeSectionKey === 'education') return !document.education || document.education.length === 0;
+    if (activeSectionKey === 'summary') return !document.summary?.text || document.summary.text.trim().length === 0;
+    if (activeSectionKey === 'achievements') return !document.achievements || document.achievements.length === 0;
+    return false;
+  }, [document, activeSectionKey]);
 
   // Fetch tailoring insights only for Tailored variants (0 network calls on Master)
   const {
@@ -344,6 +361,28 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
                 </div>
               )}
 
+
+              {/* Add to Canvas Prompt Card if Section is Missing from Resume */}
+              {isSectionMissing && onAddSectionToCanvas && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-50/90 to-purple-50/80 dark:from-indigo-950/40 dark:to-purple-950/30 border border-indigo-200/80 dark:border-indigo-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="space-y-0.5">
+                    <h4 className="text-xs font-bold text-indigo-950 dark:text-indigo-200">
+                      {selectedConfig?.title || 'This section'} is not on your resume canvas
+                    </h4>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                      Add this section with a starter template to start editing directly on the live A4 canvas.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onAddSectionToCanvas(activeSectionKey)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add to Canvas</span>
+                  </button>
+                </div>
+              )}
 
               {/* Section AI Workspace */}
               {selectedSectionData && selectedConfig ? (

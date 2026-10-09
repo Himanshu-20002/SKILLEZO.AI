@@ -56,7 +56,12 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Welcome Banner */}
-        <WelcomeBanner profile={profile} records={records} isLoading={isLoading} />
+        <WelcomeBanner
+          profile={profile}
+          records={records}
+          isLoading={isLoading}
+          resumesCount={resumesCount}
+        />
 
         {/* Profile Completion Onboarding Guide */}
         <ProfileCompletionGuide

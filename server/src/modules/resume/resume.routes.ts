@@ -8,6 +8,7 @@ import {
   uploadResumeValidator,
   updateResumeValidator,
   resumeIdParamValidator,
+  sectionParamValidator,
   createVariantValidator,
 } from "./resume.validator";
 import { asyncHandler } from "@/core/utils/asyncHandler";
@@ -88,6 +89,12 @@ router.post(
 router.post(
   "/:resumeId/sections/:sectionId/apply-improvement",
   asyncHandler(controller.applySectionImprovement)
+);
+
+router.put(
+  "/:resumeId/sections/:sectionId",
+  validate({ params: sectionParamValidator }),
+  asyncHandler(controller.updateSectionContent)
 );
 
 router.get(

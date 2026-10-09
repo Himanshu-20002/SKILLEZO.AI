@@ -19,6 +19,7 @@ export interface ResumeRendererProps {
   interactive?: boolean;
   className?: string;
   config?: ResumeBuilderConfig | null;
+  onUpdateSection?: (sectionId: string, content: any) => void;
 }
 
 export const ResumeRenderer: React.FC<ResumeRendererProps> = React.memo(({
@@ -28,6 +29,7 @@ export const ResumeRenderer: React.FC<ResumeRendererProps> = React.memo(({
   interactive = true,
   className = '',
   config,
+  onUpdateSection,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -85,6 +87,7 @@ export const ResumeRenderer: React.FC<ResumeRendererProps> = React.memo(({
             isHighlighted={highlightSectionId === 'summary'}
             onClick={sectionHandlers.summary}
             config={config}
+            onUpdateSummary={onUpdateSection ? (s) => onUpdateSection('summary', s) : undefined}
           />
         );
       case 'skills':
@@ -95,6 +98,7 @@ export const ResumeRenderer: React.FC<ResumeRendererProps> = React.memo(({
             isHighlighted={highlightSectionId === 'skills'}
             onClick={sectionHandlers.skills}
             config={config}
+            onUpdateSkills={onUpdateSection ? (s) => onUpdateSection('skills', s) : undefined}
           />
         );
       case 'experience':
@@ -105,6 +109,7 @@ export const ResumeRenderer: React.FC<ResumeRendererProps> = React.memo(({
             isHighlighted={highlightSectionId === 'experience'}
             onClick={sectionHandlers.experience}
             config={config}
+            onUpdateExperience={onUpdateSection ? (exp) => onUpdateSection('experience', exp) : undefined}
           />
         );
       case 'projects':
@@ -115,6 +120,7 @@ export const ResumeRenderer: React.FC<ResumeRendererProps> = React.memo(({
             isHighlighted={highlightSectionId === 'projects'}
             onClick={sectionHandlers.projects}
             config={config}
+            onUpdateProjects={onUpdateSection ? (p) => onUpdateSection('projects', p) : undefined}
           />
         );
       case 'education':
@@ -125,6 +131,7 @@ export const ResumeRenderer: React.FC<ResumeRendererProps> = React.memo(({
             isHighlighted={highlightSectionId === 'education'}
             onClick={sectionHandlers.education}
             config={config}
+            onUpdateEducation={onUpdateSection ? (edu) => onUpdateSection('education', edu) : undefined}
           />
         );
       case 'achievements':
@@ -154,6 +161,8 @@ export const ResumeRenderer: React.FC<ResumeRendererProps> = React.memo(({
         isHighlighted={highlightSectionId === 'contact'}
         onClick={sectionHandlers.contact}
         config={config}
+        onUpdateContact={onUpdateSection ? (c) => onUpdateSection('contact', c) : undefined}
+        onUpdateRole={onUpdateSection ? (r) => onUpdateSection('targetRole', r) : undefined}
       />
 
       {/* 2. Reorderable Body Sections */}

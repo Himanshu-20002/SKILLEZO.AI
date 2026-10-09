@@ -66,7 +66,7 @@ export const ProfileCompletionGuide: React.FC<ProfileCompletionGuideProps> = ({
       completed: hasTargetRole,
       badge: '+15%',
       icon: Target,
-      href: '/dashboard/profile',
+      href: '/dashboard/profile?focus=target-role#target-role',
       actionLabel: 'Set Role',
     },
     {
@@ -151,12 +151,22 @@ export const ProfileCompletionGuide: React.FC<ProfileCompletionGuideProps> = ({
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              {nextStep ? (
-                <span>
-                  Finish onboarding to unlock higher recruiter visibility • <strong className="text-slate-800 dark:text-slate-200 font-semibold">Next step: {nextStep.title}</strong>
-                </span>
+              {!hasResume ? (
+                nextStep ? (
+                  <span>
+                    Upload your resume to auto-fill your profile details • <strong className="text-slate-800 dark:text-slate-200 font-semibold">Next step: {nextStep.title}</strong>
+                  </span>
+                ) : (
+                  'Upload your resume to auto-fill your profile details, unlock verified credentials, and personalized job matches.'
+                )
               ) : (
-                'Finish onboarding to unlock higher recruiter visibility, verified credentials, and personalized job matches.'
+                nextStep ? (
+                  <span>
+                    Complete your profile to unlock higher recruiter visibility • <strong className="text-slate-800 dark:text-slate-200 font-semibold">Next step: {nextStep.title}</strong>
+                  </span>
+                ) : (
+                  'Complete your profile to unlock higher recruiter visibility, verified credentials, and personalized job matches.'
+                )
               )}
             </p>
           </div>

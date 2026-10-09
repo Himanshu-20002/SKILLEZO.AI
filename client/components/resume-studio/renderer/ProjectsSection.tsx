@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ResumeProjectItem } from '@/types/resume-document';
 import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { ExternalLink, FolderGit2 } from 'lucide-react';
 import { resolveConfigClasses } from './templates';
 import { cleanProjectContent } from '../utils/resume-content.util';
+import { InlineText } from './InlineText';
 
 interface ProjectsSectionProps {
   projects?: ResumeProjectItem[];
   isHighlighted?: boolean;
   onClick?: () => void;
   config?: ResumeBuilderConfig | null;
+  onUpdateProjects?: (updatedProjects: ResumeProjectItem[]) => void;
 }
 
 export const ProjectsSection: React.FC<ProjectsSectionProps> = React.memo(({
@@ -17,11 +19,42 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = React.memo(({
   isHighlighted,
   onClick,
   config,
+  onUpdateProjects,
 }) => {
   if (!projects || projects.length === 0) return null;
 
   const { template, sectionSpacingClass, lineHeightClass, accentTextClass } = resolveConfigClasses(config);
   const isCompact = config?.templateId === 'compact';
+
+  const handleTitleChange = useCallback((projId: string, newTitle: string) => {
+    if (!onUpdateProjects) return;
+    const updated = projects.map((p) =>
+      p.id === projId ? { ...p, title: newTitle } : p
+    );
+    onUpdateProjects(updated);
+  }, [projects, onUpdateProjects]);
+
+  const handleBulletChange = useCallback((projId: string, bulletIdx: number, newText: string) => {
+    if (!onUpdateProjects) return;
+    const updated = projects.map((p) => {
+      if (p.id !== projId) return p;
+      const bullets = [...(p.bullets || [])];
+      bullets[bulletIdx] = newText;
+      return {
+        ...p,
+        bullets,
+      };
+    });
+    onUpdateProjects(updated);
+  }, [projects, onUpdateProjects]);
+
+  const handleDescriptionChange = useCallback((projId: string, newDesc: string) => {
+    if (!onUpdateProjects) return;
+    const updated = projects.map((p) =>
+      p.id === projId ? { ...p, description: newDesc } : p
+    );
+    onUpdateProjects(updated);
+  }, [projects, onUpdateProjects]);
 
   return (
     <section
@@ -52,9 +85,18 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = React.memo(({
             >
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
                 <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="font-bold text-slate-900 dark:text-slate-100">
-                    {proj.title}
-                  </span>
+                  {onUpdateProjects ? (
+                    <InlineText
+                      value={proj.title}
+                      onChange={(val) => handleTitleChange(proj.id, val)}
+                      placeholder="Project Title"
+                      className="font-bold text-slate-900 dark:text-slate-100"
+                    />
+                  ) : (
+                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                      {proj.title}
+                    </span>
+                  )}
                   {proj.subtitle && (
                     <span className="text-slate-500 dark:text-slate-400 text-xs">
                       — {proj.subtitle}
@@ -97,11 +139,22 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = React.memo(({
                 </p>
               )}
 
-              {/* Optional Short Summary (Max 2 lines) */}
+              {/* Optional Short Summary (when no bullets or distinct summary) */}
               {cleanSummary && (
-                <p className={`text-slate-700 dark:text-slate-300 line-clamp-2 ${lineHeightClass}`}>
-                  {cleanSummary}
-                </p>
+                <div className={`text-slate-700 dark:text-slate-300 ${lineHeightClass}`}>
+                  {onUpdateProjects ? (
+                    <InlineText
+                      as="p"
+                      multiline={true}
+                      value={cleanSummary}
+                      onChange={(val) => handleDescriptionChange(proj.id, val)}
+                      placeholder="Project description..."
+                      className="w-full inline-block text-slate-700 dark:text-slate-300 line-clamp-3"
+                    />
+                  ) : (
+                    <p className="line-clamp-3">{cleanSummary}</p>
+                  )}
+                </div>
               )}
 
               {/* Clean Individual Bullet Points (Max 4) */}
@@ -111,7 +164,18 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = React.memo(({
                 >
                   {cleanBullets.map((bullet, idx) => (
                     <li key={idx}>
-                      <span>{bullet}</span>
+                      {onUpdateProjects ? (
+                        <InlineText
+                          as="span"
+                          multiline={true}
+                          value={bullet}
+                          onChange={(val) => handleBulletChange(proj.id, idx, val)}
+                          placeholder="Project achievement or impact bullet..."
+                          className="w-full inline-block"
+                        />
+                      ) : (
+                        <span>{bullet}</span>
+                      )}
                     </li>
                   ))}
                 </ul>

@@ -309,12 +309,15 @@ function ResumeStudioPageContent() {
                       studio.setMobileEditorView('editor');
                     }}
                     onViewAtsAndPortfolio={() => studio.setViewMode('audit')}
+                    onAddSectionToCanvas={studio.handleAddSectionToCanvas}
                   />
                 ) : undefined
               }
               editorPanel={
                 studio.viewMode !== 'audit' && studio.viewMode !== 'analysis' ? (
                   <ResumeEditorPanel
+                    document={studio.resumeDoc}
+                    onAddSectionToCanvas={studio.handleAddSectionToCanvas}
                     viewMode={studio.viewMode}
                     onViewModeChange={studio.setViewMode}
                     activeView={studio.activeView}
@@ -355,12 +358,14 @@ function ResumeStudioPageContent() {
                     document={studio.resumeDoc}
                     config={studio.builderConfig}
                     highlightSectionId={studio.previewHighlightSection}
+                    onUpdateSection={studio.handleUpdateSection}
+                    canUndo={studio.canUndo}
+                    canRedo={studio.canRedo}
+                    onUndo={studio.handleUndo}
+                    onRedo={studio.handleRedo}
                     onSectionClick={(secId: string) => {
                       studio.setActiveSectionKey(secId as any);
                       studio.setPreviewHighlightSection(secId);
-                      studio.setActiveView('detail');
-                      studio.setViewMode('editor');
-                      studio.setMobileEditorView('editor');
                     }}
                   />
                 ) : undefined

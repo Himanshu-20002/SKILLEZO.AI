@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { ResumeDocument } from '@/types/resume-document';
 import { ResumeScoreResult } from '@/types/resume-scoring.types';
 import { SectionImprovementSuggestion } from '@/types/resume-editor.types';
-import { ResumeBuilderConfig, DEFAULT_BUILDER_CONFIG } from '@/types/resume-builder.types';
+import { ResumeBuilderConfig, DEFAULT_BUILDER_CONFIG, CANONICAL_SECTION_ORDER } from '@/types/resume-builder.types';
 import { resumeService } from '@/services/resume.service';
 import { ResumeRecord, ResumeAnalysisData, ResumeOptimizationDraft } from '@/types/resume';
 import { StudioViewMode } from '@/components/resume-studio/ResumeStudioSidebar';
@@ -114,6 +114,8 @@ export function useResumeStudio(initialResumeId?: string | null) {
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activeSavePromiseRef = useRef<Promise<any> | null>(null);
   const pendingConfigRef = useRef<ResumeBuilderConfig | null>(null);
+  const pendingSectionUpdatesRef = useRef<Record<string, any>>({});
+  const sectionSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Variant Switching & Concurrency Guard State
   const [pendingSwitchResumeId, setPendingSwitchResumeId] = useState<string | null>(null);
@@ -123,6 +125,30 @@ export function useResumeStudio(initialResumeId?: string | null) {
 
   useEffect(() => {
     selectedResumeIdRef.current = selectedResumeId;
+  }, [selectedResumeId]);
+
+  const resumeDocRef = useRef<ResumeDocument | null>(resumeDoc);
+  useEffect(() => {
+    resumeDocRef.current = resumeDoc;
+  }, [resumeDoc]);
+
+  // Undo / Redo Snapshot History Stacks
+  const undoStackRef = useRef<ResumeDocument[]>([]);
+  const redoStackRef = useRef<ResumeDocument[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const undoDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear undo/redo stacks when active resume changes
+  useEffect(() => {
+    undoStackRef.current = [];
+    redoStackRef.current = [];
+    setCanUndo(false);
+    setCanRedo(false);
+    if (undoDebounceTimerRef.current) {
+      clearTimeout(undoDebounceTimerRef.current);
+      undoDebounceTimerRef.current = null;
+    }
   }, [selectedResumeId]);
 
   // Section AI Editor State
@@ -493,30 +519,464 @@ export function useResumeStudio(initialResumeId?: string | null) {
     }, 600);
   }, [selectedResumeId, executeSaveBuilderConfig]);
 
+  // Direct manual section content save executor
+  const executeSaveSectionContent = useCallback(async (targetId: string, sectionId: string, content: any) => {
+    setSaveStatus('saving');
+    const savePromise = resumeService.updateResumeSection(targetId, sectionId, content);
+    activeSavePromiseRef.current = savePromise;
+    try {
+      const result = await savePromise;
+      setSaveStatus('saved');
+      if (selectedResumeIdRef.current === targetId) {
+        setResumeDoc((prev) => {
+          if (!prev) return result.resumeDocument;
+          return {
+            ...result.resumeDocument,
+            ...pendingSectionUpdatesRef.current,
+          };
+        });
+        setResumes((prev) =>
+          prev.map((r) =>
+            r._id === targetId
+              ? {
+                  ...r,
+                  resumeDocument: {
+                    ...result.resumeDocument,
+                    ...pendingSectionUpdatesRef.current,
+                  },
+                }
+              : r
+          )
+        );
+        if (result.scoreResult) {
+          setScoreResult(result.scoreResult);
+        }
+      }
+      return result;
+    } catch (err) {
+      console.error(`Failed to persist ${sectionId} section`, err);
+      setSaveStatus('error');
+      toast.error(`Failed to save changes to ${sectionId}.`);
+      throw err;
+    } finally {
+      if (activeSavePromiseRef.current === savePromise) {
+        activeSavePromiseRef.current = null;
+      }
+    }
+  }, []);
+
+  // Live direct section content update handler (instant optimistic local state + 750ms debounced persistence + undo snapshot)
+  const handleUpdateSection = useCallback((sectionId: string, updatedContent: any) => {
+    if (!selectedResumeId) return;
+
+    // Fast-path guard: ignore if content didn't actually change
+    const currentSectionData = (resumeDocRef.current as any)?.[sectionId];
+    if (currentSectionData !== undefined && currentSectionData === updatedContent) {
+      return;
+    }
+
+    // Snapshot document before changes begin for Undo
+    if (resumeDocRef.current) {
+      if (!undoDebounceTimerRef.current) {
+        // Snapshot the current doc state before this typing burst
+        undoStackRef.current.push(structuredClone(resumeDocRef.current));
+        if (undoStackRef.current.length > 30) {
+          undoStackRef.current.shift();
+        }
+        redoStackRef.current = [];
+        setCanUndo(true);
+        setCanRedo(false);
+      }
+
+      // Reset burst debounce
+      if (undoDebounceTimerRef.current) {
+        clearTimeout(undoDebounceTimerRef.current);
+      }
+      undoDebounceTimerRef.current = setTimeout(() => {
+        undoDebounceTimerRef.current = null;
+      }, 1000);
+    }
+
+    // 1. Instant local update for 60-120fps live canvas rendering
+    setResumeDoc((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [sectionId]: updatedContent,
+      };
+    });
+
+    // 2. Track pending update for autosave flush
+    pendingSectionUpdatesRef.current[sectionId] = updatedContent;
+    setSaveStatus('unsaved');
+
+    // 3. Debounced autosave (750ms idle)
+    if (sectionSaveTimerRef.current) {
+      clearTimeout(sectionSaveTimerRef.current);
+    }
+
+    sectionSaveTimerRef.current = setTimeout(async () => {
+      sectionSaveTimerRef.current = null;
+      const targetId = selectedResumeIdRef.current;
+      const updates = { ...pendingSectionUpdatesRef.current };
+      pendingSectionUpdatesRef.current = {};
+      if (targetId && Object.keys(updates).length > 0) {
+        for (const [secId, contentToSave] of Object.entries(updates)) {
+          try {
+            await executeSaveSectionContent(targetId, secId, contentToSave);
+          } catch {
+            // Handled in executeSaveSectionContent
+          }
+        }
+      }
+    }, 750);
+  }, [selectedResumeId, executeSaveSectionContent]);
+
+  // Undo Handler - pops previous snapshot and restores document
+  const handleUndo = useCallback(() => {
+    if (!selectedResumeId || undoStackRef.current.length === 0) return;
+
+    if (undoDebounceTimerRef.current) {
+      clearTimeout(undoDebounceTimerRef.current);
+      undoDebounceTimerRef.current = null;
+    }
+
+    if (sectionSaveTimerRef.current) {
+      clearTimeout(sectionSaveTimerRef.current);
+      sectionSaveTimerRef.current = null;
+    }
+    pendingSectionUpdatesRef.current = {};
+
+    const currentDoc = resumeDocRef.current;
+    const targetDoc = undoStackRef.current.pop();
+    if (!targetDoc) return;
+
+    if (currentDoc) {
+      redoStackRef.current.push(structuredClone(currentDoc));
+      if (redoStackRef.current.length > 30) {
+        redoStackRef.current.shift();
+      }
+    }
+
+    setCanUndo(undoStackRef.current.length > 0);
+    setCanRedo(true);
+
+    // Apply undone document to state
+    setResumeDoc(targetDoc);
+    setResumes((prev) =>
+      prev.map((r) =>
+        r._id === selectedResumeId
+          ? {
+              ...r,
+              resumeDocument: targetDoc,
+            }
+          : r
+      )
+    );
+
+    // Persist changed sections back to server
+    if (currentDoc) {
+      const keysToPersist = (Object.keys(targetDoc) as (keyof ResumeDocument)[]).filter(
+        (key) => (currentDoc as any)[key] !== (targetDoc as any)[key]
+      );
+
+      for (const secKey of keysToPersist) {
+        pendingSectionUpdatesRef.current[secKey] = (targetDoc as any)[secKey];
+      }
+    }
+
+    setSaveStatus('unsaved');
+    sectionSaveTimerRef.current = setTimeout(async () => {
+      sectionSaveTimerRef.current = null;
+      const targetId = selectedResumeIdRef.current;
+      const updates = { ...pendingSectionUpdatesRef.current };
+      pendingSectionUpdatesRef.current = {};
+      if (targetId && Object.keys(updates).length > 0) {
+        for (const [secId, contentToSave] of Object.entries(updates)) {
+          try {
+            await executeSaveSectionContent(targetId, secId, contentToSave);
+          } catch {
+            // Handled
+          }
+        }
+      }
+    }, 750);
+  }, [selectedResumeId, executeSaveSectionContent]);
+
+  // Redo Handler - pops next snapshot and re-applies changes
+  const handleRedo = useCallback(() => {
+    if (!selectedResumeId || redoStackRef.current.length === 0) return;
+
+    if (undoDebounceTimerRef.current) {
+      clearTimeout(undoDebounceTimerRef.current);
+      undoDebounceTimerRef.current = null;
+    }
+
+    if (sectionSaveTimerRef.current) {
+      clearTimeout(sectionSaveTimerRef.current);
+      sectionSaveTimerRef.current = null;
+    }
+    pendingSectionUpdatesRef.current = {};
+
+    const currentDoc = resumeDocRef.current;
+    const targetDoc = redoStackRef.current.pop();
+    if (!targetDoc) return;
+
+    if (currentDoc) {
+      undoStackRef.current.push(structuredClone(currentDoc));
+      if (undoStackRef.current.length > 30) {
+        undoStackRef.current.shift();
+      }
+    }
+
+    setCanUndo(true);
+    setCanRedo(redoStackRef.current.length > 0);
+
+    // Apply redone document to state
+    setResumeDoc(targetDoc);
+    setResumes((prev) =>
+      prev.map((r) =>
+        r._id === selectedResumeId
+          ? {
+              ...r,
+              resumeDocument: targetDoc,
+            }
+          : r
+      )
+    );
+
+    // Persist changed sections back to server
+    if (currentDoc) {
+      const keysToPersist = (Object.keys(targetDoc) as (keyof ResumeDocument)[]).filter(
+        (key) => (currentDoc as any)[key] !== (targetDoc as any)[key]
+      );
+
+      for (const secKey of keysToPersist) {
+        pendingSectionUpdatesRef.current[secKey] = (targetDoc as any)[secKey];
+      }
+    }
+
+    setSaveStatus('unsaved');
+    sectionSaveTimerRef.current = setTimeout(async () => {
+      sectionSaveTimerRef.current = null;
+      const targetId = selectedResumeIdRef.current;
+      const updates = { ...pendingSectionUpdatesRef.current };
+      pendingSectionUpdatesRef.current = {};
+      if (targetId && Object.keys(updates).length > 0) {
+        for (const [secId, contentToSave] of Object.entries(updates)) {
+          try {
+            await executeSaveSectionContent(targetId, secId, contentToSave);
+          } catch {
+            // Handled
+          }
+        }
+      }
+    }, 750);
+  }, [selectedResumeId, executeSaveSectionContent]);
+
+  // Add missing section to canvas with starter template
+  const handleAddSectionToCanvas = useCallback((sectionKey: keyof ResumeScoreResult['sections']) => {
+    if (!selectedResumeId) return;
+
+    let defaultContent: any = null;
+    const now = Date.now();
+
+    switch (sectionKey) {
+      case 'experience':
+        defaultContent = [
+          {
+            id: `exp-${now}`,
+            companyName: 'Company Name',
+            jobTitle: 'Software Engineer',
+            location: 'City, Country',
+            startDate: '2023',
+            endDate: 'Present',
+            isCurrent: true,
+            bullets: [
+              {
+                id: `bullet-${now}-1`,
+                text: 'Architected and built scalable features, improving user engagement and system performance.',
+                evidenceIds: [],
+              },
+              {
+                id: `bullet-${now}-2`,
+                text: 'Collaborated with engineering team to deliver reliable, production-ready services.',
+                evidenceIds: [],
+              },
+            ],
+          },
+        ];
+        break;
+      case 'projects':
+        defaultContent = [
+          {
+            id: `proj-${now}`,
+            title: 'Project Name',
+            technologies: ['React', 'Node.js', 'PostgreSQL'],
+            bullets: [
+              'Engineered full-stack application with responsive UI and optimized database schema.',
+            ],
+          },
+        ];
+        break;
+      case 'skills':
+        defaultContent = [
+          { id: `skill-${now}-1`, name: 'TypeScript', category: 'FRONTEND', evidenceIds: [] },
+          { id: `skill-${now}-2`, name: 'React', category: 'FRONTEND', evidenceIds: [] },
+          { id: `skill-${now}-3`, name: 'Node.js', category: 'BACKEND', evidenceIds: [] },
+          { id: `skill-${now}-4`, name: 'PostgreSQL', category: 'DATABASE', evidenceIds: [] },
+        ];
+        break;
+      case 'education':
+        defaultContent = [
+          {
+            id: `edu-${now}`,
+            institution: 'University / Institute Name',
+            degree: 'Bachelor of Technology',
+            fieldOfStudy: 'Computer Science',
+            startDate: '2020',
+            endDate: '2024',
+          },
+        ];
+        break;
+      case 'summary':
+        defaultContent = {
+          text: 'Passionate and detail-oriented Software Engineer with experience in building scalable web applications and intuitive user interfaces.',
+        };
+        break;
+      case 'achievements':
+        defaultContent = [
+          {
+            id: `ach-${now}`,
+            title: 'Certified Full Stack Engineer',
+            description: 'Demonstrated expertise in building enterprise-grade cloud applications.',
+          },
+        ];
+        break;
+      default:
+        break;
+    }
+
+    if (!defaultContent) return;
+
+    // 1. Ensure section is enabled in builderConfig.sectionOrder
+    if (builderConfig && sectionKey !== 'contact') {
+      const currentOrder = builderConfig.sectionOrder || CANONICAL_SECTION_ORDER;
+      if (!currentOrder.includes(sectionKey as any)) {
+        const canonicalIndex = CANONICAL_SECTION_ORDER.indexOf(sectionKey as any);
+        const newOrder = [...currentOrder];
+        if (canonicalIndex !== -1 && canonicalIndex < newOrder.length) {
+          newOrder.splice(canonicalIndex, 0, sectionKey as any);
+        } else {
+          newOrder.push(sectionKey as any);
+        }
+        handleBuilderConfigChange({
+          ...builderConfig,
+          sectionOrder: newOrder,
+        });
+      }
+    }
+
+    // 2. Add section content to document and trigger live canvas update + debounced save
+    handleUpdateSection(sectionKey, defaultContent);
+
+    // 3. Highlight and focus newly added section
+    setActiveSectionKey(sectionKey);
+    setPreviewHighlightSection(sectionKey);
+
+    const titleMap: Record<string, string> = {
+      experience: 'Work Experience',
+      projects: 'Projects',
+      skills: 'Technical Skills',
+      education: 'Education',
+      summary: 'Professional Summary',
+      achievements: 'Achievements & Certifications',
+    };
+
+    toast.success(`${titleMap[sectionKey] || 'Section'} added to canvas! Click any text to edit.`);
+  }, [selectedResumeId, builderConfig, handleBuilderConfigChange, handleUpdateSection, setActiveSectionKey, setPreviewHighlightSection]);
+
+  // Global keyboard shortcuts (Ctrl+Z for undo, Ctrl+Y / Ctrl+Shift+Z for redo)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        const target = e.target as HTMLElement | null;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+          return;
+        }
+
+        e.preventDefault();
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+
+        if (e.shiftKey) {
+          handleRedo();
+        } else {
+          handleUndo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        const target = e.target as HTMLElement | null;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+          return;
+        }
+
+        e.preventDefault();
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo]);
+
   // Flush pending autosave immediately and await completion
   const flushPendingAutosave = useCallback(async (): Promise<boolean> => {
+    let success = true;
+
+    // Flush builder config if pending
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
       if (selectedResumeId && pendingConfigRef.current) {
         try {
           await executeSaveBuilderConfig(selectedResumeId, pendingConfigRef.current);
-          return true;
         } catch {
-          return false;
+          success = false;
         }
       }
     }
+
+    // Flush section updates if pending
+    if (sectionSaveTimerRef.current) {
+      clearTimeout(sectionSaveTimerRef.current);
+      sectionSaveTimerRef.current = null;
+      const targetId = selectedResumeIdRef.current;
+      const pendingUpdates = { ...pendingSectionUpdatesRef.current };
+      pendingSectionUpdatesRef.current = {};
+      if (targetId && Object.keys(pendingUpdates).length > 0) {
+        for (const [secId, content] of Object.entries(pendingUpdates)) {
+          try {
+            await executeSaveSectionContent(targetId, secId, content);
+          } catch {
+            success = false;
+          }
+        }
+      }
+    }
+
     if (activeSavePromiseRef.current) {
       try {
         await activeSavePromiseRef.current;
-        return true;
       } catch {
-        return false;
+        success = false;
       }
     }
-    return true;
-  }, [selectedResumeId, executeSaveBuilderConfig]);
+    return success;
+  }, [selectedResumeId, executeSaveBuilderConfig, executeSaveSectionContent]);
 
   // Execute Variant Switch Transaction guarded by switchRequestIdRef
   const executeVariantSwitch = useCallback(async (
@@ -1025,6 +1485,12 @@ export function useResumeStudio(initialResumeId?: string | null) {
     handleAcceptOptimization,
     handleRejectOptimization,
     handleTargetRoleChange,
+    handleUpdateSection,
     fetchScore,
+    canUndo,
+    canRedo,
+    handleUndo,
+    handleRedo,
+    handleAddSectionToCanvas,
   };
 }

@@ -663,9 +663,20 @@ export class ResumeDocumentNormalizer {
         // Check if proj.description is a distinct short summary or a duplicate of bullets
         if (proj.description) {
           const rawDescTrimmed = proj.description.replace(/\s+/g, " ").trim();
-          const descNorm = rawDescTrimmed.replace(/^[•\u2022\u25E6\u25AA\*\-]\s*/, "").toLowerCase();
+          const cleanDescAlpha = rawDescTrimmed.toLowerCase().replace(/[^a-z0-9]/g, "");
           const isBullet = /^[•\u2022\u25E6\u25AA\*\-]/.test(rawDescTrimmed);
-          const isDuplicate = bullets.some((b) => b.toLowerCase() === descNorm);
+          
+          const isDuplicate = bullets.some((b) => {
+            const cleanBAlpha = b.toLowerCase().replace(/[^a-z0-9]/g, "");
+            if (!cleanBAlpha || !cleanDescAlpha) return false;
+            if (cleanBAlpha === cleanDescAlpha) return true;
+            if (cleanBAlpha.startsWith(cleanDescAlpha) || cleanDescAlpha.startsWith(cleanBAlpha)) {
+              const minLen = Math.min(cleanBAlpha.length, cleanDescAlpha.length);
+              const maxLen = Math.max(cleanBAlpha.length, cleanDescAlpha.length);
+              return minLen >= 25 && minLen / maxLen > 0.6;
+            }
+            return false;
+          });
 
           if (!isBullet && !isDuplicate) {
             description = rawDescTrimmed.slice(0, 250);

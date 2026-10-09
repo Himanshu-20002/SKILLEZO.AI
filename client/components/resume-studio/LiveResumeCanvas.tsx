@@ -5,7 +5,7 @@ import { ResumeDocument } from '@/types/resume-document';
 import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { SAMPLE_RESUME_DOCUMENT_FIXTURE } from '@/types/resume-document.fixture';
 import { ResumeRenderer } from './renderer';
-import { ZoomIn, ZoomOut, Maximize2, Minimize2, Move, FileText, UploadCloud } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Minimize2, Move, FileText, UploadCloud, Undo2, Redo2 } from 'lucide-react';
 
 interface LiveResumeCanvasProps {
   document: ResumeDocument | null;
@@ -14,6 +14,11 @@ interface LiveResumeCanvasProps {
   onSectionClick?: (sectionId: string) => void;
   isVisibleOnMobile?: boolean;
   className?: string;
+  onUpdateSection?: (sectionId: string, content: any) => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
@@ -23,6 +28,11 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
   onSectionClick,
   isVisibleOnMobile = false,
   className = '',
+  onUpdateSection,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
 }) => {
   // Concurrently defer heavy A4 DOM re-renders so builder controls & typing run at 60-120 FPS
   const deferredConfig = useDeferredValue(config);
@@ -110,8 +120,40 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
           </span>
         </div>
 
-        {/* View Scaling Toolbar */}
+        {/* View Scaling & History Toolbar */}
         <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs text-xs">
+          {/* Undo Button */}
+          <button
+            type="button"
+            onClick={onUndo}
+            disabled={!canUndo}
+            title={canUndo ? "Undo changes (Ctrl+Z)" : "Undo (No changes to undo)"}
+            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              canUndo
+                ? 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95'
+                : 'text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-40'
+            }`}
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Redo Button */}
+          <button
+            type="button"
+            onClick={onRedo}
+            disabled={!canRedo}
+            title={canRedo ? "Redo changes (Ctrl+Y / Ctrl+Shift+Z)" : "Redo (No changes to redo)"}
+            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              canRedo
+                ? 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95'
+                : 'text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-40'
+            }`}
+          >
+            <Redo2 className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="h-3.5 w-px bg-slate-200 dark:bg-slate-700 mx-0.5" />
+
           <button
             onClick={() => setZoomMode('fit')}
             title="Fit entire 1-page resume on screen without scrolling"
@@ -202,13 +244,14 @@ export const LiveResumeCanvas: React.FC<LiveResumeCanvasProps> = React.memo(({
             }}
             className="absolute top-0 shadow-2xl rounded-2xl pointer-events-auto select-text"
           >
-            {deferredDoc ? (
+            {document ? (
               <ResumeRenderer
-                document={deferredDoc}
+                document={document}
                 highlightSectionId={highlightSectionId}
                 onSectionClick={handleSectionClick}
                 interactive={true}
                 config={deferredConfig}
+                onUpdateSection={onUpdateSection}
               />
             ) : (
               <div className="w-[850px] min-h-[1100px] bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center p-12 text-center space-y-4 shadow-sm">

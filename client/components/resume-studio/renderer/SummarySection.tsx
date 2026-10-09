@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ResumeSummary } from '@/types/resume-document';
 import { ResumeBuilderConfig } from '@/types/resume-builder.types';
 import { resolveConfigClasses } from './templates';
+import { InlineText } from './InlineText';
 
 interface SummarySectionProps {
   summary?: ResumeSummary;
   isHighlighted?: boolean;
   onClick?: () => void;
   config?: ResumeBuilderConfig | null;
+  onUpdateSummary?: (updatedSummary: ResumeSummary) => void;
 }
 
 export const SummarySection: React.FC<SummarySectionProps> = React.memo(({
@@ -15,10 +17,20 @@ export const SummarySection: React.FC<SummarySectionProps> = React.memo(({
   isHighlighted,
   onClick,
   config,
+  onUpdateSummary,
 }) => {
-  if (!summary?.text?.trim()) return null;
-
   const { template, sectionSpacingClass, lineHeightClass } = resolveConfigClasses(config);
+
+  const handleTextChange = useCallback((newText: string) => {
+    if (onUpdateSummary) {
+      onUpdateSummary({
+        ...(summary || { text: '' }),
+        text: newText,
+      });
+    }
+  }, [summary, onUpdateSummary]);
+
+  if (!summary?.text?.trim() && !onUpdateSummary) return null;
 
   return (
     <section
@@ -35,9 +47,20 @@ export const SummarySection: React.FC<SummarySectionProps> = React.memo(({
       <h2 className={template.sectionHeaderStyle}>
         Professional Summary
       </h2>
-      <p className={`text-slate-700 dark:text-slate-300 ${lineHeightClass} text-justify`}>
-        {summary.text}
-      </p>
+      {onUpdateSummary ? (
+        <InlineText
+          as="p"
+          multiline={true}
+          value={summary?.text || ''}
+          onChange={handleTextChange}
+          placeholder="Click here to type your professional summary..."
+          className={`text-slate-700 dark:text-slate-300 ${lineHeightClass} text-justify w-full block`}
+        />
+      ) : (
+        <p className={`text-slate-700 dark:text-slate-300 ${lineHeightClass} text-justify`}>
+          {summary?.text}
+        </p>
+      )}
     </section>
   );
 });

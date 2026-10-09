@@ -7,3 +7,4 @@ export * from './ProjectsSection';
 export * from './EducationSection';
 export * from './AchievementsSection';
 export * from './templates';
+export * from './InlineText';

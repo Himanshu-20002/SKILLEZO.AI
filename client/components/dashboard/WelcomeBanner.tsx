@@ -2,24 +2,28 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Sparkles, ArrowRight, ShieldCheck, Zap, Award } from 'lucide-react';
+import { Sparkles, ArrowRight, ShieldCheck, Zap, Award, FileText } from 'lucide-react';
 import { useSession } from '@/lib/auth-client';
 import { profileService, CandidateProfile } from '@/services/profile.service';
 import { verificationService } from '@/services/verification.service';
+import { resumeService } from '@/services/resume.service';
 
 interface WelcomeBannerProps {
   profile?: CandidateProfile | null;
   records?: import('@/types/verification').SkillVerificationRecord[];
   isLoading?: boolean;
+  resumesCount?: number;
 }
 
 export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
   profile: profileProp,
   records: recordsProp,
   isLoading: isLoadingProp,
+  resumesCount: resumesCountProp,
 }) => {
   const { data: session } = useSession();
   const [profile, setProfile] = useState<CandidateProfile | null>(profileProp || null);
+  const [resumesCount, setResumesCount] = useState<number>(resumesCountProp || 0);
   const [verifiedCount, setVerifiedCount] = useState<number>(() => {
     return (recordsProp || []).filter((r) => r.status === 'verified').length;
   });
@@ -36,24 +40,29 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
       const count = recordsProp.filter((r) => r.status === 'verified').length;
       setVerifiedCount(count);
     }
-  }, [profileProp, recordsProp]);
+    if (resumesCountProp !== undefined) {
+      setResumesCount(resumesCountProp);
+    }
+  }, [profileProp, recordsProp, resumesCountProp]);
 
   useEffect(() => {
     // Skip local fetch if parent component already passed data
-    if (profileProp !== undefined && recordsProp !== undefined) return;
+    if (profileProp !== undefined && recordsProp !== undefined && resumesCountProp !== undefined) return;
 
     let isMounted = true;
 
     async function loadBannerData() {
       try {
-        const [profileData, liveRecords] = await Promise.all([
+        const [profileData, liveRecords, userResumes] = await Promise.all([
           profileService.getMyProfile().catch(() => null),
           verificationService.getUserRecords().catch(() => []),
+          resumeService.getUserResumes().catch(() => []),
         ]);
 
         if (!isMounted) return;
 
         if (profileData) setProfile(profileData);
+        if (Array.isArray(userResumes)) setResumesCount(userResumes.length);
 
         const countVerified = (liveRecords || []).filter((r) => r.status === 'verified').length;
         const totalCount = profileData?.skills?.length || 0;
@@ -114,7 +123,11 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
               Welcome back, <span className="text-cyan-300">{displayName}</span> 👋
             </h1>
             <p className="mt-1.5 text-blue-100 dark:text-blue-200 text-sm sm:text-base leading-relaxed font-normal">
-              {targetRole ? (
+              {resumesCount === 0 ? (
+                <>
+                  Your career profile is <span className="font-bold text-white underline decoration-cyan-400/60 decoration-2 underline-offset-2">{readinessScore}% complete</span>. Upload your resume to auto-fill your profile details and get highlighted for recruiters.
+                </>
+              ) : targetRole ? (
                 <>
                   Your career profile is <span className="font-bold text-white underline decoration-cyan-400/60 decoration-2 underline-offset-2">{readinessScore}% complete</span> for <span className="font-semibold text-cyan-200">{targetRole}</span>. You have{' '}
                   <span className="font-bold text-emerald-300">{verifiedCount} verified {verifiedCount === 1 ? 'skill' : 'skills'}</span> and{' '}
@@ -130,14 +143,25 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
 
           {/* Action CTAs */}
           <div className="flex flex-wrap items-center gap-3 pt-1">
-            <Link
-              href="/dashboard/skill-verification"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
-            >
-              <ShieldCheck className="w-4 h-4 text-blue-600" />
-              <span>Verify New Skill</span>
-              <ArrowRight className="w-4 h-4 text-blue-600" />
-            </Link>
+            {resumesCount === 0 ? (
+              <Link
+                href="/dashboard/profile"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <FileText className="w-4 h-4 text-blue-600" />
+                <span>Upload Resume</span>
+                <ArrowRight className="w-4 h-4 text-blue-600" />
+              </Link>
+            ) : (
+              <Link
+                href="/dashboard/skill-verification"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <ShieldCheck className="w-4 h-4 text-blue-600" />
+                <span>Verify New Skill</span>
+                <ArrowRight className="w-4 h-4 text-blue-600" />
+              </Link>
+            )}
 
             <Link
               href="/dashboard/assessments"
