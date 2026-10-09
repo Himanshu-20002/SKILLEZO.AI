@@ -9,11 +9,12 @@
 
 ## 📊 1. Overall QA Execution S| Total Test Cases Defined | Passed | Failed / Blocked | In Progress / Next | Current Pass Rate |
 | :---: | :---: | :---: | :---: | :---: |
-| **24** | **7** | **0** | **17** | **100% (of tested)** |
+| **24** | **8** | **0** | **16** | **100% (of tested)** |
 
 ### System Status Banner
 * **Authentication Subsystem**: 🟢 **VERIFIED & OPERATIONAL** (All 3 Roles Authenticate, Role Routing Exact, Duplicate Email Blocked)
 * **Candidate Dashboard & Profile**: 🟢 **VERIFIED & OPERATIONAL** (Widgets Render Cleanly, MongoDB Profile Persistence Verified)
+* **Recruiter Requisition Engine**: 🟢 **VERIFIED & OPERATIONAL** (Job Posting & Form Submission Working Cleanly)
 * **Frontend Client (`:3000`)**: 🟢 Active (Next.js 16.3 App Router)
 * **Backend API (`:5000`)**: 🟢 Active (Express 5.2 + Better Auth + Mongoose)
 
@@ -38,6 +39,12 @@
 | **CAND-01** | Candidate Dashboard Overview | Load `/dashboard` with logged-in candidate session | Welcome banner, quick actions, profile completion bar, and recent activity render without hydration errors | **PASS** — All widgets loaded cleanly with zero console runtime crashes | <span style="color:green;font-weight:bold;">PASS ✅</span> | P0 (Critical) |
 | **CAND-02** | Profile Edit & Persistence | Update Headline, Bio, Location, and Skills at `/dashboard/profile` & hard refresh (`Ctrl+F5`) | Data persists permanently to MongoDB; changes remain visible after browser refresh | **PASS** — Success toast shown; hard refresh retained all updated fields & skills | <span style="color:green;font-weight:bold;">PASS ✅</span> | P0 (Critical) |
 
+### 🏢 Module 3: Recruiter Portal & ATS
+
+| Test ID | Flow / Area | Description / Action | Expected Result | Actual Result | Status | Severity |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| **RECR-02** | Post a New Job | Create & publish a new job opening at `/recruiter/jobs` (Title, Department, Requirements, Skills, Salary) | Job is validated, created in DB with status `Active`, and listed in recruiter requisitions | **PASS** — New job post submitted and created successfully | <span style="color:green;font-weight:bold;">PASS ✅</span> | P0 (Critical) |
+
 ---
 
 ## 🔍 3. Detailed Verification Notes
@@ -60,11 +67,17 @@
    - Updated Headline, Bio, and skills list saved via `PUT /api/profile`.
    - Hard refresh (`Ctrl + F5`) executed: state rehydrated from MongoDB Atlas without data rollback or loss.
 
+### Module 3: Recruiter Portal
+1. **Job Requisition Creation (RECR-02)**:
+   - Recruiter job creation form navigated at `/recruiter/jobs`.
+   - Job parameters (title, description, tags/skills, compensation) validated and committed to MongoDB.
+   - Requisition displayed in active recruiter jobs table.
+
 ---
 
 ## 🎯 4. Upcoming Test Modules (Step-by-Step Queue)
 
-### 📌 Module 2: Resume Studio (Next Up)
+### 📌 Module 2: Resume Studio
 * [ ] **CAND-03**: Resume Studio Canvas Load (`/dashboard/resume-studio`)
 * [ ] **CAND-04**: Direct WYSIWYG In-Place Canvas Editing (Summary, Bullets, Experience)
 * [ ] **CAND-05**: Autosave Persistence & Undo/Redo (`Ctrl+Z`, `Ctrl+Y`)
@@ -72,9 +85,8 @@
 * [ ] **CAND-07**: ATS Diagnostics & Real-time Scoring
 * [ ] **CAND-08**: PDF Export & Rendering Fidelity
 
-### 📌 Module 3: Recruiter Portal & ATS
+### 📌 Module 3: Recruiter Portal & ATS (Remaining)
 * [ ] **RECR-01**: Recruiter Dashboard metrics (`/recruiter`)
-* [ ] **RECR-02**: Post a New Job Requisition (`/recruiter/jobs`)
 * [ ] **RECR-03**: Manage & Pause/Close Job
 * [ ] **RECR-04**: Applicant Pipeline & Candidate Resume Review (`/recruiter/applications`)
 * [ ] **RECR-05**: Pipeline Stage Transitions (Applied ➔ Shortlisted ➔ Under Review ➔ Hired/Rejected)
@@ -84,3 +96,4 @@
 * [ ] **ADMN-02**: User Directory & Role Filtering
 * [ ] **ADMN-03**: User Suspension & Security Revocation Guard (`/account-suspended`)
 * [ ] **ADMN-04**: Reactivation & Audit Logging
+
