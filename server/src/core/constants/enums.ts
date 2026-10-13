@@ -159,3 +159,18 @@ export const JobSourceProvider = {
 } as const;
 export type JobSourceProvider = (typeof JobSourceProvider)[keyof typeof JobSourceProvider];
 
+export const NotificationCategory = {
+  JOB_ALERT: "job_alert",
+  APPLICATION: "application",
+  VERIFICATION: "verification",
+  SYSTEM: "system",
+} as const;
+export type NotificationCategory = (typeof NotificationCategory)[keyof typeof NotificationCategory];
+
+export const NotificationPriority = {
+  NORMAL: "normal",
+  HIGH: "high",
+  URGENT: "urgent",
+} as const;
+export type NotificationPriority = (typeof NotificationPriority)[keyof typeof NotificationPriority];
+

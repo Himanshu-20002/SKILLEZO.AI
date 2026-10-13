@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { WelcomeBanner } from '@/components/dashboard/WelcomeBanner';
 import { ProfileCompletionGuide } from '@/components/dashboard/ProfileCompletionGuide';
@@ -52,6 +52,11 @@ export default function DashboardPage() {
     };
   }, []);
 
+  const candidateSkills = useMemo(() => {
+    if (!profile?.skills || !Array.isArray(profile.skills)) return [];
+    return profile.skills.map((s) => s.name).filter(Boolean);
+  }, [profile]);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -79,7 +84,7 @@ export default function DashboardPage() {
         {/* Middle Section: Quick Actions & Live Activity Timeline */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <QuickActions />
-          <ActivityTimeline records={records} isLoading={isLoading} />
+          <ActivityTimeline userSkills={candidateSkills} isLoading={isLoading} />
         </div>
 
         {/* Bottom Section: Recent Verification Table */}

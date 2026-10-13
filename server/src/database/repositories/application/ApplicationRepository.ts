@@ -1,4 +1,5 @@
 import { BaseRepository } from "../base";
+import "@/database/models";
 import { ApplicationModel, IApplication } from "@/database/models/Application.model";
 import { ApplicationStatus } from "@/core/constants/enums";
 
@@ -129,7 +130,7 @@ export class ApplicationRepository extends BaseRepository<IApplication> {
     options: { page?: number; limit?: number; jobId?: string; status?: string } = {}
   ): Promise<{ items: IApplication[]; total: number; page: number; limit: number; totalPages: number }> {
     const page = Math.max(1, options.page || 1);
-    const limit = Math.min(50, Math.max(1, options.limit || 20));
+    const limit = Math.min(100, Math.max(1, options.limit || 20));
     const skip = (page - 1) * limit;
 
     const stringJobIds = companyJobIds.map((id) => id.toString());

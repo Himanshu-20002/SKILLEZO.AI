@@ -171,3 +171,85 @@ export async function sendPasswordResetEmail(options: SendPasswordResetOptions):
     return false;
   }
 }
+
+export interface SendApplicationStatusOptions {
+  to: string;
+  name?: string;
+  jobTitle: string;
+  companyName: string;
+  status: string;
+  portalUrl?: string;
+}
+
+export async function sendApplicationStatusEmail(options: SendApplicationStatusOptions): Promise<boolean> {
+  const { to, name = "Candidate", jobTitle, companyName, status, portalUrl = `${env.CLIENT_URL || "http://localhost:3000"}/dashboard/applications` } = options;
+
+  console.log("\n========================================================");
+  console.log("📬 [SKILLEZO NOTIFICATION] Application Status Update");
+  console.log(`✉️  Recipient: ${to} (${name})`);
+  console.log(`💼 Job: ${jobTitle} at ${companyName}`);
+  console.log(`📌 New Status: ${status.toUpperCase()}`);
+  console.log(`🔗 Portal URL: ${portalUrl}`);
+  console.log("========================================================\n");
+
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn("[EmailService] No RESEND_API_KEY provided. Status email skipped (details logged above).");
+    return true;
+  }
+
+  const statusLabel = status.replace(/_/g, " ").toUpperCase();
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Application Status Update</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0c1024; color: #e2e8f0; margin: 0; padding: 24px; }
+    .container { max-width: 540px; margin: 0 auto; background-color: #131b3e; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 32px 28px; }
+    .logo { font-size: 20px; font-weight: 800; color: #ffffff; margin-bottom: 24px; }
+    .logo-accent { color: #3D5AFE; }
+    .badge { display: inline-block; padding: 6px 14px; border-radius: 9999px; font-weight: 700; font-size: 13px; background: rgba(0, 217, 192, 0.15); color: #00D9C0; border: 1px solid rgba(0, 217, 192, 0.3); margin: 12px 0; }
+    .button { display: inline-block; background-color: #3D5AFE; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 10px; margin: 24px 0; }
+    .footer { font-size: 12px; color: #64748b; text-align: center; margin-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">SKILLEZO<span class="logo-accent">.AI</span></div>
+    <h2>Application Status Update 📌</h2>
+    <p>Hi ${name},</p>
+    <p>There is an update on your application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong>.</p>
+    <div>
+      <span class="badge">Status: ${statusLabel}</span>
+    </div>
+    <p>Visit your candidate dashboard to review details, timeline notes, or next steps:</p>
+    <div style="text-align: center;">
+      <a href="${portalUrl}" class="button">View Application Status</a>
+    </div>
+    <div class="footer">© ${new Date().getFullYear()} SKILLEZO AI • The Intelligent Career Platform</div>
+  </div>
+</body>
+</html>
+  `.trim();
+
+  try {
+    const result = await resend.emails.send({
+      from: env.EMAIL_FROM || "SKILLEZO <onboarding@resend.dev>",
+      to: [to],
+      subject: `Update on your application: ${jobTitle} at ${companyName} 📌`,
+      html,
+    });
+
+    if (result.error) {
+      console.error("[EmailService] Resend rejected status email:", result.error);
+      return false;
+    }
+    return true;
+  } catch (error: any) {
+    console.error("[EmailService] Failed to send status email:", error?.message || error);
+    return false;
+  }
+}

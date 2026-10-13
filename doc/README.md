@@ -11,6 +11,7 @@ doc/
 ├── README.md                      # [You Are Here] Central Documentation Index
 │
 ├── architecture/                  # Global blueprints & integration maps
+│   ├── NOTIFICATION_SYSTEM_ARCHITECTURE.md
 │   ├── SYSTEM_INTEGRATION_MASTER_MAP.md
 │   ├── CAREER_GPS_ARCHITECTURE.md
 │   ├── MASTER_RESUME_AND_TAILORED_VARIANTS_ARCHITECTURE.md

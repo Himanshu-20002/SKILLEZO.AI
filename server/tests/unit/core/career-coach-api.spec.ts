@@ -27,6 +27,24 @@ vi.mock("@/core/auth/auth", () => ({
   getAuth: vi.fn(),
 }));
 
+vi.mock("@/modules/plan", () => ({
+  planService: {
+    checkQuota: vi.fn().mockResolvedValue({
+      hasQuota: true,
+      remainingTokens: 5000,
+      requiredTokens: 50,
+      tier: "FREE",
+    }),
+    deductTokens: vi.fn().mockResolvedValue({
+      success: true,
+      remainingTokens: 4950,
+      deductedTokens: 50,
+      transactionId: "mock_tx_123",
+    }),
+  },
+  tokenGuard: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 describe("Phase 5: Career Coach API Integration & Transport Suite", () => {
   let app: express.Application;
   let orchestrateSpy: any;

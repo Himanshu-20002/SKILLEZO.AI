@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Clock,
   ChevronDown,
@@ -9,6 +10,9 @@ import {
   Sparkles,
   FileText,
   Ban,
+  Video,
+  MessageSquare,
+  ExternalLink,
 } from 'lucide-react';
 import { JobApplication, ApplicationStatus } from '@/types/job-center';
 import { getApplicationStatusLabel, HistoricalResumeSnapshot } from '@/types/application';
@@ -217,6 +221,72 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
                     </button>
                   </div>
                 </div>
+
+                {/* Interview Action Banner */}
+                {app.status === 'interview' && (
+                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-teal-500/10 border border-indigo-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-lg bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 shrink-0">
+                        <Video className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h5 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <span>{app.interviewSchedule?.roundTitle || 'Interview Scheduled'}</span>
+                        </h5>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {app.interviewSchedule?.scheduledAt
+                            ? `Scheduled: ${new Date(app.interviewSchedule.scheduledAt).toLocaleString([], {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}`
+                            : 'Date & Time scheduled by hiring team'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {app.interviewSchedule?.meetingLink && (
+                        <a
+                          href={app.interviewSchedule.meetingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>Join Meeting</span>
+                        </a>
+                      )}
+
+                      <Link
+                        href={`/dashboard/messages?appId=${app.id}`}
+                        className="px-3 py-1.5 rounded-lg bg-[#3D5AFE]/10 hover:bg-[#3D5AFE]/20 text-[#3D5AFE] dark:text-[#8098FF] font-bold text-xs flex items-center gap-1.5 border border-[#3D5AFE]/20 transition"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>View Chat</span>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Shortlisted Banner */}
+                {app.status === 'shortlisted' && (
+                  <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-between gap-3 text-xs">
+                    <span className="font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                      <span>You were shortlisted! The hiring team opened a message thread with you.</span>
+                    </span>
+                    <Link
+                      href={`/dashboard/messages?appId=${app.id}`}
+                      className="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-[11px] flex items-center gap-1 transition shadow-xs shrink-0"
+                    >
+                      <MessageSquare className="w-3 h-3" />
+                      <span>Open Chat</span>
+                    </Link>
+                  </div>
+                )}
 
                 {/* Next Step & Action Row */}
                 <div

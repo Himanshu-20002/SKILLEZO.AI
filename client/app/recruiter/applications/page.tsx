@@ -59,7 +59,11 @@ export default function RecruiterApplicationsPage() {
         limit: 100,
       });
       setApplications(data?.items || []);
-    } catch {
+    } catch (err: any) {
+      console.error('[RecruiterApplications] Failed to load applications:', err);
+      toast.error('Failed to load applications', {
+        description: err?.message || 'Please refresh the page.',
+      });
       setApplications([]);
     } finally {
       setLoading(false);

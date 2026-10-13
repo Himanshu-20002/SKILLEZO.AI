@@ -10,5 +10,6 @@ export * from "./job";
 export * from "./resume/ResumeRepository";
 export * from "./application/ApplicationRepository";
 export * from "./action/ActionProposalRepository";
+export * from "./notification";
 
 

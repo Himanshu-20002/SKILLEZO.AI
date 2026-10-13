@@ -28,6 +28,8 @@ import {
   ApplicationStage,
 } from '@/services/recruiter.service';
 import { STAGE_CONFIGS } from './KanbanColumn';
+import { ScheduleInterviewModal } from './ScheduleInterviewModal';
+import { CandidateMessagesTab } from './CandidateMessagesTab';
 import { toast } from 'sonner';
 
 interface CandidateReviewDrawerProps {
@@ -46,7 +48,8 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [reviewNote, setReviewNote] = useState('');
-  const [activeTab, setActiveTab] = useState<'resume' | 'skills' | 'history'>('resume');
+  const [activeTab, setActiveTab] = useState<'resume' | 'skills' | 'history' | 'messages'>('resume');
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   useEffect(() => {
     if (!application) return;
@@ -194,6 +197,18 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
           >
             <Clock className="w-4 h-4" />
             <span>Audit History ({history.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('messages')}
+            className={`py-3 px-2 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+              activeTab === 'messages'
+                ? 'border-[#3D5AFE] text-[#3D5AFE] dark:text-[#8098FF]'
+                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Chat & Messages</span>
           </button>
         </div>
 
@@ -354,6 +369,19 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
               )}
             </div>
           )}
+
+          {/* Tab 4: Two-Way Chat & Messages */}
+          {activeTab === 'messages' && (
+            <CandidateMessagesTab
+              applicationId={application.id}
+              initialConversationId={
+                (details as any)?.conversationId || (application as any).conversationId
+              }
+              candidateName={candidateName}
+              candidateId={application.candidate?.id || details?.candidate?.id || ''}
+              onScheduleInterviewClick={() => setIsScheduleModalOpen(true)}
+            />
+          )}
         </div>
 
         {/* Drawer Bottom Action Bar: Fast Stage Transition Buttons */}
@@ -376,18 +404,22 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 disabled={updating || currentStage === 'shortlisted'}
-                onClick={() => handleStageChange('shortlisted')}
+                onClick={() => {
+                  handleStageChange('shortlisted');
+                  setActiveTab('messages');
+                }}
                 className="px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer"
               >
                 Shortlist
               </button>
 
               <button
-                disabled={updating || currentStage === 'interview'}
-                onClick={() => handleStageChange('interview')}
-                className="px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer"
+                disabled={updating}
+                onClick={() => setIsScheduleModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
               >
-                Invite Interview
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Schedule Interview</span>
               </button>
 
               <button
@@ -409,6 +441,26 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Schedule Interview Modal */}
+      <ScheduleInterviewModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        applicationId={application.id}
+        candidateName={candidateName}
+        jobTitle={details?.job?.title || application.job?.title || 'Position'}
+        onScheduled={(result) => {
+          onStatusUpdated(application.id, 'interview');
+          if (details) {
+            setDetails({
+              ...details,
+              status: 'interview',
+              interviewSchedule: result.application?.interviewSchedule,
+            });
+          }
+          setActiveTab('messages');
+        }}
+      />
     </div>
   );
 };

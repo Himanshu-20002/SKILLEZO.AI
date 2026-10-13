@@ -7,6 +7,7 @@ import { X, ShieldCheck } from 'lucide-react';
 import BrandLogo from '@/components/auth/BrandLogo';
 import { useSession } from '@/lib/auth-client';
 import { sidebarSections, adminSidebarSections } from './Sidebar';
+import { SidebarTokenWidget } from './SidebarTokenWidget';
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -104,6 +105,11 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
               })}
             </div>
           ))}
+        </div>
+
+        {/* Bottom AI Token / Credit Card (Candidate only) */}
+        <div className="pb-3 border-t border-slate-200/80 dark:border-slate-800/80">
+          <SidebarTokenWidget onItemClick={onClose} />
         </div>
       </div>
     </div>

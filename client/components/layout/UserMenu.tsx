@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
   Settings,
-  Wallet,
+  Zap,
   LineChart,
   LogOut,
   ChevronDown,
@@ -199,16 +199,16 @@ export const UserMenu: React.FC = () => {
                   </Link>
 
                   <Link
-                    href="/dashboard/wallet"
+                    href="/dashboard/plan"
                     onClick={() => setIsOpen(false)}
                     className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
                   >
                     <div className="flex items-center gap-2.5">
-                      <Wallet className="w-4 h-4 text-amber-500" />
-                      <span>Wallet & Tokens</span>
+                      <Zap className="w-4 h-4 text-[#3D5AFE]" />
+                      <span>Plan & Usage</span>
                     </div>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                      Tokens
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#3D5AFE]/10 text-[#3D5AFE] dark:bg-[#3D5AFE]/20 border border-[#3D5AFE]/30">
+                      Free Plan
                     </span>
                   </Link>
 

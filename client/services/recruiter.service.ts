@@ -26,6 +26,8 @@ export interface RecruiterApplicationItem {
     employabilityScore?: number;
     skills?: string[];
   };
+  conversationId?: string | null;
+  interviewSchedule?: any | null;
   resume: {
     id: string;
     title: string;
@@ -39,6 +41,8 @@ export interface RecruiterApplicationItem {
 export interface RecruiterApplicationDetails {
   id: string;
   status: ApplicationStage;
+  conversationId?: string | null;
+  interviewSchedule?: any | null;
   appliedAt: string;
   updatedAt: string;
   job: {

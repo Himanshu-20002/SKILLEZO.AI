@@ -12,6 +12,8 @@ import {
   createVariantValidator,
 } from "./resume.validator";
 import { asyncHandler } from "@/core/utils/asyncHandler";
+import { tokenGuard } from "@/modules/plan";
+import { TokenFeature } from "@/database/models/TokenUsageLog.model";
 
 const router = Router();
 const controller = new ResumeController();
@@ -21,6 +23,7 @@ router.use(requireAuth);
 router.post(
   "/upload",
   heavyOpsRateLimiter,
+  tokenGuard(TokenFeature.RESUME_ATS),
   resumeUploadMiddleware.single("file"),
   validate({ body: uploadResumeValidator }),
   asyncHandler(controller.uploadResume)

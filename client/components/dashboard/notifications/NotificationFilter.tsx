@@ -12,6 +12,8 @@ interface NotificationFilterProps {
 
 const categoryOptions: FilterOption[] = [
   { label: 'All Categories', value: 'all' },
+  { label: 'Job Alerts', value: 'job_alert' },
+  { label: 'Applications', value: 'application' },
   { label: 'Skill Verification', value: 'verification' },
   { label: 'Assessments', value: 'assessment' },
   { label: 'Security Alerts', value: 'security' },

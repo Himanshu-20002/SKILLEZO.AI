@@ -14,6 +14,7 @@ import {
   FolderGit2,
   Bot,
   Briefcase,
+  MessageSquare,
   Sparkles,
   ShieldCheck,
   ChevronLeft,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/lib/auth-client';
 import BrandLogo from '@/components/auth/BrandLogo';
+import { SidebarTokenWidget } from './SidebarTokenWidget';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -115,6 +117,12 @@ export const sidebarSections: NavSection[] = [
         href: '/dashboard/job-center',
         icon: Briefcase,
         badge: 'JOBS',
+      },
+      {
+        label: 'Company Messages',
+        href: '/dashboard/messages',
+        icon: MessageSquare,
+        badge: 'NEW',
       },
     ],
   },
@@ -297,16 +305,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
         ))}
       </div>
 
-      {/* Footer Pro Banner */}
-      {!collapsed && (
-        <div className="p-3.5 m-3 rounded-2xl bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800/90 text-center shrink-0 shadow-sm transition-colors">
-          <div className="inline-flex p-2 rounded-xl bg-[#3D5AFE]/10 dark:bg-[#3D5AFE]/20 text-[#3D5AFE] dark:text-[#00D9C0] mb-1.5">
-            <Zap className="w-4 h-4" />
-          </div>
-          <h4 className="text-xs font-bold text-slate-900 dark:text-white">SKILLEZO AI</h4>
-          <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">Enterprise Career Intelligence</p>
-        </div>
-      )}
+      {/* Bottom AI Token / Credit Card (Candidate only) */}
+      <SidebarTokenWidget collapsed={collapsed} />
     </aside>
 
   );

@@ -289,7 +289,26 @@ export default function SmartJobCenterPage() {
           appliedDate: app.appliedAt ? new Date(app.appliedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           matchScore: 85,
           status: app.status || 'applied',
-          nextStep: app.status === 'withdrawn' ? 'Application withdrawn by candidate' : 'Awaiting recruiter review',
+          nextStep:
+            app.status === 'withdrawn'
+              ? 'Application withdrawn by candidate'
+              : app.status === 'interview'
+              ? (app as any).interviewSchedule
+                ? `Interview on ${new Date((app as any).interviewSchedule.scheduledAt).toLocaleDateString([], {
+                    month: 'short',
+                    day: 'numeric',
+                  })} at ${new Date((app as any).interviewSchedule.scheduledAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}`
+                : 'Interview stage active — Check your messages'
+              : app.status === 'shortlisted'
+              ? 'Shortlisted! Check Company Messages to chat with recruiter'
+              : app.status === 'offered'
+              ? 'Offer extended! Check your messages for offer details'
+              : 'Awaiting recruiter review',
+          interviewSchedule: (app as any).interviewSchedule || null,
+          conversationId: (app as any).conversationId || null,
           resumeUsed: app.resumeSnapshot?.originalFileName || app.resumeSnapshot?.title || 'Attached Resume',
           atsScore: 85,
           resumeSnapshot: app.resumeSnapshot || null,

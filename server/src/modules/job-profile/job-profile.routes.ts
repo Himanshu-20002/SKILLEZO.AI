@@ -5,6 +5,8 @@ import { tailoringPlanController } from "@/modules/job-tailoring/tailoring-plan.
 import { tailoredResumeController } from "@/modules/job-tailoring/tailored-resume.controller";
 import { requireAuth } from "@/core/auth/middleware/requireAuth";
 import { asyncHandler } from "@/core/utils/asyncHandler";
+import { tokenGuard } from "@/modules/plan";
+import { TokenFeature } from "@/database/models/TokenUsageLog.model";
 
 const router = Router();
 
@@ -21,7 +23,14 @@ router.patch("/:id/tailoring-plan/proposals/batch", asyncHandler(tailoringPlanCo
 router.post("/:id/tailoring-plan/proposals/batch", asyncHandler(tailoringPlanController.batchUpdateDecisions));
 router.patch("/:id/tailoring-plan/proposals/:proposalId", asyncHandler(tailoringPlanController.updateProposalDecision));
 router.post("/:id/tailoring-plan/regenerate", asyncHandler(tailoringPlanController.regeneratePlan));
-router.post("/:id/tailoring-plan/generate", asyncHandler(tailoredResumeController.generateTailoredResume));
+
+// Protected: AI Tailored Resume Generation (700 tokens)
+router.post(
+  "/:id/tailoring-plan/generate",
+  tokenGuard(TokenFeature.TAILORED_RESUME),
+  asyncHandler(tailoredResumeController.generateTailoredResume)
+);
+
 router.get("/:id/tailored-resume", asyncHandler(tailoredResumeController.getTailoredResume));
 router.get("/:id", asyncHandler(jobProfileController.getJobProfile));
 router.get("/", asyncHandler(jobProfileController.listJobProfiles));

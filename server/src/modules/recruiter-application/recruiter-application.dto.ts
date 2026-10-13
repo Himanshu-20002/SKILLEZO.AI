@@ -24,7 +24,14 @@ export interface RecruiterApplicationListItemDTO {
   } | null;
   candidate: {
     id: string;
+    name?: string;
+    email?: string;
+    headline?: string;
+    employabilityScore?: number;
+    skills?: string[];
   };
+  conversationId?: string | null;
+  interviewSchedule?: any | null;
   resume: {
     id: string;
     title: string;
@@ -39,9 +46,19 @@ export interface RecruiterApplicationDetailsDTO {
   id: string;
   userId: string;
   status: ApplicationStatus;
+  conversationId?: string | null;
+  interviewSchedule?: any | null;
   job: any;
   candidate: {
     id: string;
+    name?: string;
+    email?: string;
+    headline?: string;
+    phone?: string;
+    location?: string;
+    bio?: string;
+    employabilityScore?: number;
+    verifiedSkills?: any[];
   };
   resume: any;
   resumeSnapshot: ResumeSnapshotDTO | null;

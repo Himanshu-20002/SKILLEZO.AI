@@ -8,6 +8,7 @@ import { JobStatus, JobSourceType, CompetencyImportance } from "@/core/constants
 import { AppError } from "@/core/utils/AppError";
 import { ERROR_CODES } from "@/core/constants/error-codes";
 import { HTTP_STATUS } from "@/core/constants/http-status";
+import { notificationService } from "@/modules/notifications";
 
 export class JobsService {
   private readonly jobRepository: JobRepository;
@@ -187,6 +188,18 @@ export class JobsService {
       publishedAt: new Date(),
     } as any);
 
+    // Asynchronously trigger job match alerts for candidates
+    notificationService
+      .notifyJobMatches({
+        jobId: job._id.toString(),
+        jobTitle: job.title,
+        companyName: job.companyName || "Hiring Company",
+        requiredSkills: (job.requiredSkills || []).map((s: any) => (typeof s === "string" ? s : s.name)),
+      })
+      .catch((err) => {
+        console.error("[JobsService] Failed to notify matching candidates on job creation:", err);
+      });
+
     return job;
   }
 
@@ -197,11 +210,16 @@ export class JobsService {
     }).select("companyId");
 
     const companyIds = memberships.map((m) => m.companyId).filter(Boolean);
+    const customCompanyIds = companyIds.filter(
+      (cid) => cid.toString() !== "6ac33e72bce5333c78d5e58d"
+    );
 
+    // Only return jobs created by this recruiter, or recruiter-created jobs within their dedicated company
     const query: any = {
+      createdBy: { $ne: null },
       $or: [
         { createdBy: userId },
-        ...(companyIds.length > 0 ? [{ companyId: { $in: companyIds } }] : []),
+        ...(customCompanyIds.length > 0 ? [{ companyId: { $in: customCompanyIds } }] : []),
       ],
     };
 

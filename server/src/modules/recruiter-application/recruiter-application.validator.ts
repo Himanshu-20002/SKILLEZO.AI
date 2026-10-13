@@ -13,7 +13,7 @@ export const getRecruiterApplicationsQueryValidator = z.object({
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 20))
-    .pipe(z.number().int().positive().max(50)),
+    .pipe(z.number().int().positive().max(100)),
   jobId: z.string().trim().regex(objectIdRegex, "Invalid jobId ObjectId format").optional(),
   status: z
     .enum(Object.values(ApplicationStatus) as [string, ...string[]])

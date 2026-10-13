@@ -92,6 +92,8 @@ export interface JobApplication {
   atsScore: number;
   resumeSnapshot?: HistoricalResumeSnapshot | null;
   resumeSnapshotHash?: string | null;
+  interviewSchedule?: any | null;
+  conversationId?: string | null;
 }
 
 export interface JobFilterState {

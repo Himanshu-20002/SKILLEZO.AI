@@ -90,6 +90,16 @@ const oauthRoleSyncPlugin: BetterAuthPlugin = {
               ctx.context.session.user.role = UserRole.RECRUITER;
             }
           }
+
+          // Auto-provision Free Plan + 5,000 Free tokens if not already provisioned
+          if (user?.id) {
+            try {
+              const { planService } = await import("@/modules/plan");
+              await planService.getOrCreateAccount(user.id.toString());
+            } catch (pErr) {
+              console.error("[OAuth Plan Auto-Provision Hook Error]:", pErr);
+            }
+          }
         }),
       },
     ],
@@ -240,6 +250,18 @@ export function getAuth() {
                 }
               } catch (err) {
                 console.error("[OAuth user.create.before Hook Error]:", err);
+              }
+            },
+            after: async (user: any) => {
+              try {
+                const userId = user?.id || user?._id;
+                if (userId) {
+                  const { planService } = await import("@/modules/plan");
+                  await planService.getOrCreateAccount(userId.toString());
+                  console.log(`[Plan Service] Successfully provisioned Free Plan + 5,000 tokens for user: ${userId}`);
+                }
+              } catch (err) {
+                console.error("[Plan Auto-Provision User Create Hook Error]:", err);
               }
             },
           },

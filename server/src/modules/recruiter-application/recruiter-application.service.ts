@@ -12,6 +12,9 @@ import { JobModel } from "@/database/models/Job.model";
 import { UserModel } from "@/database/models/User.model";
 import { ProfileModel } from "@/database/models/Profile.model";
 import { Readable } from "stream";
+import { Types } from "mongoose";
+import { notificationService } from "@/modules/notifications";
+import { messagesService } from "@/modules/messages";
 import {
   UpdateRecruiterApplicationStatusDTO,
   PaginatedRecruiterApplicationsResponseDTO,
@@ -82,10 +85,11 @@ export class RecruiterApplicationService {
 
     const companyIds = activeMemberships.map((m) => m.companyId.toString());
 
-    // Find only jobs belonging to these companies or created directly by this recruiter
+    // Find only jobs belonging to these companies, enterprise network, or created directly by this recruiter
     const jobs = await this.jobRepository.findMany({
       $or: [
         { companyId: { $in: companyIds } },
+        { companyName: "SKILLEZO Enterprise Talent Network" },
         { createdBy: userId }
       ]
     });
@@ -119,9 +123,40 @@ export class RecruiterApplicationService {
 
     const result = await this.applicationRepository.findCompanyApplications(companyJobIds, query);
 
+    const userIds = [...new Set(result.items.map((app) => app.userId).filter(Boolean))];
+    const userObjectIds = userIds
+      .map((id) => {
+        try {
+          return new Types.ObjectId(id);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    const [users, profiles] = await Promise.all([
+      UserModel.collection
+        .find({ _id: { $in: userObjectIds as any[] } }, { projection: { name: 1, email: 1 } })
+        .toArray(),
+      ProfileModel.find({ userId: { $in: userIds } })
+        .select("userId name headline employabilityScore skills targetRole")
+        .lean(),
+    ]);
+
+    const userMap = new Map(users.map((u: any) => [u._id ? u._id.toString() : "", u]));
+    const profileMap = new Map(profiles.map((p: any) => [p.userId, p]));
+
     const items: RecruiterApplicationListItemDTO[] = result.items.map((app) => {
       const jobDoc = app.jobId as any;
       const resumeDoc = app.resumeId as any;
+      const userDoc = userMap.get(app.userId);
+      const profileDoc = profileMap.get(app.userId) as any;
+
+      const candidateName =
+        userDoc?.name ||
+        (userDoc?.email ? userDoc.email.split("@")[0].replace(/[._]/g, " ") : "Candidate Applicant");
+
+      const candidateSkills = (profileDoc?.skills || []).map((s: any) => (typeof s === "string" ? s : s.name));
 
       return {
         id: app._id.toString(),
@@ -135,7 +170,14 @@ export class RecruiterApplicationService {
           : null,
         candidate: {
           id: app.userId,
+          name: candidateName,
+          email: userDoc?.email,
+          headline: profileDoc?.headline || profileDoc?.targetRole || undefined,
+          employabilityScore: profileDoc?.profileCompleteness?.score || undefined,
+          skills: candidateSkills,
         },
+        conversationId: (app as any).conversationId ? (app as any).conversationId.toString() : null,
+        interviewSchedule: (app as any).interviewSchedule || null,
         resume: resumeDoc && typeof resumeDoc === "object" && resumeDoc.fileName
           ? {
             id: resumeDoc._id.toString(),
@@ -202,10 +244,40 @@ export class RecruiterApplicationService {
       };
     }
 
+    let userObjId: any = null;
+    try {
+      userObjId = new Types.ObjectId(application.userId);
+    } catch {}
+
+    const [userDoc, profileDoc] = await Promise.all([
+      userObjId
+        ? UserModel.collection.findOne({ _id: userObjId }, { projection: { name: 1, email: 1 } })
+        : null,
+      ProfileModel.findOne({ userId: application.userId }).lean(),
+    ]);
+
+    const candidateName =
+      userDoc?.name ||
+      (userDoc?.email ? userDoc.email.split("@")[0].replace(/[._]/g, " ") : "Candidate Applicant");
+
+    const locationStr = profileDoc?.location
+      ? [profileDoc.location.city, profileDoc.location.country].filter(Boolean).join(", ")
+      : undefined;
+
+    const verifiedSkillsList = (profileDoc?.skills || [])
+      .filter((s) => s.verified)
+      .map((s) => ({
+        name: s.name,
+        proficiency: s.proficiency || "Intermediate",
+        score: s.score || (s.level ? s.level * 20 : 80),
+      }));
+
     return {
       id: application._id.toString(),
       userId: application.userId,
       status: application.status,
+      conversationId: application.conversationId ? application.conversationId.toString() : null,
+      interviewSchedule: application.interviewSchedule || null,
       job: jobDoc && typeof jobDoc === "object" && jobDoc.title
         ? {
           id: jobDoc._id.toString(),
@@ -218,6 +290,14 @@ export class RecruiterApplicationService {
         : null,
       candidate: {
         id: application.userId,
+        name: candidateName,
+        email: userDoc?.email,
+        headline: profileDoc?.headline || profileDoc?.targetRole || undefined,
+        phone: profileDoc?.phone || undefined,
+        location: locationStr,
+        bio: profileDoc?.bio || undefined,
+        employabilityScore: (profileDoc as any)?.profileCompleteness?.score || undefined,
+        verifiedSkills: verifiedSkillsList,
       },
       resume: resumeDoc && typeof resumeDoc === "object" && resumeDoc.fileName
         ? {
@@ -432,6 +512,36 @@ export class RecruiterApplicationService {
     });
 
     await application.save();
+
+    // When status advances to SHORTLISTED, auto-provision 2-way conversation channel
+    if (dto.status === ApplicationStatus.SHORTLISTED) {
+      messagesService
+        .getOrCreateConversation(
+          application._id.toString(),
+          userId,
+          dto.reason || "Congratulations! Your profile has been shortlisted. We'd love to connect regarding this opportunity."
+        )
+        .catch((err) => {
+          console.error("[RecruiterApplicationService] Failed to auto-provision conversation on shortlist:", err);
+        });
+    }
+
+    // Asynchronously notify candidate of status update (In-App + Email)
+    const jobDoc = application.jobId as any;
+    const jobTitle = jobDoc && typeof jobDoc === "object" && jobDoc.title ? jobDoc.title : "Application";
+    const companyName = jobDoc && typeof jobDoc === "object" && jobDoc.companyName ? jobDoc.companyName : "Hiring Team";
+
+    notificationService
+      .notifyApplicationStatusChange({
+        candidateUserId: application.userId,
+        jobTitle,
+        companyName,
+        newStatus: dto.status,
+        applicationId: application._id.toString(),
+      })
+      .catch((err) => {
+        console.error("[RecruiterApplicationService] Failed to notify candidate on status update:", err);
+      });
 
     return await this.getCompanyApplicationDetails(userId, applicationId);
   }

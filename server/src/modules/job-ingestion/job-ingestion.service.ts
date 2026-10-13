@@ -3,6 +3,7 @@ import { ProviderRegistry } from "@/integrations/jobs/provider.registry";
 import { IngestJobsDTO, IngestionSummaryResponse } from "./job-ingestion.dto";
 import { JobSourceType, JobStatus } from "@/core/constants/enums";
 import { IJob } from "@/database/models/Job.model";
+import { notificationService } from "@/modules/notifications";
 
 export class JobIngestionService {
   private readonly jobRepository: JobRepository;
@@ -64,9 +65,19 @@ export class JobIngestionService {
           status: JobStatus.ACTIVE,
         };
 
-        const { isNew } = await this.jobRepository.upsertExternalJob(jobPayload);
+        const { job, isNew } = await this.jobRepository.upsertExternalJob(jobPayload);
         if (isNew) {
           createdCount++;
+          notificationService
+            .notifyJobMatches({
+              jobId: job._id.toString(),
+              jobTitle: job.title,
+              companyName: job.companyName || nj.companyName || "Hiring Company",
+              requiredSkills: (job.requiredSkills || []).map((s) => s.name),
+            })
+            .catch((err) => {
+              console.error("[JobIngestionService] Failed to notify matching candidates:", err);
+            });
         } else {
           updatedCount++;
         }

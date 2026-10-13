@@ -71,8 +71,29 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
         window.dispatchEvent(new CustomEvent("account-suspended"));
       }
     }
+
+    if (response.status === 402 && code === "INSUFFICIENT_TOKENS") {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("skillezo:insufficient-tokens", {
+            detail: details || { required: 0, balance: 0, missing: 0 },
+          })
+        );
+      }
+    }
     
     throw new ApiError(message, response.status, code, details);
+  }
+
+  // Intercept response telemetry header to update in-memory token counters
+  if (typeof window !== "undefined") {
+    const remainingHeader = response.headers.get("x-tokens-remaining") || response.headers.get("X-Tokens-Remaining");
+    if (remainingHeader) {
+      const remaining = parseInt(remainingHeader, 10);
+      if (!isNaN(remaining)) {
+        window.dispatchEvent(new CustomEvent("skillezo:tokens-updated", { detail: { remaining } }));
+      }
+    }
   }
 
   return response.json();

@@ -90,6 +90,10 @@ export interface IApplication extends Document {
   status: ApplicationStatus;
   statusHistory: IApplicationTimelineEvent[];
 
+  // Two-way Recruiter-Candidate Channel & Interview
+  conversationId?: Types.ObjectId | null;
+  interviewSchedule?: any | null;
+
   // Application Timestamps
   appliedAt?: Date | null;
   createdAt: Date;
@@ -227,6 +231,16 @@ const applicationSchema = new Schema<IApplication>(
       index: true,
     },
     statusHistory: [statusHistorySchema],
+    conversationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Conversation",
+      default: null,
+      index: true,
+    },
+    interviewSchedule: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
     appliedAt: { type: Date, default: null },
   },
   {

@@ -20,6 +20,14 @@ const CoachFloatingWidget = dynamic(
   { ssr: false }
 );
 
+const UpgradePlanModal = dynamic(
+  () =>
+    import('@/components/dashboard/plan/UpgradePlanModal').then(
+      (mod) => mod.UpgradePlanModal
+    ),
+  { ssr: false }
+);
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -208,6 +216,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
         {/* Global Floating AI Career Coach Assistant Widget */}
         {!isAdmin && !isSuspended && <CoachFloatingWidget />}
+
+        {/* Global Floating Upgrade Paywall Modal (Listens to 402 insufficient tokens) */}
+        {!isAdmin && !isSuspended && <UpgradePlanModal />}
       </div>
 
       {/* Centered Glassmorphism Lock Screen Overlay when user is suspended */}

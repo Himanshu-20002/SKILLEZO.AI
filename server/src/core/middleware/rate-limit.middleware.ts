@@ -36,7 +36,7 @@ export const globalRateLimiter = rateLimit({
     xForwardedForHeader: false,
   },
   skip: (req: Request) => {
-    if (process.env.NODE_ENV === "test") return true;
+    if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") return true;
     const path = req.path.toLowerCase();
     return (
       path === "/" ||

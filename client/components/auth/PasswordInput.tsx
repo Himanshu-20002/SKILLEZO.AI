@@ -4,14 +4,14 @@ import { useState, forwardRef, InputHTMLAttributes, ReactNode } from "react";
 import { Eye, EyeOff, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface PasswordInputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface PasswordInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   rightLabelSlot?: ReactNode;
 }
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
-  ({ label = "Password", error, rightLabelSlot, className, disabled, ...props }, ref) => {
+  ({ label, error, rightLabelSlot, className, disabled, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
 
     return (
@@ -27,8 +27,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           </div>
         )}
 
-        <div className="relative flex items-center">
-          <div className="pointer-events-none absolute left-3.5 text-slate-400">
+        <div className="relative flex items-center w-full">
+          <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 z-10 flex items-center">
             <Lock className="h-4 w-4" />
           </div>
 
@@ -50,15 +50,19 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
 
           <button
             type="button"
-            onClick={() => setShowPassword((prev) => !prev)}
+            onClick={(e) => {
+              e.preventDefault();
+              setShowPassword((prev) => !prev);
+            }}
             disabled={disabled}
-            className="absolute right-3.5 grid place-items-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer focus:outline-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer focus:outline-none"
             aria-label={showPassword ? "Hide password" : "Show password"}
+            tabIndex={-1}
           >
             {showPassword ? (
-              <EyeOff className="h-4 w-4" />
+              <EyeOff className="h-4 w-4 text-[#00D9C0]" />
             ) : (
-              <Eye className="h-4 w-4" />
+              <Eye className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" />
             )}
           </button>
         </div>
