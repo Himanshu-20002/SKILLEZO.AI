@@ -65,7 +65,7 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
 
   // 2. Dynamic Verified Credentials / Badges Count
   const verifiedCount = records.filter((r) => r.status === 'verified').length;
-  const totalCredentialsCount = verifiedCount > 0 ? verifiedCount : (profile?.skills?.filter(s => s.verified)?.length || 0);
+  const totalCredentialsCount = verifiedCount;
 
   // 3. Dynamic Verification Rate / Score
   const evaluatedRecords = records.filter((r) => r.status === 'verified' || r.status === 'failed');

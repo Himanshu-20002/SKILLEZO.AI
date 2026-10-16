@@ -223,7 +223,7 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
                 </span>
               </div>
               <p className="text-sm font-black text-white whitespace-nowrap">
-                {readinessScore >= 85 ? 'Top 5% Talent' : readinessScore >= 60 ? 'Recruiter Ready' : 'Getting Started'}
+                {verifiedCount > 0 && readinessScore >= 85 ? 'Top 5% Talent' : readinessScore >= 60 ? 'Recruiter Ready' : 'Getting Started'}
               </p>
               <p className={`text-[11px] font-bold flex items-center gap-1 ${verifiedCount > 0 ? 'text-emerald-300' : 'text-cyan-200'}`}>
                 <span>●</span> {verifiedCount > 0 ? `${verifiedCount} Verified` : 'Verification Pending'}

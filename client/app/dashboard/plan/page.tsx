@@ -13,6 +13,7 @@ import {
   PricingPlan,
   TokenUsageLogItem,
 } from '@/services/plan.service';
+import { billingService } from '@/services/billing.service';
 import { toast } from 'sonner';
 
 export default function PlanAndUsagePage() {
@@ -72,7 +73,7 @@ export default function PlanAndUsagePage() {
     setPage(newPage);
   };
 
-  const handleUpgradeClick = (tier = 'PRO') => {
+  const handleUpgradeClick = async (tier = 'PRO') => {
     if (tier === 'ENTERPRISE') {
       toast.info('Enterprise Tier Inquiry', {
         description: 'Please contact support@skillezo.ai for institutional placement bulk packages.',
@@ -80,10 +81,33 @@ export default function PlanAndUsagePage() {
       return;
     }
 
-    // Phase 4 will connect Stripe checkout session here
-    toast.success('Upgrade to SKILLEZO Pro', {
-      description: 'Redirecting to checkout session...',
-    });
+    try {
+      toast.loading('Initiating secure checkout...', { id: 'checkout-toast' });
+      await billingService.startCheckout({
+        billingCycle: 'MONTHLY',
+        onSuccess: (result) => {
+          toast.dismiss('checkout-toast');
+          toast.success('Upgraded to SKILLEZO Pro!', {
+            description: result.message || '100,000 AI tokens have been credited to your account.',
+          });
+          loadData(true);
+        },
+        onError: (err) => {
+          toast.dismiss('checkout-toast');
+          toast.error('Payment Failed or Cancelled', {
+            description: err?.message || 'Could not complete checkout.',
+          });
+        },
+        onDismiss: () => {
+          toast.dismiss('checkout-toast');
+        },
+      });
+    } catch (err: any) {
+      toast.dismiss('checkout-toast');
+      toast.error('Upgrade Error', {
+        description: err?.message || 'Failed to initiate payment.',
+      });
+    }
   };
 
   return (

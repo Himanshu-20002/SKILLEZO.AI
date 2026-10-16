@@ -18,8 +18,8 @@ export const SidebarTokenWidget: React.FC<SidebarTokenWidgetProps> = ({
 }) => {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [plan, setPlan] = useState<PlanDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [plan, setPlan] = useState<PlanDetails | null>(() => planService.getCachedPlan());
+  const [loading, setLoading] = useState<boolean>(() => !planService.getCachedPlan());
 
   // Role Gate: Strictly candidate only
   const role = ((session?.user as any)?.role || '').toLowerCase();
@@ -62,13 +62,15 @@ export const SidebarTokenWidget: React.FC<SidebarTokenWidgetProps> = ({
           const total = prev.totalAllowance + prev.bonusTokens;
           const consumed = Math.max(0, total - remaining);
           const percent = total > 0 ? Math.min(100, Math.round((consumed / total) * 100)) : 100;
-          return {
+          const updated: PlanDetails = {
             ...prev,
             remainingTokens: remaining,
             consumedTokens: consumed,
             usagePercent: percent,
             isExhausted: remaining <= 0,
           };
+          planService.setCachedPlan(updated);
+          return updated;
         });
       }
     };
@@ -85,8 +87,8 @@ export const SidebarTokenWidget: React.FC<SidebarTokenWidgetProps> = ({
     return null;
   }
 
-  // Loading Skeleton Placeholder
-  if (loading || !plan) {
+  // Loading Skeleton Placeholder: only shown on very first visit before any cache exists
+  if (!plan) {
     if (collapsed) {
       return (
         <div className="w-10 h-10 mx-auto my-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 animate-pulse" />
@@ -239,3 +241,5 @@ export const SidebarTokenWidget: React.FC<SidebarTokenWidgetProps> = ({
     </Link>
   );
 };
+
+export default SidebarTokenWidget;

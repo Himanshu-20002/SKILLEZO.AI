@@ -81,15 +81,17 @@ const actionMetadataMap: Record<string, ActionMetadata> = {
 
 export const QuickActions: React.FC = () => {
   return (
-    <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.4)] flex flex-col justify-between">
-      <div>
-        <CardHeader
-          title="Career Acceleration Hub"
-          subtitle="Direct access to AI career intelligence & job portals"
-          icon={<Zap className="w-4 h-4 text-[#3D5AFE] dark:text-[#00D9C0]" />}
-        />
+    <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.4)] flex flex-col justify-between h-full lg:h-[450px]">
+      <div className="flex flex-col h-full justify-between">
+        <div className="shrink-0">
+          <CardHeader
+            title="Career Acceleration Hub"
+            subtitle="Direct access to AI career intelligence & job portals"
+            icon={<Zap className="w-4 h-4 text-[#3D5AFE] dark:text-[#00D9C0]" />}
+          />
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2 flex-1 items-stretch">
           {QUICK_ACTIONS.map((action) => {
             const meta = actionMetadataMap[action.id] || actionMetadataMap['qa-1'];
             return (

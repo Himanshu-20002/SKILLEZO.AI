@@ -34,6 +34,13 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().default("SKILLEZO <onboarding@resend.dev>"),
   AI_CONTEXT_CACHE_TTL_SECONDS: z.string().optional().default("600"),
   REDIS_URL: z.string().optional().default(""),
+  RAZORPAY_KEY_ID: z.string().optional().default(""),
+  RAZORPAY_KEY_SECRET: z.string().optional().default(""),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(""),
+  MOCK_BILLING_ENABLED: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return true;
+    return val === "true" || val === true || val === "1";
+  }, z.boolean()).default(true),
 });
 
 const parseEnv = () => {

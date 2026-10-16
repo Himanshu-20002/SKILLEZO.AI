@@ -82,7 +82,7 @@ export default function DashboardPage() {
         <StatsGrid profile={profile} records={records} isLoading={isLoading} />
 
         {/* Middle Section: Quick Actions & Live Activity Timeline */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           <QuickActions />
           <ActivityTimeline userSkills={candidateSkills} isLoading={isLoading} />
         </div>

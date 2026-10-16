@@ -68,12 +68,89 @@ export interface CheckQuotaResult {
 }
 
 class PlanService {
+  private cachedPlan: PlanDetails | null = null;
+  private cacheTimestamp = 0;
+  private inFlightPromise: Promise<PlanDetails> | null = null;
+  private readonly CACHE_TTL_MS = 60_000;
+  private readonly STORAGE_KEY = "skillezo_plan_cache";
+
+  /**
+   * Synchronously returns cached plan from memory or sessionStorage
+   */
+  getCachedPlan(): PlanDetails | null {
+    if (this.cachedPlan) {
+      return this.cachedPlan;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem(this.STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed.remainingTokens === "number") {
+            this.cachedPlan = parsed;
+            return parsed;
+          }
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Updates local cached plan manually (e.g. on deduction event)
+   */
+  setCachedPlan(plan: PlanDetails): void {
+    this.cachedPlan = plan;
+    this.cacheTimestamp = Date.now();
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(plan));
+      } catch {
+        // Ignore storage errors
+      }
+    }
+  }
+
+  /**
+   * Clears the cache (e.g. on logout)
+   */
+  clearCache(): void {
+    this.cachedPlan = null;
+    this.cacheTimestamp = 0;
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.removeItem(this.STORAGE_KEY);
+      } catch {
+        // Ignore errors
+      }
+    }
+  }
+
   /**
    * Fetches user's current subscription tier, remaining token balance, and usage percentage
    */
-  async getPlanStatus(): Promise<PlanDetails> {
-    const response = await apiFetch<{ success: boolean; data: PlanDetails }>("/api/plan/status");
-    return response.data;
+  async getPlanStatus(forceRefresh = false): Promise<PlanDetails> {
+    const isFresh = Date.now() - this.cacheTimestamp < this.CACHE_TTL_MS;
+    if (!forceRefresh && this.cachedPlan && isFresh) {
+      return this.cachedPlan;
+    }
+
+    if (this.inFlightPromise) {
+      return this.inFlightPromise;
+    }
+
+    this.inFlightPromise = apiFetch<{ success: boolean; data: PlanDetails }>("/api/plan/status")
+      .then((response) => {
+        this.setCachedPlan(response.data);
+        return response.data;
+      })
+      .finally(() => {
+        this.inFlightPromise = null;
+      });
+
+    return this.inFlightPromise;
   }
 
   /**

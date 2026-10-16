@@ -11,7 +11,10 @@ import {
   ArrowRight,
   ShieldCheck,
   Flame,
+  Loader2,
 } from 'lucide-react';
+import { billingService } from '@/services/billing.service';
+import { toast } from 'sonner';
 
 export interface InsufficientTokenDetails {
   balance?: number;
@@ -24,6 +27,7 @@ export interface InsufficientTokenDetails {
 export const UpgradePlanModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [details, setDetails] = useState<InsufficientTokenDetails | null>(null);
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   useEffect(() => {
     const handleInsufficientTokens = (event: Event) => {
@@ -49,6 +53,36 @@ export const UpgradePlanModal: React.FC = () => {
   const featureLabel = details?.feature
     ? featureNames[details.feature] || details.feature.replace(/_/g, ' ')
     : 'AI Feature';
+
+  const handleDirectUpgrade = async () => {
+    setIsUpgrading(true);
+    try {
+      await billingService.startCheckout({
+        billingCycle: 'MONTHLY',
+        onSuccess: (result) => {
+          setIsUpgrading(false);
+          setIsOpen(false);
+          toast.success('Upgraded to SKILLEZO Pro!', {
+            description: result.message || '100,000 AI tokens have been credited to your account.',
+          });
+        },
+        onError: (err) => {
+          setIsUpgrading(false);
+          toast.error('Upgrade Failed', {
+            description: err?.message || 'Could not complete payment.',
+          });
+        },
+        onDismiss: () => {
+          setIsUpgrading(false);
+        },
+      });
+    } catch (err: any) {
+      setIsUpgrading(false);
+      toast.error('Checkout Error', {
+        description: err?.message || 'Failed to initiate checkout.',
+      });
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -155,15 +189,24 @@ export const UpgradePlanModal: React.FC = () => {
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
-              <Link
-                href="/dashboard/plan"
-                onClick={() => setIsOpen(false)}
-                className="w-full sm:flex-1 py-3 px-5 rounded-2xl bg-[#3D5AFE] hover:bg-[#324ad4] text-white font-bold text-xs shadow-lg shadow-[#3D5AFE]/30 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+              <button
+                onClick={handleDirectUpgrade}
+                disabled={isUpgrading}
+                className="w-full sm:flex-1 py-3 px-5 rounded-2xl bg-[#3D5AFE] hover:bg-[#324ad4] text-white font-bold text-xs shadow-lg shadow-[#3D5AFE]/30 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] disabled:opacity-60"
               >
-                <Sparkles className="w-4 h-4" />
-                <span>Upgrade to Pro (₹399/mo)</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+                {isUpgrading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Upgrade to Pro (₹399/mo)</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
 
               <Link
                 href="/dashboard/plan"

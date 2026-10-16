@@ -56,7 +56,7 @@ export const ProfileCompletionGuide: React.FC<ProfileCompletionGuideProps> = ({
   const hasTargetRole = Boolean(profile?.targetRole && profile.targetRole.trim().length > 0);
   const hasResume = resumesCount > 0;
   const hasSkills = (profile?.skills?.length || 0) >= 3;
-  const hasVerifiedSkill = verifiedSkillsCount > 0 || (profile?.skills?.some((s) => s.verified) ?? false);
+  const hasVerifiedSkill = verifiedSkillsCount > 0;
 
   const steps = [
     {

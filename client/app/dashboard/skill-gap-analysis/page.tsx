@@ -185,7 +185,7 @@ export default function SkillGapAnalysisPage() {
       let updatedSkills;
       if (skillIdx >= 0) {
         updatedSkills = existingSkills.map((s, idx) =>
-          idx === skillIdx ? { ...s, level: level as any, verified: true } : s
+          idx === skillIdx ? { ...s, level: level as any } : s
         );
       } else {
         updatedSkills = [
@@ -193,7 +193,7 @@ export default function SkillGapAnalysisPage() {
           {
             name: skillName,
             level: level as any,
-            verified: true,
+            verified: false,
           },
         ];
       }

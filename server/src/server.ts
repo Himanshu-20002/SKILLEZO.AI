@@ -19,6 +19,7 @@ import { verificationRouter } from "@/modules/verification";
 import { adminRouter } from "@/modules/admin";
 import { notificationRouter } from "@/modules/notifications";
 import { planRouter } from "@/modules/plan";
+import { billingRouter } from "@/modules/billing";
 import { messagesRouter } from "@/modules/messages";
 import { careerCoachRouter } from "@/core/ai/api";
 import { actionRouter } from "@/core/ai/actions/api/action.routes";
@@ -165,7 +166,14 @@ app.use("/api/auth", authRateLimiter, (req, res, next) => {
   authHandler(req, res).catch(next);
 });
 
-app.use(express.json({ limit: "1mb" }));
+app.use(
+  express.json({
+    limit: "1mb",
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 
 // Tier 1: Global API rate limiting protection (protects against traffic bursts and scraping)
 app.use("/api", globalRateLimiter);
@@ -190,6 +198,7 @@ app.use("/api/verification", verificationRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/plan", planRouter);
+app.use("/api/billing", billingRouter);
 app.use("/api/messages", messagesRouter);
 app.use("/api/ai", heavyOpsRateLimiter);
 app.use("/api/ai/coach", careerCoachRouter);

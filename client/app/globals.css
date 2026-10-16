@@ -56,6 +56,15 @@ h1, h2, h3, h4, .font-display {
 ::-webkit-scrollbar-thumb { background: rgba(61, 90, 254, 0.2); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: #3D5AFE; }
 
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Optimized lightweight glass classes */
 .glass {
   background: rgba(255, 255, 255, 0.85);
