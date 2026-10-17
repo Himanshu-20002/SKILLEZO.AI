@@ -181,7 +181,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                {isEditing ? 'Edit Job Requisition' : 'Create & Publish Job Requisition'}
+                {isEditing ? 'Edit Job Post' : 'Create & Publish Job Post'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {isEditing

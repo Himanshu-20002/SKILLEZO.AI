@@ -3,6 +3,8 @@ import { messagesService } from "./messages.service";
 import {
   sendMessageValidator,
   scheduleInterviewValidator,
+  sendOfferValidator,
+  respondOfferValidator,
   getConversationsQueryValidator,
   getMessagesQueryValidator,
 } from "./messages.dto";
@@ -57,6 +59,34 @@ export class MessagesController {
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Interview scheduled successfully",
+      data: result,
+    });
+  }
+
+  static async sendOffer(req: Request, res: Response): Promise<void> {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const applicationId = String(req.params.id);
+    const body = sendOfferValidator.parse(req.body);
+
+    const result = await messagesService.sendOffer(applicationId, userId, body);
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: "Job offer extended successfully",
+      data: result,
+    });
+  }
+
+  static async respondOffer(req: Request, res: Response): Promise<void> {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const applicationId = String(req.params.id);
+    const body = respondOfferValidator.parse(req.body);
+
+    const result = await messagesService.respondOffer(applicationId, userId, body);
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: body.action === "accept" ? "Job offer accepted successfully" : "Job offer declined",
       data: result,
     });
   }

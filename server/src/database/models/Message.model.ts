@@ -1,6 +1,6 @@
 import { Schema, model, Document, Types } from "mongoose";
 
-export type MessageType = "text" | "interview_invite" | "status_change" | "system";
+export type MessageType = "text" | "interview_invite" | "offer_letter" | "status_change" | "system";
 
 export interface IInterviewDetails {
   roundTitle: string;
@@ -14,6 +14,8 @@ export interface IInterviewDetails {
   status: "scheduled" | "completed" | "rescheduled" | "cancelled";
 }
 
+import { IOfferDetails } from "./Application.model";
+
 export interface IMessage extends Document {
   _id: Types.ObjectId;
   conversationId: Types.ObjectId;
@@ -22,6 +24,7 @@ export interface IMessage extends Document {
   type: MessageType;
   content: string;
   interviewDetails?: IInterviewDetails | null;
+  offerDetails?: IOfferDetails | null;
   readBy: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -70,7 +73,7 @@ const messageSchema = new Schema<IMessage>(
     },
     type: {
       type: String,
-      enum: ["text", "interview_invite", "status_change", "system"],
+      enum: ["text", "interview_invite", "offer_letter", "status_change", "system"],
       default: "text",
     },
     content: {
@@ -80,6 +83,10 @@ const messageSchema = new Schema<IMessage>(
     },
     interviewDetails: {
       type: interviewDetailsSchema,
+      default: null,
+    },
+    offerDetails: {
+      type: Schema.Types.Mixed,
       default: null,
     },
     readBy: {

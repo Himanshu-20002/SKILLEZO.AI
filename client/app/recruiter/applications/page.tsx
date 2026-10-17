@@ -80,10 +80,9 @@ export default function RecruiterApplicationsPage() {
     );
   };
 
-  // Group applications by stage for Kanban
+  // Group applications by stage for Kanban (under_review merged into applied for clean workflow)
   const stages: ApplicationStage[] = [
     'applied',
-    'under_review',
     'shortlisted',
     'interview',
     'offered',
@@ -92,7 +91,7 @@ export default function RecruiterApplicationsPage() {
   ];
 
   const totalCount = applications.length;
-  const underReviewCount = applications.filter((a) => a.status === 'under_review').length;
+  const shortlistedCount = applications.filter((a) => a.status === 'shortlisted').length;
   const interviewCount = applications.filter((a) => a.status === 'interview').length;
   const offerCount = applications.filter((a) => a.status === 'offered').length;
 
@@ -163,15 +162,15 @@ export default function RecruiterApplicationsPage() {
 
           <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1535] border border-slate-200/90 dark:border-slate-800 shadow-xs backdrop-blur-md">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
-                <Clock className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
                 <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium">
-                  Under Review
+                  Shortlisted
                 </span>
-                <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
-                  {underReviewCount} Active
+                <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                  {shortlistedCount} Qualified
                 </span>
               </div>
             </div>
@@ -243,7 +242,11 @@ export default function RecruiterApplicationsPage() {
         {viewMode === 'kanban' && (
           <div className="flex gap-4 overflow-x-auto pb-6 pt-1">
             {stages.map((stage) => {
-              const columnApps = applications.filter((app) => app.status === stage);
+              const columnApps = applications.filter((app) =>
+                stage === 'applied'
+                  ? app.status === 'applied' || (app.status as string) === 'under_review'
+                  : app.status === stage
+              );
               return (
                 <KanbanColumn
                   key={stage}

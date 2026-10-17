@@ -72,16 +72,10 @@ export default function RecruiterDashboardPage() {
 
   const funnelStages = [
     {
-      label: 'Applied Inflow',
-      count: stageCounts.applied ?? 0,
+      label: 'New Applied',
+      count: (stageCounts.applied ?? 0) + (stageCounts.under_review ?? 0),
       color: 'bg-blue-500',
-      width: totalCandidates > 0 ? `${Math.max(10, Math.round(((stageCounts.applied ?? 0) / totalCandidates) * 100))}%` : '0%',
-    },
-    {
-      label: 'Under Review',
-      count: stageCounts.under_review ?? 0,
-      color: 'bg-amber-500',
-      width: totalCandidates > 0 ? `${Math.max(10, Math.round(((stageCounts.under_review ?? 0) / totalCandidates) * 100))}%` : '0%',
+      width: totalCandidates > 0 ? `${Math.max(10, Math.round((((stageCounts.applied ?? 0) + (stageCounts.under_review ?? 0)) / totalCandidates) * 100))}%` : '0%',
     },
     {
       label: 'Shortlisted',
@@ -132,7 +126,7 @@ export default function RecruiterDashboardPage() {
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 text-white text-xs font-bold shadow-md shadow-[#3D5AFE]/20 transition cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Post Requisition</span>
+                <span>Post a Job</span>
               </button>
             </div>
           }
@@ -144,7 +138,7 @@ export default function RecruiterDashboardPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  Total Active Inflow
+                  Total Applicants
                 </span>
                 <div className="text-2xl font-black text-slate-900 dark:text-white">
                   {totalCandidates} <span className="text-xs text-slate-400 font-normal">Candidates</span>
@@ -170,10 +164,10 @@ export default function RecruiterDashboardPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  Open Requisitions
+                  Active Job Openings
                 </span>
                 <div className="text-2xl font-black text-slate-900 dark:text-white">
-                  {activeJobs} <span className="text-xs text-slate-400 font-normal">Positions</span>
+                  {activeJobs} <span className="text-xs text-slate-400 font-normal">Jobs</span>
                 </div>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
@@ -182,7 +176,7 @@ export default function RecruiterDashboardPage() {
             </div>
             <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
               <ShieldCheck className="w-3 h-3 text-emerald-500" />
-              <span>{activeJobs > 0 ? `${activeJobs} active requisitions` : "No requisitions created"}</span>
+              <span>{activeJobs > 0 ? `${activeJobs} active job listings` : "No jobs posted"}</span>
             </div>
           </div>
 
@@ -235,7 +229,7 @@ export default function RecruiterDashboardPage() {
                   Hiring Pipeline Velocity & Conversion
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Stage progression for current requisitions
+                  Applicant pipeline stages
                 </p>
               </div>
 
@@ -285,7 +279,7 @@ export default function RecruiterDashboardPage() {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                      Post New Requisition
+                      Post a New Job
                     </h4>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">
                       Publish role with required verified skill benchmarks
@@ -328,7 +322,7 @@ export default function RecruiterDashboardPage() {
                       Review Pending Applications
                     </h4>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {stageCounts.under_review ?? 0} candidates awaiting initial qualification review
+                      {(stageCounts.applied ?? 0) + (stageCounts.under_review ?? 0)} candidates awaiting initial qualification review
                     </span>
                   </div>
                 </div>
@@ -345,10 +339,10 @@ export default function RecruiterDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                  Active Job Requisitions
+                  Active Job Openings
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Open positions currently attracting candidate streams
+                  Open jobs currently receiving applicants
                 </p>
               </div>
 
@@ -365,10 +359,10 @@ export default function RecruiterDashboardPage() {
                 <Briefcase className="w-8 h-8 text-slate-400 mx-auto" />
                 <div className="space-y-1">
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                    No active job requisitions
+                    No active job openings
                   </h4>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-                    Create your first job posting to define required verified skills and start receiving candidate applications.
+                    Create your first job posting to define required skills and start receiving candidate applications.
                   </p>
                 </div>
                 <button
@@ -376,7 +370,7 @@ export default function RecruiterDashboardPage() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 text-white text-xs font-bold transition cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Post Requisition</span>
+                  <span>Post a Job</span>
                 </button>
               </div>
             ) : (

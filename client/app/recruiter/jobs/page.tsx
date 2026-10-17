@@ -95,8 +95,8 @@ export default function RecruiterJobsPage() {
       <div className="space-y-6">
         {/* Page Header */}
         <PageHeader
-          title="Job Requisitions Management"
-          description="Manage open roles, monitor inbound application velocity, and configure verified skill requirements."
+          title="Job Openings"
+          description="Manage your open roles, track applicants, and configure required skills."
           badge="Enterprise ATS"
           actions={
             <button
@@ -107,7 +107,7 @@ export default function RecruiterJobsPage() {
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#3D5AFE] hover:bg-[#3D5AFE]/90 text-white text-xs font-bold shadow-md shadow-[#3D5AFE]/20 transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Post New Requisition</span>
+              <span>Post New Job</span>
             </button>
           }
         />
@@ -117,7 +117,7 @@ export default function RecruiterJobsPage() {
           <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1535] border border-slate-200/90 dark:border-slate-800 shadow-xs flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Total Requisitions
+                Total Jobs Posted
               </span>
               <div className="text-xl font-bold text-slate-900 dark:text-white">
                 {jobs.length} Positions
@@ -201,7 +201,7 @@ export default function RecruiterJobsPage() {
           {filteredJobs.length === 0 ? (
             <div className="p-12 text-center rounded-3xl bg-white dark:bg-[#0E1535] border border-slate-200 dark:border-slate-800 space-y-3">
               <Briefcase className="w-10 h-10 text-slate-400 mx-auto" />
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white">No Requisitions Found</h4>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">No Jobs Found</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Adjust search keywords or post a new job opening.
               </p>
@@ -280,7 +280,7 @@ export default function RecruiterJobsPage() {
                           setCreateModalOpen(true);
                         }}
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 hover:border-[#3D5AFE]/40 hover:text-[#3D5AFE] dark:hover:text-[#8098FF] bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 transition cursor-pointer"
-                        title="Edit Job Requisition"
+                        title="Edit Job"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                         <span>Edit</span>

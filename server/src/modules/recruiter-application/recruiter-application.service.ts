@@ -13,6 +13,7 @@ import { UserModel } from "@/database/models/User.model";
 import { ProfileModel } from "@/database/models/Profile.model";
 import { Readable } from "stream";
 import { Types } from "mongoose";
+import { ResumeModel } from "@/database/models/Resume.model";
 import { notificationService } from "@/modules/notifications";
 import { messagesService } from "@/modules/messages";
 import {
@@ -84,14 +85,17 @@ export class RecruiterApplicationService {
     }
 
     const companyIds = activeMemberships.map((m) => m.companyId.toString());
+    const customCompanyIds = companyIds.filter(
+      (cid) => cid.toString() !== "6ac33e72bce5333c78d5e58d"
+    );
 
-    // Find only jobs belonging to these companies, enterprise network, or created directly by this recruiter
+    // Find only jobs created by this recruiter or within their dedicated company
     const jobs = await this.jobRepository.findMany({
+      createdBy: { $ne: null },
       $or: [
-        { companyId: { $in: companyIds } },
-        { companyName: "SKILLEZO Enterprise Talent Network" },
-        { createdBy: userId }
-      ]
+        { createdBy: userId },
+        ...(customCompanyIds.length > 0 ? [{ companyId: { $in: customCompanyIds } }] : []),
+      ],
     });
     const companyJobIds = jobs.map((j) => j._id.toString());
 
@@ -241,6 +245,27 @@ export class RecruiterApplicationService {
         fileSize: application.resumeSnapshot.fileSize,
         version: application.resumeSnapshot.version,
         submittedAt: application.resumeSnapshot.submittedAt,
+        resumeDocument:
+          application.resumeSnapshot.resumeDocument ||
+          (resumeDoc && resumeDoc.resumeDocument) ||
+          null,
+        builderConfig:
+          application.resumeSnapshot.builderConfig ||
+          (resumeDoc && resumeDoc.builderConfig) ||
+          null,
+      };
+    } else if (resumeDoc) {
+      resumeSnapshot = {
+        resumeId: resumeDoc._id.toString(),
+        title: resumeDoc.title,
+        originalFileName: resumeDoc.originalFileName || resumeDoc.fileName,
+        storageKey: resumeDoc.storageKey,
+        mimeType: resumeDoc.mimeType,
+        fileSize: resumeDoc.fileSize,
+        version: resumeDoc.version,
+        submittedAt: resumeDoc.createdAt,
+        resumeDocument: resumeDoc.resumeDocument || null,
+        builderConfig: resumeDoc.builderConfig || null,
       };
     }
 
@@ -278,6 +303,7 @@ export class RecruiterApplicationService {
       status: application.status,
       conversationId: application.conversationId ? application.conversationId.toString() : null,
       interviewSchedule: application.interviewSchedule || null,
+      offerDetails: application.offerDetails || null,
       job: jobDoc && typeof jobDoc === "object" && jobDoc.title
         ? {
           id: jobDoc._id.toString(),
@@ -329,19 +355,12 @@ export class RecruiterApplicationService {
   ): Promise<{ stream: Readable; fileName: string; mimeType: string; fileSize: number }> {
     const details = await this.getCompanyApplicationDetails(userId, applicationId);
 
-    if (!details.resumeSnapshot || !details.resumeSnapshot.storageKey) {
-      throw new AppError(
-        "Application resume snapshot or storage key is missing",
-        HTTP_STATUS.NOT_FOUND,
-        ERROR_CODES.APPLICATION_RESUME_FILE_NOT_FOUND
-      );
-    }
+    const storageKey = details.resumeSnapshot?.storageKey;
+    const exists = storageKey ? await this.storageService.exists(storageKey) : false;
 
-    const storageKey = details.resumeSnapshot.storageKey;
-    const exists = await this.storageService.exists(storageKey);
-    if (!exists) {
+    if (!exists || !storageKey) {
       throw new AppError(
-        "Submitted application resume file not found on storage",
+        "Application resume binary file is not stored on server storage. Candidate profile is available in the vector resume viewer.",
         HTTP_STATUS.NOT_FOUND,
         ERROR_CODES.APPLICATION_RESUME_FILE_NOT_FOUND
       );
@@ -350,9 +369,9 @@ export class RecruiterApplicationService {
     const stream = await this.storageService.getStream(storageKey);
     return {
       stream,
-      fileName: details.resumeSnapshot.originalFileName || "resume.pdf",
-      mimeType: details.resumeSnapshot.mimeType || "application/pdf",
-      fileSize: details.resumeSnapshot.fileSize || 0,
+      fileName: details.resumeSnapshot?.originalFileName || "resume.pdf",
+      mimeType: details.resumeSnapshot?.mimeType || "application/pdf",
+      fileSize: details.resumeSnapshot?.fileSize || 0,
     };
   }
 
@@ -406,10 +425,8 @@ export class RecruiterApplicationService {
     });
 
     const activeJobs = await this.jobRepository.findMany({ 
-      $or: [
-        { _id: { $in: companyJobIds }, status: "active" },
-        { companyId: { $in: companyIds }, status: "active" }
-      ]
+      _id: { $in: companyJobIds },
+      status: "active",
     });
 
     const recentCandidateIds = [...new Set(allItems.slice(0, 5).map((app) => app.userId).filter(Boolean))];

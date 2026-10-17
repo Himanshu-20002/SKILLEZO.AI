@@ -71,6 +71,21 @@ export interface IApplicationTimelineEvent {
 // Backward-compatible alias
 export type IApplicationStatusHistory = IApplicationTimelineEvent;
 
+export interface IOfferDetails {
+  designation: string;
+  annualCompensation: string;
+  joiningDate: Date;
+  workplaceType: "remote" | "hybrid" | "on-site";
+  location?: string;
+  decisionDeadline?: Date;
+  benefits?: string[];
+  message?: string;
+  status: "pending" | "accepted" | "declined";
+  offeredAt: Date;
+  respondedAt?: Date;
+  declineReason?: string;
+}
+
 // 5. Main Application Interface
 export interface IApplication extends Document {
   _id: Types.ObjectId;
@@ -90,9 +105,10 @@ export interface IApplication extends Document {
   status: ApplicationStatus;
   statusHistory: IApplicationTimelineEvent[];
 
-  // Two-way Recruiter-Candidate Channel & Interview
+  // Two-way Recruiter-Candidate Channel & Interview & Offer
   conversationId?: Types.ObjectId | null;
   interviewSchedule?: any | null;
+  offerDetails?: IOfferDetails | null;
 
   // Application Timestamps
   appliedAt?: Date | null;
@@ -238,6 +254,10 @@ const applicationSchema = new Schema<IApplication>(
       index: true,
     },
     interviewSchedule: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    offerDetails: {
       type: Schema.Types.Mixed,
       default: null,
     },

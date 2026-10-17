@@ -48,6 +48,7 @@ export interface RecruiterApplicationDetailsDTO {
   status: ApplicationStatus;
   conversationId?: string | null;
   interviewSchedule?: any | null;
+  offerDetails?: any | null;
   job: any;
   candidate: {
     id: string;

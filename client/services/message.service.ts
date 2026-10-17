@@ -12,15 +12,31 @@ export interface InterviewDetails {
   status: "scheduled" | "completed" | "rescheduled" | "cancelled";
 }
 
+export interface OfferDetails {
+  designation: string;
+  annualCompensation: string;
+  joiningDate: string;
+  workplaceType: "remote" | "hybrid" | "on-site";
+  location?: string;
+  decisionDeadline?: string;
+  benefits?: string[];
+  message?: string;
+  status: "pending" | "accepted" | "declined";
+  offeredAt?: string;
+  respondedAt?: string;
+  declineReason?: string;
+}
+
 export interface ChatMessage {
   _id?: string;
   id?: string;
   conversationId: string;
   senderId: string;
   senderRole: "recruiter" | "candidate" | "system";
-  type: "text" | "interview_invite" | "status_change" | "system";
+  type: "text" | "interview_invite" | "offer_letter" | "status_change" | "system";
   content: string;
   interviewDetails?: InterviewDetails | null;
+  offerDetails?: OfferDetails | null;
   readBy?: string[];
   createdAt: string;
   updatedAt?: string;
@@ -31,6 +47,7 @@ export interface ConversationSummary {
   applicationId: string;
   applicationStatus: string;
   interviewSchedule?: InterviewDetails | null;
+  offerDetails?: OfferDetails | null;
   job: {
     id: string;
     title: string;
@@ -73,6 +90,7 @@ export interface ConversationThreadResponse {
     applicationId: string;
     applicationStatus: string;
     interviewSchedule?: InterviewDetails | null;
+    offerDetails?: OfferDetails | null;
     job: any;
     company: any;
     candidateId: string;
@@ -95,6 +113,17 @@ export interface ScheduleInterviewPayload {
   meetingLink: string;
   interviewerName: string;
   instructions?: string;
+  message?: string;
+}
+
+export interface SendOfferPayload {
+  designation: string;
+  annualCompensation: string;
+  joiningDate: string;
+  workplaceType?: "remote" | "hybrid" | "on-site";
+  location?: string;
+  decisionDeadline?: string;
+  benefits?: string[];
   message?: string;
 }
 
@@ -129,14 +158,15 @@ export const messageService = {
   async sendMessage(
     conversationId: string,
     content: string,
-    type: "text" | "interview_invite" | "status_change" | "system" = "text",
-    interviewDetails?: InterviewDetails
+    type: "text" | "interview_invite" | "offer_letter" | "status_change" | "system" = "text",
+    interviewDetails?: InterviewDetails,
+    offerDetails?: OfferDetails
   ): Promise<ChatMessage> {
     const res = await apiFetch<{ success: boolean; data: ChatMessage }>(
       `/api/messages/conversations/${conversationId}/messages`,
       {
         method: "POST",
-        body: JSON.stringify({ content, type, interviewDetails }),
+        body: JSON.stringify({ content, type, interviewDetails, offerDetails }),
       }
     );
     return res.data;
@@ -153,6 +183,42 @@ export const messageService = {
     }>(`/api/messages/applications/${applicationId}/schedule-interview`, {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+    return res.data;
+  },
+
+  async sendOffer(
+    applicationId: string,
+    payload: SendOfferPayload
+  ): Promise<{ application: any; message: ChatMessage }> {
+    const res = await apiFetch<{
+      success: boolean;
+      message: string;
+      data: { application: any; message: ChatMessage };
+    }>(`/api/messages/applications/${applicationId}/send-offer`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  },
+
+  async respondOffer(
+    applicationId: string,
+    actionOrPayload: "accept" | "decline" | { action: "accept" | "decline"; declineReason?: string; reason?: string },
+    optionalReason?: string
+  ): Promise<{ application: any; offerDetails: OfferDetails }> {
+    const action = typeof actionOrPayload === "string" ? actionOrPayload : actionOrPayload.action;
+    const reason =
+      typeof actionOrPayload === "object"
+        ? actionOrPayload.reason || actionOrPayload.declineReason
+        : optionalReason;
+    const res = await apiFetch<{
+      success: boolean;
+      message: string;
+      data: { application: any; offerDetails: OfferDetails };
+    }>(`/api/messages/applications/${applicationId}/respond-offer`, {
+      method: "POST",
+      body: JSON.stringify({ action, reason }),
     });
     return res.data;
   },

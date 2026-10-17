@@ -28,6 +28,7 @@ export interface RecruiterApplicationItem {
   };
   conversationId?: string | null;
   interviewSchedule?: any | null;
+  offerDetails?: any | null;
   resume: {
     id: string;
     title: string;
@@ -43,6 +44,7 @@ export interface RecruiterApplicationDetails {
   status: ApplicationStage;
   conversationId?: string | null;
   interviewSchedule?: any | null;
+  offerDetails?: any | null;
   appliedAt: string;
   updatedAt: string;
   job: {
@@ -51,6 +53,7 @@ export interface RecruiterApplicationDetails {
     department?: string | null;
     location?: string | null;
     employmentType?: string | null;
+    companyName?: string | null;
   } | null;
   candidate: {
     id: string;
@@ -75,6 +78,18 @@ export interface RecruiterApplicationDetails {
     contentType?: string;
     fileSize?: number;
     parsedTextSnippet?: string;
+  } | null;
+  resumeSnapshot?: {
+    resumeId?: string | null;
+    title?: string | null;
+    originalFileName?: string | null;
+    storageKey?: string | null;
+    mimeType?: string | null;
+    fileSize?: number | null;
+    version?: number;
+    submittedAt?: string | null;
+    resumeDocument?: any | null;
+    builderConfig?: any | null;
   } | null;
   recruiterNotes?: string;
 }

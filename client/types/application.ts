@@ -146,6 +146,8 @@ export interface ApplicationRecord {
   job?: ApplicationJobSummary | null;
   resume?: ApplicationResumeSummary | null;
   resumeSnapshot?: HistoricalResumeSnapshot | null;
+  interviewSchedule?: any | null;
+  offerDetails?: any | null;
   statusHistory: TimelineEvent[];
   appliedAt?: string | null;
   createdAt: string;

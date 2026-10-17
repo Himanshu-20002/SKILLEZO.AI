@@ -13,6 +13,8 @@ import {
   Video,
   MessageSquare,
   ExternalLink,
+  Gift,
+  CheckCircle2,
 } from 'lucide-react';
 import { JobApplication, ApplicationStatus } from '@/types/job-center';
 import { getApplicationStatusLabel, HistoricalResumeSnapshot } from '@/types/application';
@@ -221,6 +223,69 @@ export const AppliedJobsTracker: React.FC<AppliedJobsTrackerProps> = ({
                     </button>
                   </div>
                 </div>
+
+                {/* Job Offer Extended Banner */}
+                {app.status === 'offered' && (
+                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-emerald-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                        <Gift className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h5 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <span>Official Job Offer Extended! 🎉</span>
+                          {app.offerDetails?.annualCompensation && (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10px] font-black border border-emerald-500/20">
+                              {app.offerDetails.annualCompensation}
+                            </span>
+                          )}
+                        </h5>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {app.offerDetails?.decisionDeadline
+                            ? `Decision requested by ${new Date(app.offerDetails.decisionDeadline).toLocaleDateString([], {
+                                month: 'short',
+                                day: 'numeric',
+                              })}`
+                            : 'Review the offer details, compensation, and respond directly in Messages'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/dashboard/messages?appId=${app.id}`}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 transition cursor-pointer self-start sm:self-auto shrink-0"
+                    >
+                      <Gift className="w-3.5 h-3.5" />
+                      <span>Review & Respond to Offer</span>
+                    </Link>
+                  </div>
+                )}
+
+                {/* Hired Banner */}
+                {app.status === 'hired' && (
+                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/15 to-teal-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h5 className="font-extrabold text-emerald-700 dark:text-emerald-300">
+                          Hired & Onboarded! 🎉
+                        </h5>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          You accepted the offer for this role. Welcome aboard!
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      href={`/dashboard/messages?appId=${app.id}`}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 transition shadow-xs shrink-0"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Chat</span>
+                    </Link>
+                  </div>
+                )}
 
                 {/* Interview Action Banner */}
                 {app.status === 'interview' && (

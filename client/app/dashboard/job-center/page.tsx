@@ -308,6 +308,7 @@ export default function SmartJobCenterPage() {
               ? 'Offer extended! Check your messages for offer details'
               : 'Awaiting recruiter review',
           interviewSchedule: (app as any).interviewSchedule || null,
+          offerDetails: (app as any).offerDetails || null,
           conversationId: (app as any).conversationId || null,
           resumeUsed: app.resumeSnapshot?.originalFileName || app.resumeSnapshot?.title || 'Attached Resume',
           atsScore: 85,

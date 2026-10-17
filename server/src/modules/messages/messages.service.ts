@@ -14,9 +14,12 @@ import { notificationService } from "@/modules/notifications";
 import {
   SendMessageDTO,
   ScheduleInterviewDTO,
+  SendOfferDTO,
+  RespondOfferDTO,
   GetConversationsQueryDTO,
   GetMessagesQueryDTO,
 } from "./messages.dto";
+import { IOfferDetails } from "@/database/models/Application.model";
 
 export class MessagesService {
   /**
@@ -166,7 +169,7 @@ export class MessagesService {
         .limit(limit)
         .populate("jobId", "title department location workMode companyName")
         .populate("companyId", "name slug logoUrl industry")
-        .populate("applicationId", "status appliedAt interviewSchedule")
+        .populate("applicationId", "status appliedAt interviewSchedule offerDetails")
         .lean(),
       ConversationModel.countDocuments(filter),
     ]);
@@ -208,6 +211,7 @@ export class MessagesService {
         applicationId: conv.applicationId?._id?.toString() || conv.applicationId,
         applicationStatus: conv.applicationId?.status || "applied",
         interviewSchedule: conv.applicationId?.interviewSchedule || null,
+        offerDetails: conv.applicationId?.offerDetails || null,
         job: {
           id: conv.jobId?._id?.toString() || conv.jobId,
           title: conv.jobId?.title || "Job Position",
@@ -261,7 +265,7 @@ export class MessagesService {
     const conversation = await ConversationModel.findById(conversationId)
       .populate("jobId", "title department location companyName")
       .populate("companyId", "name slug logoUrl industry")
-      .populate("applicationId", "status appliedAt interviewSchedule")
+      .populate("applicationId", "status appliedAt interviewSchedule offerDetails")
       .lean();
 
     if (!conversation) {
@@ -306,6 +310,7 @@ export class MessagesService {
         applicationId: (conversation as any).applicationId?._id?.toString(),
         applicationStatus: (conversation as any).applicationId?.status,
         interviewSchedule: (conversation as any).applicationId?.interviewSchedule,
+        offerDetails: (conversation as any).applicationId?.offerDetails || null,
         job: (conversation as any).jobId,
         company: (conversation as any).companyId,
         candidateId: (conversation as any).candidateId,
@@ -462,6 +467,186 @@ export class MessagesService {
       });
 
     return { application, message };
+  }
+
+  /**
+   * Extend official job offer from ATS Review Drawer
+   */
+  async sendOffer(
+    applicationId: string,
+    recruiterUserId: string,
+    dto: SendOfferDTO
+  ): Promise<{ application: any; message: IMessage }> {
+    const application = await ApplicationModel.findById(applicationId);
+    if (!application) {
+      throw new AppError("Application not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+    }
+
+    const job = await JobModel.findById(application.jobId);
+    if (!job) {
+      throw new AppError("Associated Job not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+    }
+
+    const offerDetails: IOfferDetails = {
+      designation: dto.designation,
+      annualCompensation: dto.annualCompensation,
+      joiningDate: new Date(dto.joiningDate),
+      workplaceType: dto.workplaceType,
+      location:
+        dto.location ||
+        (typeof job.location === "string"
+          ? job.location
+          : (job.location as any)?.city
+            ? [(job.location as any).city, (job.location as any).country].filter(Boolean).join(", ")
+            : undefined),
+      decisionDeadline: dto.decisionDeadline ? new Date(dto.decisionDeadline) : undefined,
+      benefits: dto.benefits || [],
+      message: dto.message || "",
+      status: "pending",
+      offeredAt: new Date(),
+    };
+
+    // Update Application
+    application.status = ApplicationStatus.OFFERED;
+    application.offerDetails = offerDetails;
+    application.statusHistory.push({
+      status: ApplicationStatus.OFFERED,
+      changedAt: new Date(),
+      changedBy: recruiterUserId,
+      reason: `Official Job Offer Extended: ${dto.annualCompensation} for ${dto.designation}`,
+    } as any);
+
+    await application.save();
+
+    // Ensure conversation exists
+    const { conversation } = await this.getOrCreateConversation(applicationId, recruiterUserId);
+
+    const offerContent =
+      dto.message ||
+      `🎉 Congratulations! We are thrilled to extend an official job offer for the role of ${dto.designation} at ${
+        job.companyName || "our organization"
+      } with an annual compensation of ${dto.annualCompensation}.`;
+
+    const message = await MessageModel.create({
+      conversationId: conversation._id,
+      senderId: recruiterUserId,
+      senderRole: "recruiter",
+      type: "offer_letter",
+      content: offerContent,
+      offerDetails,
+      readBy: [recruiterUserId],
+    });
+
+    conversation.lastMessage = {
+      content: `🎁 Official Job Offer: ${dto.annualCompensation}`,
+      senderId: recruiterUserId,
+      senderRole: "recruiter",
+      sentAt: message.createdAt,
+    };
+    conversation.unreadCountCandidate += 1;
+    await conversation.save();
+
+    // Trigger candidate notification
+    notificationService
+      .notifyApplicationStatusChange({
+        candidateUserId: application.userId,
+        jobTitle: job.title,
+        companyName: job.companyName || "Hiring Team",
+        newStatus: "offered",
+        applicationId: application._id.toString(),
+      })
+      .catch((err) => {
+        console.error("[MessagesService] Failed to notify candidate of job offer:", err);
+      });
+
+    return { application, message };
+  }
+
+  /**
+   * Candidate responds to extended job offer (Accept or Decline)
+   */
+  async respondOffer(
+    applicationId: string,
+    candidateUserId: string,
+    dto: RespondOfferDTO
+  ): Promise<{ application: any; offerDetails: IOfferDetails }> {
+    const application = await ApplicationModel.findById(applicationId);
+    if (!application) {
+      throw new AppError("Application not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+    }
+
+    if (application.userId !== candidateUserId) {
+      throw new AppError("Unauthorized to respond to this offer", HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
+    }
+
+    if (!application.offerDetails) {
+      throw new AppError("No active job offer found on this application", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+    }
+
+    const job = await JobModel.findById(application.jobId);
+    const isAccept = dto.action === "accept";
+    const nextStatus = isAccept ? ApplicationStatus.HIRED : ApplicationStatus.REJECTED;
+
+    application.status = nextStatus;
+    application.offerDetails.status = isAccept ? "accepted" : "declined";
+    application.offerDetails.respondedAt = new Date();
+    if (!isAccept && dto.reason) {
+      application.offerDetails.declineReason = dto.reason;
+    }
+
+    application.statusHistory.push({
+      status: nextStatus,
+      changedAt: new Date(),
+      changedBy: candidateUserId,
+      reason: isAccept
+        ? "Candidate accepted the official job offer!"
+        : `Candidate declined the job offer. Reason: ${dto.reason || "Not specified"}`,
+    } as any);
+
+    await application.save();
+
+    // Update offer message in conversation
+    const conversation = await ConversationModel.findOne({ applicationId: application._id });
+    if (conversation) {
+      await MessageModel.updateMany(
+        { conversationId: conversation._id, type: "offer_letter" },
+        {
+          $set: {
+            "offerDetails.status": isAccept ? "accepted" : "declined",
+            "offerDetails.respondedAt": new Date(),
+            ...(dto.reason ? { "offerDetails.declineReason": dto.reason } : {}),
+          },
+        }
+      );
+
+      const statusMsgContent = isAccept
+        ? `🎉 Offer Accepted! I am excited to accept the offer for ${application.offerDetails.designation}. Looking forward to joining on ${new Date(
+            application.offerDetails.joiningDate
+          ).toLocaleDateString()}!`
+        : `I appreciate the offer for ${application.offerDetails.designation}; however, I must respectfully decline at this time.${
+            dto.reason ? ` Reason: ${dto.reason}` : ""
+          }`;
+
+      const responseMessage = await MessageModel.create({
+        conversationId: conversation._id,
+        senderId: candidateUserId,
+        senderRole: "candidate",
+        type: "text",
+        content: statusMsgContent,
+        readBy: [candidateUserId],
+      });
+
+      conversation.lastMessage = {
+        content: isAccept ? "🎉 Candidate Accepted Job Offer" : "❌ Candidate Declined Job Offer",
+        senderId: candidateUserId,
+        senderRole: "candidate",
+        sentAt: responseMessage.createdAt,
+      };
+      conversation.unreadCountRecruiter += 1;
+      await conversation.save();
+    }
+
+    return { application, offerDetails: application.offerDetails };
   }
 }
 

@@ -18,6 +18,14 @@ import {
   ShieldCheck,
   CheckCircle2,
   ArrowLeft,
+  Gift,
+  DollarSign,
+  MapPin,
+  Check,
+  X,
+  XCircle,
+  AlertCircle,
+  FileCheck,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/dashboard/common/PageHeader';
@@ -42,6 +50,9 @@ function MessagesContent() {
   const [replyText, setReplyText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [respondingOffer, setRespondingOffer] = useState(false);
+  const [declineModalOpen, setDeclineModalOpen] = useState(false);
+  const [declineReason, setDeclineReason] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -146,6 +157,58 @@ function MessagesContent() {
       setReplyText(content);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleRespondOffer = async (action: 'accept' | 'decline', reason?: string) => {
+    if (!selectedConversation?.applicationId || respondingOffer) return;
+
+    try {
+      setRespondingOffer(true);
+      await messageService.respondOffer(selectedConversation.applicationId, {
+        action,
+        declineReason: reason,
+      });
+
+      if (action === 'accept') {
+        toast.success('🎉 Congratulations! You have accepted the job offer!');
+      } else {
+        toast.info('You have declined the job offer.');
+      }
+
+      // Refresh conversation thread
+      const res = await messageService.getConversationMessages(selectedConversation.id);
+      setMessages(res.messages || []);
+
+      // Update local conversation status
+      const nextStatus = action === 'accept' ? 'hired' : 'rejected';
+      setSelectedConversation((prev) =>
+        prev
+          ? {
+              ...prev,
+              applicationStatus: nextStatus,
+            }
+          : prev
+      );
+
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === selectedConversation.id
+            ? {
+                ...c,
+                applicationStatus: nextStatus,
+              }
+            : c
+        )
+      );
+
+      setDeclineModalOpen(false);
+      setDeclineReason('');
+    } catch (err: any) {
+      console.error('[MessagesPage] Failed to respond to offer:', err);
+      toast.error(err?.message || 'Failed to submit response to offer');
+    } finally {
+      setRespondingOffer(false);
     }
   };
 
@@ -268,12 +331,22 @@ function MessagesContent() {
                           </span>
                         )}
 
-                        {hasInterview && (
+                        {conv.applicationStatus === 'offered' ? (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-0.5 shrink-0 animate-pulse">
+                            <Gift className="w-2.5 h-2.5" />
+                            Offer
+                          </span>
+                        ) : conv.applicationStatus === 'hired' ? (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-0.5 shrink-0">
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                            Hired
+                          </span>
+                        ) : hasInterview ? (
                           <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 flex items-center gap-0.5 shrink-0">
                             <Calendar className="w-2.5 h-2.5" />
                             Interview
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </button>
@@ -310,9 +383,23 @@ function MessagesContent() {
                       <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
                         {selectedConversation.company?.name || 'Employer'}
                       </h3>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3" /> Shortlisted
-                      </span>
+                      {selectedConversation.applicationStatus === 'offered' ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 animate-pulse">
+                          <Gift className="w-3 h-3 text-amber-500" /> Offer Extended
+                        </span>
+                      ) : selectedConversation.applicationStatus === 'hired' ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Hired
+                        </span>
+                      ) : selectedConversation.applicationStatus === 'interview' ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-indigo-500" /> Interviewing
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3" /> Shortlisted
+                        </span>
+                      )}
                     </div>
 
                     <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
@@ -356,8 +443,181 @@ function MessagesContent() {
                         key={idx}
                         className={`flex flex-col ${isCandidate ? 'items-end' : 'items-start'}`}
                       >
-                        {/* Interview Invitation Card */}
-                        {isInterviewCard && msg.interviewDetails ? (
+                        {/* Job Offer Card */}
+                        {msg.type === 'offer_letter' && msg.offerDetails ? (
+                          <div className="max-w-xl w-full p-6 rounded-3xl bg-gradient-to-br from-amber-950/80 via-slate-900 to-slate-950 border border-amber-500/40 text-white shadow-2xl space-y-4 my-3 backdrop-blur-xl relative overflow-hidden">
+                            {/* Ambient glow */}
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                            {/* Card Top: Tag + Time + Response Badge */}
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                                <Gift className="w-3.5 h-3.5 text-amber-400" /> Formal Employment Offer
+                              </span>
+
+                              <div className="flex items-center gap-2">
+                                {msg.offerDetails.status === 'accepted' ? (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Offer Accepted
+                                  </span>
+                                ) : msg.offerDetails.status === 'declined' ? (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+                                    <XCircle className="w-3 h-3 text-rose-400" /> Offer Declined
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 animate-pulse">
+                                    Awaiting Your Decision
+                                  </span>
+                                )}
+
+                                <span className="text-[10px] text-slate-400">
+                                  {new Date(msg.createdAt).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Role & Compensation Banner */}
+                            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div>
+                                <span className="text-[10px] uppercase font-black text-amber-400 tracking-wider">
+                                  Role Offered
+                                </span>
+                                <h4 className="text-lg font-extrabold text-white">
+                                  {msg.offerDetails.designation || selectedConversation.job?.title}
+                                </h4>
+                              </div>
+
+                              <div className="text-left sm:text-right">
+                                <span className="text-[10px] uppercase font-black text-amber-400 tracking-wider">
+                                  Compensation (CTC)
+                                </span>
+                                <div className="text-lg font-black text-emerald-400">
+                                  {msg.offerDetails.annualCompensation}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Offer Terms Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs bg-black/40 p-3.5 rounded-2xl border border-amber-500/20">
+                              <div className="flex items-center gap-2.5 text-slate-200">
+                                <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
+                                <div>
+                                  <span className="block text-[10px] text-slate-400 font-semibold">Joining Date</span>
+                                  <span className="font-bold text-slate-100">
+                                    {msg.offerDetails.joiningDate
+                                      ? new Date(msg.offerDetails.joiningDate).toLocaleDateString([], {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric',
+                                        })
+                                      : 'To be agreed'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2.5 text-slate-200">
+                                <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+                                <div>
+                                  <span className="block text-[10px] text-slate-400 font-semibold">Workplace Mode</span>
+                                  <span className="font-bold text-slate-100 capitalize">
+                                    {msg.offerDetails.workplaceType}
+                                    {msg.offerDetails.location ? ` • ${msg.offerDetails.location}` : ''}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2.5 text-slate-200">
+                                <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                                <div>
+                                  <span className="block text-[10px] text-slate-400 font-semibold">Decision Deadline</span>
+                                  <span className="font-bold text-slate-100">
+                                    {msg.offerDetails.decisionDeadline
+                                      ? new Date(msg.offerDetails.decisionDeadline).toLocaleDateString([], {
+                                          month: 'short',
+                                          day: 'numeric',
+                                        })
+                                      : 'Flexible'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Benefits Perks */}
+                            {msg.offerDetails.benefits && msg.offerDetails.benefits.length > 0 && (
+                              <div className="space-y-1.5">
+                                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                                  Included Perks & Benefits
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {msg.offerDetails.benefits.map((b, bIdx) => (
+                                    <span
+                                      key={bIdx}
+                                      className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold text-slate-200 flex items-center gap-1"
+                                    >
+                                      <Check className="w-3 h-3 text-emerald-400" /> {b}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Recruiter Note / Personal Message */}
+                            {(msg.offerDetails.message || msg.content) && (
+                              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 italic leading-relaxed">
+                                &ldquo;{msg.offerDetails.message || msg.content}&rdquo;
+                              </div>
+                            )}
+
+                            {/* Interactive Candidate Action Area */}
+                            {msg.offerDetails.status === 'pending' ? (
+                              <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRespondOffer('accept')}
+                                  disabled={respondingOffer}
+                                  className="w-full sm:flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/25 cursor-pointer disabled:opacity-50"
+                                >
+                                  {respondingOffer ? (
+                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Check className="w-4 h-4" />
+                                  )}
+                                  <span>Accept Job Offer</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDeclineReason('');
+                                    setDeclineModalOpen(true);
+                                  }}
+                                  disabled={respondingOffer}
+                                  className="w-full sm:w-auto py-3 px-4 rounded-2xl bg-white/5 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 border border-rose-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>Decline</span>
+                                </button>
+                              </div>
+                            ) : msg.offerDetails.status === 'accepted' ? (
+                              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-300 font-bold">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                <span>
+                                  You accepted this offer! The hiring team has been notified and will reach out with onboarding next steps.
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-xs text-rose-300">
+                                <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                                <span>
+                                  Offer was declined{msg.offerDetails.declineReason ? `: "${msg.offerDetails.declineReason}"` : '.'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ) : isInterviewCard && msg.interviewDetails ? (
                           <div className="max-w-lg w-full p-5 rounded-3xl bg-gradient-to-br from-indigo-900/90 via-slate-900 to-slate-950 border border-indigo-500/40 text-white shadow-2xl space-y-3.5 my-2">
                             <div className="flex items-center justify-between">
                               <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1.5">
@@ -488,6 +748,63 @@ function MessagesContent() {
           )}
         </div>
       </div>
+
+      {/* Decline Offer Modal */}
+      {declineModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white dark:bg-[#111736] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-rose-500" />
+                <span>Decline Job Offer</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setDeclineModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Are you sure you want to decline this job offer? You may provide an optional note for the hiring team explaining your decision (e.g. accepted another offer, compensation, location).
+            </p>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                Reason for declining (Optional)
+              </label>
+              <textarea
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                placeholder="e.g., Thank you for the generous offer. I have decided to accept another opportunity that aligns more closely with my current career path."
+                rows={3}
+                className="w-full text-xs p-3 rounded-2xl bg-slate-50 dark:bg-[#0A0F26] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeclineModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRespondOffer('decline', declineReason)}
+                disabled={respondingOffer}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
+              >
+                {respondingOffer ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                <span>Confirm Decline</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

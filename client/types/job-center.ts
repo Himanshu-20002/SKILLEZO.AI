@@ -93,6 +93,7 @@ export interface JobApplication {
   resumeSnapshot?: HistoricalResumeSnapshot | null;
   resumeSnapshotHash?: string | null;
   interviewSchedule?: any | null;
+  offerDetails?: any | null;
   conversationId?: string | null;
 }
 

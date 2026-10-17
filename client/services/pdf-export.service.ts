@@ -53,3 +53,101 @@ export async function exportResumeToPdf(
     URL.revokeObjectURL(url);
   }, 300);
 }
+
+/**
+ * Opens the high-fidelity vector PDF in a new browser tab for immediate viewing.
+ * Uses the existing @react-pdf/renderer and ResumePdfDocument component.
+ */
+export async function previewResumePdf(
+  document: ResumeDocument,
+  config?: ResumeBuilderConfig | null
+): Promise<void> {
+  if (typeof window === 'undefined') {
+    throw new Error('PDF preview can only be run in browser context.');
+  }
+
+  const [{ pdf }, { ResumePdfDocument }] = await Promise.all([
+    import('@react-pdf/renderer'),
+    import('@/components/resume-studio/pdf/ResumePdfDocument'),
+  ]);
+
+  const docElement = React.createElement(ResumePdfDocument, {
+    document,
+    config,
+  });
+
+  const blob = await pdf(docElement as any).toBlob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 60000);
+}
+
+/**
+ * Constructs a canonical ResumeDocument from application candidate data if an AST snapshot is absent.
+ */
+export function createCandidateResumeDocument(params: {
+  candidateName?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  headline?: string;
+  bio?: string;
+  skills?: string[];
+}): ResumeDocument {
+  const name = params.candidateName || 'Candidate';
+  const email = params.email || 'candidate@example.com';
+  const headline = params.headline || 'Full Stack Engineer';
+  const skillsList =
+    params.skills && params.skills.length > 0
+      ? params.skills
+      : ['React', 'TypeScript', 'Node.js', 'System Architecture'];
+
+  return {
+    id: `doc_${Date.now()}`,
+    userId: 'usr_candidate',
+    title: `${name} — Professional Resume`,
+    contact: {
+      fullName: name,
+      email,
+      phone: params.phone || '',
+      location: params.location || 'India',
+      links: [],
+    },
+    summary: {
+      text: params.bio || `Candidate applying for ${headline}. Verified credentials on SKILLEZO AI Career OS.`,
+      targetRole: headline,
+      yearsOfExperience: 3,
+    },
+    skills: skillsList.map((skill, idx) => ({
+      id: `sk_${idx}`,
+      name: skill,
+      category: 'OTHER',
+      proficiency: 'ADVANCED',
+      evidenceIds: [],
+    })),
+    experience: [],
+    projects: [],
+    education: [],
+    achievements: [],
+    evidence: [],
+    templateConfig: {
+      templateId: 'classic',
+      fontFamily: 'Inter',
+      fontSize: 'regular',
+      margins: 'normal',
+    },
+    currentVersion: {
+      versionId: 'v1',
+      versionNumber: 1,
+      name: 'Initial Submission',
+      createdAt: new Date().toISOString(),
+    },
+    schemaVersion: '1.0.0',
+    isMaster: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}

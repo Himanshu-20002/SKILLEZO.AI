@@ -47,13 +47,16 @@ export class RecruiterApplicationController {
     const applicationId = req.params.applicationId as string;
     const fileInfo = await this.service.streamApplicationResume(userId, applicationId);
 
+    const isDownload = req.query.download === "true" || req.query.download === "1";
+    const disposition = isDownload ? "attachment" : "inline";
+
     res.setHeader("Content-Type", fileInfo.mimeType);
     if (fileInfo.fileSize > 0) {
       res.setHeader("Content-Length", fileInfo.fileSize);
     }
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${encodeURIComponent(fileInfo.fileName)}"`
+      `${disposition}; filename="${encodeURIComponent(fileInfo.fileName)}"`
     );
 
     fileInfo.stream.pipe(res);

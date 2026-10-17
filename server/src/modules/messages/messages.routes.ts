@@ -20,5 +20,11 @@ router.post("/conversations/:id/messages", asyncHandler(MessagesController.sendM
 // Schedule an interview for an application
 router.post("/applications/:id/schedule-interview", asyncHandler(MessagesController.scheduleInterview));
 
+// Extend official job offer for an application
+router.post("/applications/:id/send-offer", asyncHandler(MessagesController.sendOffer));
+
+// Candidate responds to job offer (accept / decline)
+router.post("/applications/:id/respond-offer", asyncHandler(MessagesController.respondOffer));
+
 export const messagesRouter = router;
 export default router;
