@@ -1,207 +1,174 @@
-# SkilledHyre Labs & SKILLEZO.AI — Comprehensive End-of-Day Engineering Work Report
-
-**Date:** Friday, October 16, 2026  
-**Engineer:** Himanshu  
-**Timeframe:** Full Day Sprint — Morning, Mid-Day, Afternoon & Evening Sessions (09:30 AM – 06:15 PM IST)  
-**Initiatives:**
-1. **Track A (SkilledHyre Labs Website — `office-Project/website`):** Hero Video FastStart & 16:9 Experience, Mobile Scroll Fluidity & Lighthouse 90+ Optimization, and Blog/News Edge WebP Image Acceleration (4.4s ➔ < 40ms)
-2. **Track B (SKILLEZO.AI SaaS Platform — `office-Project/SKILLEZO.AI`):** Live Razorpay Sandbox Gateway Integration, Server Runtime Update, Dual Remote Git Push (`origin` & `client`), and AI Interview/Screening Architecture Audit
-**Status:** 🟢 **100% Completed, Verified, Built & Pushed Across All Remotes**
+# 📊 SKILLEZO.AI — End-of-Day Engineering Work Report
+**Date:** Saturday, October 17, 2026  
+**Session:** Full Day Sprint (09:30 – 19:55 IST)  
+**Sprint Focus:** Recruiter Pipeline UX, Full Job Offer Flow, ATS Review Drawer & Resume Export, Production Bug Fixes (Notification 404 & Job Center Counters)  
+**Target Release:** Soft MVP Production Release  
+**Current System Health:** 🟢 **100% Operational & Green** (Client [:3000] & Server [:5000] Active, Zero TypeScript Errors on Client & Server, All Changes Pushed to GitHub)
 
 ---
 
-## 📌 1. Executive Summary
+## 🎯 1. Executive Summary
 
-Today was an intensive, high-velocity dual-track engineering day delivering transformative performance breakthroughs on the **SkilledHyre Labs Public Website** and critical payment infrastructure and source synchronization for the **SKILLEZO.AI Core SaaS Platform**:
+Today's intensive full-day engineering sprint accomplished a complete end-to-end transformation of the recruitment lifecycle, closed critical production readiness gaps, and resolved candidate-facing routing and metric counter defects.
 
-- **Track A (SkilledHyre Labs Website):**
-  1. *Video Playback & FastStart*: Eliminated the initial-load black screen by re-muxing the MP4 container to place the `moov` atom at byte 32 (**FastStart**), implemented responsive 16:9 mobile framing with centered CTA button, and engineered seamless scroll-activated 10% audio with continuous ambient b-roll fallback.
-  2. *Mobile Scroll Smoothness & Lighthouse 90+*: Decoupled GSAP mobile pinning to eliminate touchscreen jitter and address-bar layout thrashing, unburdened main-thread CPU timers, replaced heavy animation libraries (`framer-motion`) with native browser `requestAnimationFrame` counters, promoted 23 non-composited animations to GPU layers, and eradicated Cumulative Layout Shift (CLS: 0.105 ➔ 0.00).
-  3. *Blog & News Image Loading Acceleration (4.4s ➔ < 40ms)*: Diagnosed and resolved extreme image loading latency caused by uncompressed 1.85 MB third-party ImgBB images. Routed delivery through global Edge WebP transformation (98.9% payload reduction down to ~18 KB), implemented Next.js `<Image>` with shimmering skeleton loaders, and integrated client-side HTML5 canvas compression in the admin panel.
-  4. *Git Synchronization*: Verified and pushed commits `cd86c03` and `25821df` to both `origin/main` (`Himanshu-20002/skilledhyre-labs`) and `upstream/main` (`skilledhyre22/website`).
-
-- **Track B (SKILLEZO.AI SaaS Platform):**
-  1. *Razorpay Sandbox Gateway Integration*: Ingested merchant test credentials, performed automated cryptographic character disambiguation on the secret key (`jm5FflSHjI9Bx5oBl3qHdeLZ`), wired active sandbox mode (`MOCK_BILLING_ENABLED=false`) in `server/.env` and `client/.env.local`, and verified live order creation (`order_ToVHTP4yCBaRZJ`) for ₹399 directly against Razorpay's API.
-  2. *Server Runtime Refresh*: Updated server dev runtime to the latest build with live environment configurations, connecting cleanly to MongoDB Atlas with all 25+ API routers mounted.
-  3. *Dual-Remote Git Commit & Push*: Staged 33 files covering Phase 21 (Part 4) Razorpay integration, Pro subscription upgrade, 100,000 monthly token replenishment, universal 402 Paywall modal, and dashboard UI elevations. Pushed commit `9faf5c6` cleanly to both `origin/main` (`Himanshu-20002/SKILLEZO.AI`) and `client/main` (`skilledhyre22/SKILLEZO`).
-  4. *AI Interview & Screening Audit*: Executed a comprehensive architectural audit mapping active Phase 22 human recruiter interview scheduling against the planned Post-MVP Phase B AI Mock Interview simulator.
-
----
-
-## 📊 2. Full-Day Delivery Scorecard
-
-| Project / Layer | Initiative / Component | Status | Key Deliverable & Performance Impact |
-| :--- | :--- | :---: | :--- |
-| **Website (Track A)** | MP4 FastStart Re-muxing | 🟢 Pushed | Moved `moov` atom to byte 32; browsers decode frame 0 within first 30 KB. |
-| **Website (Track A)** | Instant Muted Autoplay on Load | 🟢 Pushed | Added `autoPlay muted loop playsInline preload="metadata"`; 100% compliant. |
-| **Website (Track A)** | Scroll-Triggered 10% Volume | 🟢 Pushed | GSAP ScrollTrigger invokes `playVideoSafely(true)` unmuting to 10% on section scroll. |
-| **Website (Track A)** | Mobile 16:9 Aspect Ratio | 🟢 Pushed | Responsive `aspect-ratio: 16/9; height: auto !important;` with centered CTA button. |
-| **Website (Track A)** | Mobile Non-Pinning Scroll | 🟢 Pushed | Set `pin: false` on mobile; replaced with GPU scale `0.92 ➔ 1.0` (zero touch jank). |
-| **Website (Track A)** | Mobile Lighthouse Score | 🟢 90+ | Jumped from **63 ➔ 90+**; TBT reduced by 92% (3,050ms ➔ < 250ms). |
-| **Website (Track A)** | Cumulative Layout Shift (CLS) | 🟢 0.00 | Reduced from **0.105 ➔ 0.00** via dynamic import min-height skeleton guards. |
-| **Website (Track A)** | Blog & News Edge WebP CDN | 🟢 Pushed | Cloudflare edge WebP transformation; reduced image size **1,850 KB ➔ ~18 KB (98.9%)**. |
-| **Website (Track A)** | Blog Image Load Time | 🟢 < 40 ms | Load latency slashed from **~4.4 seconds ➔ < 40 ms (cached)**. |
-| **Website (Track A)** | Admin Canvas Compression | 🟢 Pushed | HTML5 canvas auto-resizes & compresses photos (< 180 KB WebP) before ImgBB upload. |
-| **Website (Track A)** | Static Asset Caching | 🟢 Pushed | 1-year immutable caching (`public, max-age=31536000, immutable`) for `/video`. |
-| **SKILLEZO (Track B)** | Server Runtime & Version Update | 🟢 Up to Date | Server refreshed with live credentials; clean startup and zero runtime errors. |
-| **SKILLEZO (Track B)** | Razorpay Sandbox Credentials | 🟢 Configured | Configured `server/.env` & `client/.env.local`; resolved secret character ambiguity (`I`). |
-| **SKILLEZO (Track B)** | Sandbox Order Creation Test | 🟢 Verified | Created test order `order_ToVHTP4yCBaRZJ` (₹399) directly with Razorpay gateway. |
-| **SKILLEZO (Track B)** | `/api/billing/config` Route | 🟢 Active | Live endpoint returns `isMockMode: false` and active public `keyId`. |
-| **SKILLEZO (Track B)** | Dual Remote Git Push | 🟢 Pushed | Clean commit `9faf5c6` pushed to both `origin` and `client` remotes with 0 drift. |
-| **SKILLEZO (Track B)** | AI Interview & Screening Audit | 🟢 Completed | Identified active Phase 22 recruiter workflow vs planned Post-MVP Phase B simulator. |
-| **Platform Quality** | Vitest Test Suite | 🟢 100% Pass | All backend unit tests passing across billing, plans, and core modules. |
-| **Platform Quality** | TypeScript Diagnostics | 🟢 0 Errors | Clean compilation across client and server with zero type errors. |
+### Key Milestones Achieved:
+1. **Recruiter UX & Pipeline Streamlining**:
+   - Eliminated confusing legacy jargon (*"Open Requisitions"*, *"Active Inflow"*) in favor of natural terminology (*"Active Job Openings"*, *"Total Applicants"*).
+   - Removed the redundant `"Under Review"` Kanban stage, condensing the pipeline into 5 actionable phases: `Applied ➔ Shortlisted ➔ Interviewing ➔ Offered ➔ Hired (& Rejected)`.
+   - Fixed data leakage in dashboard counters by strictly scoping job and applicant queries to the recruiter's authenticated company.
+2. **Live Interview Process Verification**:
+   - Scheduled and conducted a verified live technical interview session via Google Meet (`https://meet.google.com/ngx-hyww-qhh`) directly from the candidate chat drawer.
+3. **ATS Drawer UI Optimization & PDF Resume Export**:
+   - Cleaned up confusing UI elements (removed redundant optional feedback and ambiguous "Verified vs Claimed" competency blocks).
+   - Reused the existing native PDF generator (`pdf-export.service.ts`) without adding redundant micro-services, enabling recruiters to view and download the candidate's exact applied resume snapshot in 1 click.
+4. **End-to-End Job Offer Flow (Recruiter ➔ Candidate ➔ Hired)**:
+   - Built a rich, modal-driven offer generation flow for recruiters ([`SendOfferModal.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/recruiter/SendOfferModal.tsx)) configuring compensation (CTC), joining date, workplace mode, decision deadline, benefits, and personalized notes.
+   - Engineered backend endpoints (`POST /api/messages/applications/:id/send-offer` and `POST /api/messages/applications/:id/respond-offer`) with full `IOfferDetails` schema persistence, conversation message cards, and timeline event logging.
+   - Built interactive candidate-facing offer cards in [`dashboard/messages`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/messages/page.tsx) with live dynamic badges, one-click **"Accept Job Offer"**, and a modal-driven **"Decline"** flow with decline reasons.
+   - Added an **Offer Action Banner** to [`AppliedJobsTracker.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/dashboard/job-center/AppliedJobsTracker.tsx) in Job Center with direct CTA links to review and respond.
+5. **Critical Bug Fixes for Production Readiness**:
+   - **Fixed 404 on Notification Click**: Resolved defect where clicking an application status notification navigated to a non-existent `/dashboard/applications` route. Added Next.js server redirects, a client-side fallback route, and intelligent routing directly into `/dashboard/messages` (for offers/interviews) or `/dashboard/job-center?tab=applied`.
+   - **Fixed "Platform Jobs: 0" in Job Center**: Identified and fixed a pagination slice bug where metric cards and tab badges were calculating totals from only the 6 items on the current page slice. Backend now computes and returns global counts (`platformCount`, `externalCount`), and the All Jobs feed prioritizes direct platform jobs at the top of page 1.
 
 ---
 
-## 🛠️ 3. Detailed Deliverables by Project
+## 🛠️ 2. Detailed Bug Fixes & Architectural Enhancements
+
+### 1. 🎁 Complete End-to-End Job Offer Flow
+* **The Problem**: Clicking "Send Offer" previously only updated an internal string status to `"offered"`. There were no terms (CTC, joining date, deadline, workplace mode), no offer visible to the candidate, and no way for the candidate to accept or decline.
+* **The Solution (Zero Redundancy Pattern)**:
+  * **Backend Schema & Endpoints**:
+    * Defined `IOfferDetails` in [`Application.model.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/database/models/Application.model.ts) and [`Message.model.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/database/models/Message.model.ts) (`designation`, `annualCompensation`, `joiningDate`, `workplaceType`, `location`, `decisionDeadline`, `benefits`, `message`, `status: 'pending' | 'accepted' | 'declined'`, `offeredAt`, `respondedAt`, `declineReason`).
+    * Added `offer_letter` message type and endpoints:
+      * `POST /api/messages/applications/:id/send-offer` (Recruiter)
+      * `POST /api/messages/applications/:id/respond-offer` (Candidate)
+    * Application timeline history and conversation listings automatically hydrate `offerDetails`.
+  * **Recruiter Side**:
+    * Created [`SendOfferModal.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/recruiter/SendOfferModal.tsx) with role details, compensation input with currency formatting, date picker, workplace type, deadline, perk pills, and note.
+    * Added live offer status tracking in [`CandidateMessagesTab.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/recruiter/CandidateMessagesTab.tsx).
+  * **Candidate Side**:
+    * In [`client/app/dashboard/messages/page.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/messages/page.tsx), added dynamic stage header badges (`🎁 Offer Extended`, `🎉 Hired`, `📅 Interviewing`, `🛡️ Shortlisted`).
+    * Rendered the interactive Job Offer Card with terms grid, perks, recruiter note, and responsive action buttons:
+      * **Accept Job Offer**: Immediately marks offer accepted, updates application status to `hired`, logs celebratory message, and notifies recruiter.
+      * **Decline Job Offer**: Opens modal allowing candidate to provide an optional explanation note before recording decline.
+    * In [`AppliedJobsTracker.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/dashboard/job-center/AppliedJobsTracker.tsx), added gold-accented **Official Job Offer Extended Banner** and emerald **Hired & Onboarded Banner** with direct chat links.
 
 ---
 
-### Track A: SkilledHyre Labs Website (`office-Project/website`)
-
-**Git Branch:** `main`  
-- **Client Remote:** `https://github.com/skilledhyre22/website` (`upstream/main`) ✅  
-- **Personal Remote:** `https://github.com/Himanshu-20002/skilledhyre-labs` (`origin/main`) ✅  
-
-#### Phase 1: Video Engine, MP4 FastStart & Mobile 16:9 Experience
-
-1. **Binary MP4 FastStart Re-Muxing**:
-   - *Root Cause*: Binary atom inspection of `quality_broll_new.mp4` revealed the `moov` metadata index was at byte 9,928,473 (end of file). Browsers had to download all ~9.92 MB before decoding the first frame, causing a persistent black screen.
-   - *Fix*: Re-muxed the container with FastStart, placing `moov` at **byte 32** after `ftyp` and updating chunk offset tables (`stco`). Video decoding begins within the first **30 KB** of HTTP transfer.
-
-2. **Autoplay & Scroll Audio Logic ([`About.jsx`](file:///x:/projects/next.js/office-Project/website/src/components/landing-page/reusable-about-component/About.jsx))**:
-   - *Instant Muted Autoplay*: `<video autoPlay muted loop playsInline preload="metadata" />` begins playing silently on mount, 100% compliant with browser policies.
-   - *Scroll-Activated 10% Audio*: GSAP ScrollTrigger (`onEnter` & `onEnterBack`) invokes `playVideoSafely(true)`, smoothly activating **10% volume (`0.10`)**. Added a resilient user-gesture unlocker (`click`, `pointerdown`, `keydown`, `touchstart`).
-   - *Ambient B-Roll*: Scrolling back up to Hero (`onLeaveBack`) mutes the video so audio does not clash with the header, while keeping playback continuous as ambient b-roll instead of freezing into a dark pause.
-   - *Offscreen Conservation*: Hardware-level `IntersectionObserver` combined with GSAP `onLeave` pauses the video immediately when scrolled past, preventing battery and GPU drain.
-
-3. **Mobile 16:9 Aspect Ratio & Button Centering ([`about.css`](file:///x:/projects/next.js/office-Project/website/src/components/landing-page/reusable-about-component/about.css))**:
-   - Replaced fixed mobile pixel heights with `aspect-ratio: 16 / 9; height: auto !important;`, fitting full widescreen video on mobile without cropping logos or text.
-   - Centered the "Get Started" CTA button (`left: 50%; transform: translate(-50%, ...)`).
-   - Repositioned the volume widget into the bottom-right corner to prevent overlap.
-   - Preserved desktop layout (above 768px) 100% intact.
+### 2. 🚫 Fix: 404 Error When Clicking Notification
+* **The Problem**: Clicking an application status notification (e.g., *"Application Status: OFFERED"*) redirected the user to `http://localhost:3000/dashboard/applications`, triggering a Next.js `404: This page could not be found` screen.
+* **Root Cause**:
+  * In [`notification.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/notifications/notification.service.ts), `actionUrl` was hardcoded to `"/dashboard/applications"`.
+  * In the Next.js frontend router, candidate applications are tracked under `/dashboard/job-center?tab=applied`, while active conversation threads reside in `/dashboard/messages`. No `/dashboard/applications` route existed.
+* **Resolution**:
+  1. **Route Fallback**: Created [`client/app/dashboard/applications/page.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/applications/page.tsx) to capture requests and redirect gracefully to `/dashboard/messages?appId=...` (for offers/interviews) or `/dashboard/job-center?tab=applied`.
+  2. **Server-Level Redirect**: Added `redirects()` in [`client/next.config.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/next.config.ts) mapping `/dashboard/applications` ➔ `/dashboard/job-center?tab=applied`.
+  3. **Smart Notification Routing**: Updated [`NotificationDropdown.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/layout/NotificationDropdown.tsx) and [`NotificationCard.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/dashboard/notifications/NotificationCard.tsx) to resolve any incoming `actionUrl`—routing offer, interview, and shortlist notifications directly to the candidate's messages thread.
+  4. **Backend Service Update**: Updated [`notification.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/notifications/notification.service.ts) to generate `actionUrl: "/dashboard/messages?appId=${applicationId}"` for offer/interview/shortlist stages and `/dashboard/job-center?tab=applied` for general status changes.
 
 ---
 
-#### Phase 2: Mobile Performance & Scroll Fluidity Elevation (Lighthouse 63 ➔ 90+)
-
-1. **Eliminated GSAP Mobile Scroll Pinning ([`About.jsx`](file:///x:/projects/next.js/office-Project/website/src/components/landing-page/reusable-about-component/About.jsx))**:
-   - *Problem*: Mobile touchscreen pinning (`pin: true`) caused URL address-bar jitter and layout thrashing as mobile browsers collapsed/expanded their navigation bars.
-   - *Fix*: Set `pin: false` exclusively under `mm.add("(max-width: 768px)", ...)`. Replaced pinning with a native GPU-composited scale-in animation (`scale: 0.92 ➔ 1.0`), delivering butter-smooth 60/120 FPS kinetic momentum scrolling on iOS and Android. Desktop 3D scale pinning remains intact.
-
-2. **Main-Thread CPU Unburdening ([`MatrixTextRotator.js`](file:///x:/projects/next.js/office-Project/website/src/components/common/MatrixTextRotator.js))**:
-   - Throttled the scramble timer from 25ms to 60ms.
-   - Integrated an `IntersectionObserver` that pauses all interval timers whenever the rotator is scrolled out of the viewport.
-
-3. **23 Non-Composited Animations Promoted to GPU**:
-   - **`HeroBackground.js`**: Removed CPU-rasterized `drop-shadow` from animated SVG stars; hid stars 6–11 on mobile (`hidden sm:block`) to cut mobile rendering overhead in half.
-   - **`FloatingSpheresBackground.js`**: Disabled perpetual SVG vector gradient scaling animations on mobile screens (`@media (max-width: 768px)`), eliminating continuous full-viewport SVG vector repaints.
-   - **`ReviewsSection.module.css`**: Promoted marquee track to GPU layers and disabled heavy alpha mask gradient on mobile screens.
-
-4. **Critical Route Bundle Trimming ([`CounterItem.js`](file:///x:/projects/next.js/office-Project/website/src/components/common/CounterItem.js))**:
-   - Replaced `framer-motion` (`useSpring`, `useInView`) with a lightweight 20-line native `requestAnimationFrame` cubic ease-out counter triggered by an `IntersectionObserver`. Shed ~35 KB gzipped / 120 KB JS from the initial page bundle.
-
-5. **Zero-CLS Layout Shift Elimination ([`HomePageClient.js`](file:///x:/projects/next.js/office-Project/website/src/components/home/HomePageClient.js))**:
-   - Added minimum-height skeleton placeholders (`min-h-[650px]` and `min-h-[450px]`) to `ServicesScroll` and `ReviewsSection` dynamic imports, reducing Cumulative Layout Shift (CLS) from **0.105 to 0.00**.
+### 3. 🏢 Fix: "Direct Platform Jobs: 0" Inconsistency in Smart Job Center
+* **The Problem**: On the "All Jobs" view, the metric cards and header displayed:
+  * `Total Opportunities: 151 (0 Platform • 6 Jooble)`
+  * `Direct Platform Jobs: 0`
+  * `Jooble External Jobs: 6`
+  * Tab badge: `🏢 Direct Platform 0`
+  * But when clicking the "Direct Platform" tab, the count flipped to `Direct Platform Jobs: 6` and `Jooble External Jobs: 0`.
+* **Root Cause**:
+  * The frontend was computing `platformJobsCount` and `externalJobsCount` using `liveJobs.filter(...)`, where `liveJobs` represented only the **6 items on the current pagination page**.
+  * Jooble aggregator jobs were imported recently with newer timestamps. When sorted by `createdAt: -1`, page 1 of "All Jobs" contained only 6 Jooble jobs, making the page slice report `0 Platform`.
+* **Resolution**:
+  1. **Global Aggregates in Backend API**: Updated [`JobRepository.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/database/repositories/job/JobRepository.ts) and [`jobs.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/jobs/jobs.service.ts) to execute parallel base counts returning true catalog counts (`platformCount` and `externalCount`) in the pagination response.
+  2. **Prioritized Platform Sorting**: On the "All Jobs" feed, sorting now prioritizes Skillezo platform jobs (`{ sourceType: -1, createdAt: -1 }`), showcasing real employer listings on page 1 before external aggregator listings.
+  3. **Frontend State Alignment**: In [`client/app/dashboard/job-center/page.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/job-center/page.tsx), `platformJobsCount`, `externalJobsCount`, and `totalOpportunitiesCount` consume global counts so cards and tab badges remain 100% accurate across all tabs.
 
 ---
 
-#### Phase 3: Blog & News Image Loading Acceleration (4.4s ➔ < 40ms)
-
-1. **Root Cause Analysis**:
-   - Blog and news cards uploaded via Admin panel were hosted on ImgBB (`https://i.ibb.co/`) as uncompressed raw PNGs (**~1.85 MB each**).
-   - Six cards on the homepage forced downloading **> 11 MB of images** over slow free-tier CDN connections, resulting in **3.9 to 4.4 second download times** per card and ugly scanline rendering.
-
-2. **Global Edge WebP Transformation ([`BlogCard.js`](file:///x:/projects/next.js/office-Project/website/src/components/home/BlogCard.js))**:
-   - Implemented `getOptimizedImageUrl()` routing ImgBB images through Cloudflare's global edge CDN (`wsrv.nl`).
-   - Automatically converts raw PNGs into modern WebP scaled to exact card dimensions:
-     - **File Size**: Reduced from **1,850 KB ➔ ~18 KB (98.9% reduction)**.
-     - **Download Latency**: Dropped from **~4.4 seconds ➔ < 40 ms (cached)**.
-
-3. **Next.js `<Image>` & Shimmer Skeleton Loaders**:
-   - Upgraded `BlogCard.js`, `blogs/[id]/page.js`, and `news/[id]/page.js` to Next.js `<Image>` with responsive `sizes` and `quality={75}`.
-   - Added dark shimmering skeleton placeholders with smooth opacity fade-in and graceful `onError` fallback handling.
-
-4. **Browser-Side Upload Compression ([`ImageUploader.js`](file:///x:/projects/next.js/office-Project/website/src/components/admin/ImageUploader.js))**:
-   - Implemented client-side HTML5 canvas compression in the admin panel.
-   - Large 3–8 MB camera photos are automatically resized (max 1280×720) and compressed to crisp WebP (< 180 KB) directly in the browser before uploading to ImgBB.
-
-5. **Updated `remotePatterns` ([`next.config.mjs`](file:///x:/projects/next.js/office-Project/website/next.config.mjs))**:
-   - Whitelisted `i.ibb.co`, `**.ibb.co`, `wsrv.nl`, `picsum.photos`, and `via.placeholder.com` for secure Next.js image optimization.
+### 4. 📄 ATS Drawer Resume Snapshot & PDF Generation
+* **The Problem**: Recruiters in the review drawer could not download or view the candidate's submitted resume snapshot.
+* **The Solution**: Connected the existing [`pdf-export.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/services/pdf-export.service.ts) (`createCandidateResumeDocument`, `previewResumePdf`, `exportResumeToPdf`) to the review drawer.
+* Recruiters can click **"Download PDF Resume"** or **"Open PDF Preview"** to inspect the frozen resume snapshot submitted by the candidate with zero redundant code.
 
 ---
 
-### Track B: SKILLEZO.AI SaaS Platform (`office-Project/SKILLEZO.AI`)
+## 📊 3. End-of-Day Scorecard
 
-**Git Branch:** `main`  
-- **Origin Remote:** `https://github.com/Himanshu-20002/SKILLEZO.AI.git` (`origin/main`) ✅  
-- **Client Remote:** `https://github.com/skilledhyre22/SKILLEZO.git` (`client/main`) ✅  
-
-#### 1. Live Razorpay Sandbox Gateway Integration
-- **Merchant Sandbox Key ID:** `rzp_test_ToUYhfqj2y4KSd`
-- **Secret Key Disambiguation:** Ran automated node permutation testing scripts to resolve visual font ambiguities between uppercase `I` and lowercase `l`, successfully validating `jm5FflSHjI9Bx5oBl3qHdeLZ` (Character 10 = capital `I`).
-- **Environment Configuration**:
-  - Configured `server/.env`:
-    ```env
-    RAZORPAY_KEY_ID=rzp_test_ToUYhfqj2y4KSd
-    RAZORPAY_KEY_SECRET=jm5FflSHjI9Bx5oBl3qHdeLZ
-    MOCK_BILLING_ENABLED=false
-    ```
-  - Configured `client/.env.local`:
-    ```env
-    NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_ToUYhfqj2y4KSd
-    ```
-- **Direct Order Creation Test**: Created live sandbox order `order_ToVHTP4yCBaRZJ` for ₹399 (`amount: 39900` paise) with status `created`.
-- **Public Billing Config Endpoint (`GET /api/billing/config`)**:
-  - Live endpoint verified returning `isMockMode: false` and active public `keyId: "rzp_test_ToUYhfqj2y4KSd"`.
-  - Browser checkout in `/dashboard/plan` is 100% connected to Razorpay Checkout modal (UPI QR, cards, netbanking).
-
-#### 2. Server Runtime Update & Environment Refresh
-- Refreshed backend server runtime to latest build, loading environment variables cleanly with zero startup warnings.
-- Verified MongoDB Atlas connection, Better Auth session handlers, and all 25+ application routes mounted cleanly.
-
-#### 3. Dual-Remote Git Synchronization (`origin` & `client`)
-- **Commit Hash:** [`9faf5c6`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI)
-- **Files Staged:** 33 files changed (`+2,224` additions, `-485` deletions).
-- **Scope Included:** Razorpay billing services, order creation, HMAC SHA-256 verification, Pro subscription activation, 100k token quota refill, client checkout SDK, and universal 402 upgrade paywall modal.
-- **Remote Push Confirmation:**
-  - `origin/main` (`https://github.com/Himanshu-20002/SKILLEZO.AI.git`): Pushed cleanly (`59eeb45..9faf5c6`).
-  - `client/main` (`https://github.com/skilledhyre22/SKILLEZO.git`): Pushed cleanly (`632781f..9faf5c6`).
-  - Both remotes are 100% synchronized with clean working trees.
-
-#### 4. AI Interview & Screening Architectural Audit
-- Conducted deep codebase audit addressing questions on AI Interview and Initial Screening implementation.
-- Mapped active features:
-  - **Skill Verification Engine** ([`/dashboard/assessments`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/assessments/page.tsx)): Algorithmic MCQ/code quizzes awarding cryptographic badges (`TokenFeature.MOCK_INTERVIEW`).
-  - **Recruiter Screening & Interview Pipeline (Phase 22)** ([`ScheduleInterviewModal.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/recruiter/ScheduleInterviewModal.tsx)): Human recruiter review, shortlisting, two-way messaging, and interview scheduling with Google Meet / Zoom links.
-  - **AI Career Coach** ([`/dashboard/ai-career-coach`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/ai-career-coach/page.tsx)): Conversational mentor for resumes, skill roadmaps, and salary negotiation.
-- Confirmed that real-time audio/video AI Mock Interviews were intentionally scheduled for Post-MVP Phase B as documented in [`DEVELOPMENT_STATUS_AUDIT.md`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/doc/backend/overview/DEVELOPMENT_STATUS_AUDIT.md#L695) (Section 21).
+```text
+========================================================================================
+SKILLEZO.AI — END-OF-DAY SCORECARD (Saturday, October 17, 2026)
+========================================================================================
+1. Recruiter Jargon Simplification ("Requisition" ➔ "Job")     : [████████████████████] 100% (Completed)
+2. Recruiter Data Scoping & Demo Job Isolation                  : [████████████████████] 100% (Completed)
+3. Kanban Pipeline Simplification (Purged "Under Review")       : [████████████████████] 100% (Completed)
+4. Google Meet Video Interview Verification                     : [████████████████████] 100% (Verified Live)
+5. ATS Review Drawer Cleanups & Native PDF Resume Viewer        : [████████████████████] 100% (Completed)
+6. Backend Send Offer & Respond Offer API (`messages.service`)  : [████████████████████] 100% (Completed)
+7. Recruiter Send Offer Modal (`SendOfferModal.tsx`)            : [████████████████████] 100% (Completed)
+8. Candidate Interactive Job Offer Card & Accept/Decline Modal  : [████████████████████] 100% (Completed)
+9. Job Center Offer Action Banner (`AppliedJobsTracker.tsx`)    : [████████████████████] 100% (Completed)
+10. Notification 404 Bug Resolution & Smart URL Normalization   : [████████████████████] 100% (Fixed & Pushed)
+11. Job Center "Platform Jobs 0" Pagination Fix & Priority Feed : [████████████████████] 100% (Fixed & Pushed)
+12. TypeScript Compilation Check (`client` & `server`)          : [████████████████████] 100% (0 Errors)
+13. Git Production Sync (Pushed to `client` & `origin`)         : [████████████████████] 100% (Up to date)
+========================================================================================
+```
 
 ---
 
-## 📈 Performance & Impact Scorecard
+## 🗂️ 4. Files Modified and Committed
 
-| Area | Before Today | After Today | Net Result |
-| :--- | :---: | :---: | :--- |
-| **Website: Mobile Lighthouse** | 63 / 100 | **90+ / 100** | 🟢 **+27 Points Gain** |
-| **Website: Total Blocking Time** | 3,050 ms | **< 250 ms** | 🟢 **92% Reduction** |
-| **Website: Layout Shift (CLS)** | 0.105 | **0.00** | 🟢 **Zero Shift (Perfect)** |
-| **Website: Video First Frame** | ~9.9 MB download required | **< 30 KB (Byte 32)** | 🟢 **Instant Playback (0s black screen)** |
-| **Website: Blog Card Image Size** | 1,850 KB (PNG) | **~18 KB (WebP)** | 🟢 **98.9% Bandwidth Saved** |
-| **Website: Blog Card Load Time** | ~4.4 seconds | **< 40 ms (cached)** | 🟢 **Instant Appearance** |
-| **SKILLEZO: Billing Mode** | Mock Only | **Live Razorpay Sandbox** | 🟢 **Real UPI / Card Checkout Active** |
-| **SKILLEZO: Git Remotes** | Diverged / Behind | **100% Synced (9faf5c6)** | 🟢 **Zero Drift Across origin & client** |
-| **SKILLEZO: Server Health** | Stale env | **Latest Build + Hot Reload** | 🟢 **All 25+ Routers Active** |
+### Backend (`server/`)
+* [`server/src/database/models/Application.model.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/database/models/Application.model.ts) — Added `IOfferDetails` schema and field.
+* [`server/src/database/models/Message.model.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/database/models/Message.model.ts) — Added `offer_letter` message type and `offerDetails`.
+* [`server/src/modules/messages/messages.dto.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/messages/messages.dto.ts) — Added `SendOfferDTO` and `RespondOfferDTO`.
+* [`server/src/modules/messages/messages.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/messages/messages.service.ts) — Implemented `sendOffer` and `respondOffer` with timeline logging.
+* [`server/src/modules/messages/messages.controller.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/messages/messages.controller.ts) — Controller routes for offer lifecycle.
+* [`server/src/modules/messages/messages.routes.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/messages/messages.routes.ts) — Registered `/send-offer` and `/respond-offer`.
+* [`server/src/database/repositories/job/JobRepository.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/database/repositories/job/JobRepository.ts) — Global source counts & platform-first sorting.
+* [`server/src/modules/jobs/jobs.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/jobs/jobs.service.ts) & [`jobs.dto.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/jobs/jobs.dto.ts) — Return `platformCount` and `externalCount`.
+* [`server/src/modules/notifications/notification.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/modules/notifications/notification.service.ts) — Smart `actionUrl` generation.
+* [`server/src/core/email/email.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/server/src/core/email/email.service.ts) — Contextual email portal URLs.
+
+### Frontend (`client/`)
+* [`client/app/dashboard/messages/page.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/messages/page.tsx) — Dynamic status badges, interactive Job Offer Card, and decline modal.
+* [`client/components/recruiter/SendOfferModal.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/recruiter/SendOfferModal.tsx) — Modal for recruiters to configure and issue offers.
+* [`client/components/recruiter/CandidateMessagesTab.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/recruiter/CandidateMessagesTab.tsx) — Real-time offer tracking card in recruiter chat.
+* [`client/components/recruiter/CandidateReviewDrawer.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/recruiter/CandidateReviewDrawer.tsx) — Hooked offer modal and native PDF export.
+* [`client/components/dashboard/job-center/AppliedJobsTracker.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/dashboard/job-center/AppliedJobsTracker.tsx) — Added Offer Extended and Hired action banners.
+* [`client/app/dashboard/job-center/page.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/job-center/page.tsx) — Accurate global metric cards, tab badges, and platform-first feed.
+* [`client/components/layout/NotificationDropdown.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/layout/NotificationDropdown.tsx) — Smart URL normalizer preventing 404s.
+* [`client/components/dashboard/notifications/NotificationCard.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/dashboard/notifications/NotificationCard.tsx) — Normalized notification links.
+* [`client/app/dashboard/applications/page.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/app/dashboard/applications/page.tsx) — Fallback redirect page.
+* [`client/next.config.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/next.config.ts) — Added server redirect from `/dashboard/applications` to `/dashboard/job-center?tab=applied`.
+* [`client/services/job.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/services/job.service.ts) & [`message.service.ts`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/services/message.service.ts) — Hydrated types and methods.
 
 ---
 
-## 🎯 4. Tomorrow's Roadmap & Next Priorities
+## 🚀 5. Git Commit History for Today's Sprint
 
-1. **SKILLEZO.AI Platform**:
-   - Complete an end-to-end sandbox checkout test via the browser UI (`http://localhost:3000/dashboard/plan`) with Razorpay test UPI / test cards.
-   - Verify post-payment webhook and verify callbacks atomically upgrade candidate to Pro and replenish 100,000 tokens with real-time UI widget update.
-   - Wire transactional email receipts for Pro upgrades via Resend.
-2. **SkilledHyre Labs Website**:
-   - Monitor live production performance metrics and cache hit rates on Cloudflare and Vercel Edge.
-   - Final visual QA pass on mobile tablet resolutions (iPad Air / Mini).
+1. **Commit `039e933`**: `docs: update dual-track engineering midday work report`
+2. **Commit `e568bf0`**: `feat(offers): implement end-to-end job offer flow between recruiter and candidate`
+   - Added backend `send-offer` and `respond-offer` endpoints with `IOfferDetails` schema
+   - Implemented recruiter `SendOfferModal`, ATS drawer integration, and offer tracking
+   - Added candidate job offer cards with interactive accept/decline actions in messages
+   - Added offer action banner in Job Center and refined application PDF export
+3. **Commit `9b95a42`**: `fix(notifications): resolve 404 on notification click by smart-routing to messages/job-center`
+   - Added `/dashboard/applications` redirect route and `next.config` redirect
+   - Directed offer, interview, and shortlisted notifications to `/dashboard/messages?appId=:id`
+   - Normalized legacy `/dashboard/applications` links in `NotificationDropdown` and `NotificationCard`
+4. **Commit `aee451f`**: `fix(job-center): accurate platform and external job counts and prioritize platform jobs`
+   - Fixed metric cards and tab badges showing 0 platform jobs due to pagination slice
+   - Returned global `platformCount` and `externalCount` from `/api/jobs` repository and service
+   - Prioritized verified direct platform jobs before external aggregator jobs on All Jobs feed
+
+Both GitHub remotes (`client` and `origin`) are completely synchronized.
+
+---
+
+## 🔮 6. Readiness for Soft MVP Production Launch
+
+The platform is in an exceptionally stable, clean state:
+* **Recruiter Pipeline**: Streamlined, intuitive terminology, automated interview scheduling, direct Google Meet integration, instant PDF resume inspection, and full formal job offer issuance.
+* **Candidate Experience**: Real-time message threads, interactive interview join buttons, rich offer review card with instant 1-click acceptance, and accurate job discovery in Job Center.
+* **Platform Reliability**: Zero TypeScript compilation errors, clean data isolation, robust notification routing, and verified zero-redundancy architecture.
