@@ -105,14 +105,28 @@ export class NotificationService {
     const title = `Application Status: ${formattedStatus}`;
     const message = `Your application for ${jobTitle} at ${companyName} has been moved to ${formattedStatus}.`;
 
+    const statusLower = newStatus.toLowerCase();
+    const isDirectChatStage = ["offered", "interview", "shortlisted"].includes(statusLower);
+    const actionUrl = isDirectChatStage
+      ? `/dashboard/messages?appId=${applicationId}`
+      : `/dashboard/job-center?tab=applied`;
+    const actionLabel =
+      statusLower === "offered"
+        ? "Review Job Offer"
+        : statusLower === "interview"
+        ? "View Interview"
+        : isDirectChatStage
+        ? "Open Messages"
+        : "View Application";
+
     const notification = await this.notificationRepo.create({
       userId: candidateUserId,
       category: NotificationCategory.APPLICATION,
       priority: NotificationPriority.HIGH,
       title,
       message,
-      actionUrl: "/dashboard/applications",
-      actionLabel: "View Application",
+      actionUrl,
+      actionLabel,
       metadata: { applicationId, newStatus, jobTitle, companyName },
       read: false,
     });
@@ -136,6 +150,7 @@ export class NotificationService {
         jobTitle,
         companyName,
         status: newStatus,
+        portalUrl: `${process.env.CLIENT_URL || "http://localhost:3000"}${actionUrl}`,
       }).catch((err) => {
         console.error(`[NotificationService] Failed to send status email to ${email}:`, err);
       });

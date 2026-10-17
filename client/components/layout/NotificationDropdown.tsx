@@ -136,7 +136,22 @@ export const NotificationDropdown: React.FC = () => {
     }
     setIsOpen(false);
     if (notification.actionUrl) {
-      router.push(notification.actionUrl);
+      let target = notification.actionUrl;
+      const titleUpper = (notification.title || '').toUpperCase();
+      const messageUpper = (notification.message || '').toUpperCase();
+      const isOffer = titleUpper.includes('OFFER') || messageUpper.includes('OFFER');
+      const isInterview = titleUpper.includes('INTERVIEW') || messageUpper.includes('INTERVIEW');
+      const isShortlist = titleUpper.includes('SHORTLIST') || messageUpper.includes('SHORTLIST');
+
+      if (target === '/dashboard/applications' || target.startsWith('/dashboard/applications')) {
+        const appId = (notification.metadata as any)?.applicationId;
+        if (isOffer || isInterview || isShortlist) {
+          target = appId ? `/dashboard/messages?appId=${appId}` : '/dashboard/messages';
+        } else {
+          target = appId ? `/dashboard/job-center?tab=applied&appId=${appId}` : '/dashboard/job-center?tab=applied';
+        }
+      }
+      router.push(target);
     }
   };
 

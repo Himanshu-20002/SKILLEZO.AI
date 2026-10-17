@@ -28,6 +28,15 @@ function getDevOrigins(): string[] {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: getDevOrigins(),
+  async redirects() {
+    return [
+      {
+        source: "/dashboard/applications",
+        destination: "/dashboard/job-center?tab=applied",
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     const backendUrl = process.env.BACKEND_INTERNAL_URL || "https://skillezoai-production.up.railway.app";
     return [

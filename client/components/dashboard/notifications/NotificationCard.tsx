@@ -72,17 +72,35 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           {notification.message}
         </p>
 
-        {notification.actionUrl && (
-          <div className="pt-2">
-            <Link
-              href={notification.actionUrl}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#3D5AFE] hover:text-[#00D9C0] transition-colors"
-            >
-              <span>{notification.actionLabel || "View Details"}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        )}
+        {notification.actionUrl && (() => {
+          let target = notification.actionUrl;
+          const titleUpper = (notification.title || '').toUpperCase();
+          const messageUpper = (notification.message || '').toUpperCase();
+          const isOffer = titleUpper.includes('OFFER') || messageUpper.includes('OFFER');
+          const isInterview = titleUpper.includes('INTERVIEW') || messageUpper.includes('INTERVIEW');
+          const isShortlist = titleUpper.includes('SHORTLIST') || messageUpper.includes('SHORTLIST');
+
+          if (target === '/dashboard/applications' || target.startsWith('/dashboard/applications')) {
+            const appId = (notification.metadata as any)?.applicationId;
+            if (isOffer || isInterview || isShortlist) {
+              target = appId ? `/dashboard/messages?appId=${appId}` : '/dashboard/messages';
+            } else {
+              target = appId ? `/dashboard/job-center?tab=applied&appId=${appId}` : '/dashboard/job-center?tab=applied';
+            }
+          }
+
+          return (
+            <div className="pt-2">
+              <Link
+                href={target}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#3D5AFE] hover:text-[#00D9C0] transition-colors"
+              >
+                <span>{notification.actionLabel || "View Details"}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          );
+        })()}
       </div>
 
       <button
