@@ -46,6 +46,8 @@ type JobsPagination = {
   totalPages: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  platformCount?: number;
+  externalCount?: number;
 };
 
 export default function SmartJobCenterPage() {
@@ -179,6 +181,8 @@ export default function SmartJobCenterPage() {
         totalPages: res.pagination?.totalPages || 1,
         hasNextPage: Boolean(res.pagination?.hasNextPage),
         hasPreviousPage: Boolean(res.pagination?.hasPreviousPage),
+        platformCount: res.pagination?.platformCount,
+        externalCount: res.pagination?.externalCount,
       });
     } catch (err: any) {
       if (err?.name === 'AbortError' || requestId !== jobsRequestIdRef.current) return;
@@ -555,12 +559,25 @@ export default function SmartJobCenterPage() {
   }, [liveJobs, savedJobIds]);
 
   const platformJobsCount = useMemo(() => {
+    if (jobsPagination.platformCount != null) {
+      return jobsPagination.platformCount;
+    }
     return liveJobs.filter((j) => (j.sourceType || '').toUpperCase() === 'PLATFORM').length;
-  }, [liveJobs]);
+  }, [jobsPagination.platformCount, liveJobs]);
 
   const externalJobsCount = useMemo(() => {
+    if (jobsPagination.externalCount != null) {
+      return jobsPagination.externalCount;
+    }
     return liveJobs.filter((j) => (j.sourceType || '').toUpperCase() === 'EXTERNAL').length;
-  }, [liveJobs]);
+  }, [jobsPagination.externalCount, liveJobs]);
+
+  const totalOpportunitiesCount = useMemo(() => {
+    if (jobsPagination.platformCount != null && jobsPagination.externalCount != null) {
+      return jobsPagination.platformCount + jobsPagination.externalCount;
+    }
+    return totalJobsCount || jobsPagination.total || liveJobs.length;
+  }, [jobsPagination.platformCount, jobsPagination.externalCount, jobsPagination.total, totalJobsCount, liveJobs.length]);
 
   // The server returns one page at a time. Client-only refinements still apply
   // to that page without downloading the full job catalogue.
@@ -631,7 +648,7 @@ export default function SmartJobCenterPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Total Opportunities"
-            value={totalJobsCount.toString()}
+            value={totalOpportunitiesCount.toString()}
             subtitle={`${platformJobsCount} Platform • ${externalJobsCount} Jooble`}
             icon={Briefcase}
             color="text-[#3D5AFE]"
@@ -740,7 +757,7 @@ export default function SmartJobCenterPage() {
             {/* Tabs */}
             <div className="flex items-center gap-2 flex-wrap">
               {[
-                { id: 'all', label: 'All Jobs', count: liveJobs.length },
+                { id: 'all', label: 'All Jobs', count: totalOpportunitiesCount },
                 { id: 'platform', label: '🏢 Direct Platform', count: platformJobsCount },
                 { id: 'external', label: '🌐 Jooble Aggregated', count: externalJobsCount },
                 { id: 'recommended', label: '✨ Top Match', count: highMatchJobsCount },

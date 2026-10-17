@@ -26,6 +26,8 @@ export interface JobPaginationMetaDTO {
   totalPages: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  platformCount?: number;
+  externalCount?: number;
 }
 
 export interface PaginatedJobsResponseDTO {

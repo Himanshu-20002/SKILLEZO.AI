@@ -23,6 +23,8 @@ export interface PublicJobSearchResult {
   page: number;
   limit: number;
   totalPages: number;
+  platformCount: number;
+  externalCount: number;
 }
 
 export class JobRepository extends BaseRepository<IJob> {
@@ -132,12 +134,21 @@ export class JobRepository extends BaseRepository<IJob> {
       filter.$text = { $search: options.keyword };
     }
 
-    const sortOption: Record<string, 1 | -1> =
-      options.sort === "oldest" ? { createdAt: 1 } : { createdAt: -1 };
+    const sortOption: any =
+      options.sort === "oldest"
+        ? { createdAt: 1 }
+        : options.sourceType
+        ? { createdAt: -1 }
+        : { sourceType: -1, createdAt: -1 };
 
-    const [jobs, total] = await Promise.all([
+    const baseCountFilter = { ...filter };
+    delete baseCountFilter.sourceType;
+
+    const [jobs, total, platformCount, externalCount] = await Promise.all([
       this.model.find(filter).sort(sortOption).skip(skip).limit(limit).lean().exec(),
       this.model.countDocuments(filter).exec(),
+      this.model.countDocuments({ ...baseCountFilter, sourceType: JobSourceType.PLATFORM }).exec(),
+      this.model.countDocuments({ ...baseCountFilter, sourceType: JobSourceType.EXTERNAL }).exec(),
     ]);
 
     const totalPages = Math.ceil(total / limit) || 1;
@@ -148,6 +159,8 @@ export class JobRepository extends BaseRepository<IJob> {
       page,
       limit,
       totalPages,
+      platformCount,
+      externalCount,
     };
   }
 

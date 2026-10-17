@@ -40,6 +40,8 @@ export class JobsService {
         totalPages,
         hasNextPage,
         hasPreviousPage,
+        platformCount: result.platformCount,
+        externalCount: result.externalCount,
       },
     };
   }
