@@ -40,6 +40,8 @@ app.set("trust proxy", 1);
 
 const allowedOrigins = [
   env.CLIENT_URL,
+  "https://skillezo.com",
+  "https://www.skillezo.com",
   "https://skillezo-ai-rho.vercel.app",
   "https://skillezo-ai.vercel.app",
   "http://localhost:3000",
@@ -47,7 +49,12 @@ const allowedOrigins = [
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      origin.endsWith(".vercel.app") ||
+      origin.endsWith(".skillezo.com")
+    ) {
       callback(null, true);
     } else {
       callback(null, true);
@@ -66,7 +73,7 @@ app.options(/.*/, cors(corsOptions));
 // Better Auth handler mounted BEFORE express.json() for raw body access
 app.use("/api/auth", authRateLimiter, (req, res, next) => {
   if (!req.headers.origin && !req.headers.Origin) {
-    req.headers.origin = env.CLIENT_URL || "https://skillezo-ai.vercel.app";
+    req.headers.origin = env.CLIENT_URL || "https://www.skillezo.com";
   }
 
   // Cross-Domain OAuth Token Bridge:
