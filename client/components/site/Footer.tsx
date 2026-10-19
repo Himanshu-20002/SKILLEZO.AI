@@ -128,21 +128,60 @@ export function Footer() {
         </div>
 
         {/* Footer Bottom Bar */}
-        <div className="mt-12 sm:mt-16 flex flex-col-reverse sm:flex-row items-center justify-between gap-4 sm:gap-6 border-t border-white/5 py-6 sm:py-8 text-center sm:text-left">
-          <p className="text-xs text-[#8A90A6]">
-            © {new Date().getFullYear()} SKILLEZO. All rights reserved.
-          </p>
-          <div className="flex items-center gap-3">
-            {[Share2, Globe, MessageSquare, Mail].map((Icon, i) => (
-              <a
-                key={i}
-                href="#top"
-                data-testid={`social-link-${i}`}
-                className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-[#8A90A6] hover:text-white hover:border-[#00D9C0] hover:bg-white/5 transition-all"
-              >
-                <Icon className="h-4 w-4" />
-              </a>
-            ))}
+        <div className="mt-12 sm:mt-16 border-t border-white/5 py-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+            {/* Corporate Attribution & Pedigree */}
+            <div className="space-y-2 text-center lg:text-left max-w-2xl">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-2.5 gap-y-1.5 text-xs text-[#8A90A6]">
+                <span className="font-medium text-white/90">
+                  © {new Date().getFullYear()} Skillezo.
+                </span>
+                <span>All rights reserved.</span>
+              </div>
+
+              <p className="text-[11px] leading-relaxed text-[#8A90A6]/75">
+                Skillezo is a product of{" "}
+                <span className="text-white/70 font-medium">SKILLEDHYRE LABS</span>, the innovation and technology division of{" "}
+                <span className="text-white/70 font-medium">SKILLEDHYRE</span> — a unit of{" "}
+                <span className="text-white/70 font-medium tracking-wide">DEVAADYA TECHNOLOGIES PRIVATE LIMITED</span>.
+              </p>
+            </div>
+
+            {/* Legal Quick Links & Social Icons */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+              <div className="flex items-center gap-3 text-xs text-[#8A90A6]">
+                <Link href="/privacy" className="hover:text-[#00D9C0] transition-colors">
+                  Privacy
+                </Link>
+                <span className="text-white/15">•</span>
+                <Link href="/terms" className="hover:text-[#00D9C0] transition-colors">
+                  Terms
+                </Link>
+                <span className="text-white/15">•</span>
+                <Link href="/security" className="hover:text-[#00D9C0] transition-colors">
+                  Security
+                </Link>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {[
+                  { Icon: Share2, label: "Share" },
+                  { Icon: Globe, label: "Website" },
+                  { Icon: MessageSquare, label: "Community" },
+                  { Icon: Mail, label: "Contact" },
+                ].map(({ Icon, label }, i) => (
+                  <a
+                    key={i}
+                    href="#top"
+                    aria-label={label}
+                    data-testid={`social-link-${i}`}
+                    className="grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-white/[0.02] text-[#8A90A6] hover:text-white hover:border-[#00D9C0]/50 hover:bg-[#00D9C0]/10 hover:shadow-[0_0_12px_rgba(0,217,192,0.2)] transition-all duration-300"
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
