@@ -648,6 +648,25 @@ export class MessagesService {
 
     return { application, offerDetails: application.offerDetails };
   }
+
+  /**
+   * Get total unread messages count for a user across active conversations
+   */
+  async getUnreadCount(userId: string): Promise<{ unreadCount: number }> {
+    const conversations = await ConversationModel.find({
+      $or: [{ candidateId: userId }, { recruiterId: userId }],
+    })
+      .select("candidateId recruiterId unreadCountCandidate unreadCountRecruiter")
+      .lean();
+
+    const unreadCount = conversations.reduce((total, conv: any) => {
+      if (conv.candidateId === userId) return total + (conv.unreadCountCandidate || 0);
+      if (conv.recruiterId === userId) return total + (conv.unreadCountRecruiter || 0);
+      return total;
+    }, 0);
+
+    return { unreadCount };
+  }
 }
 
 export const messagesService = new MessagesService();

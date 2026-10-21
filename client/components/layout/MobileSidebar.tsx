@@ -8,6 +8,7 @@ import BrandLogo from '@/components/auth/BrandLogo';
 import { useSession } from '@/lib/auth-client';
 import dynamic from 'next/dynamic';
 import { sidebarSections, adminSidebarSections, opportunitiesSection } from './Sidebar';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 const SidebarTokenWidget = dynamic(
   () => import('./SidebarTokenWidget').then((mod) => mod.SidebarTokenWidget),
@@ -23,6 +24,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { unreadCount: unreadMessagesCount } = useUnreadMessages();
   const isAdmin = (session?.user as any)?.role === 'admin' || session?.user?.email?.toLowerCase() === 'admin@gmail.com';
   const isAdminRoute = pathname.startsWith('/admin');
 
@@ -124,6 +126,15 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
             {opportunitiesSection.items.map((item) => {
               const isActive = isLinkActive(item.href);
               const Icon = item.icon;
+              const isMessages = item.href === '/dashboard/messages';
+              const showUnread = isMessages && unreadMessagesCount > 0;
+              const displayBadge = isMessages
+                ? showUnread
+                  ? unreadMessagesCount > 99
+                    ? '99+'
+                    : String(unreadMessagesCount)
+                  : null
+                : item.badge;
 
               return (
                 <Link
@@ -139,9 +150,15 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
                   <Icon className={`w-4 h-4 ${isActive ? 'text-[#3D5AFE]' : 'text-slate-500 dark:text-slate-400'}`} />
                   <span className="truncate">{item.label}</span>
 
-                  {item.badge && (
-                    <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-[#00D9C0]/15 text-[#00897B] dark:text-[#00D9C0] border border-[#00D9C0]/30 font-bold uppercase">
-                      {item.badge}
+                  {displayBadge && (
+                    <span
+                      className={`ml-auto font-bold uppercase tracking-wider ${
+                        isMessages
+                          ? 'text-[10px] px-2 py-0.5 rounded-full bg-rose-500 text-white shadow-xs'
+                          : 'text-[9px] px-1.5 py-0.5 rounded-full bg-[#00D9C0]/15 text-[#00897B] dark:text-[#00D9C0] border border-[#00D9C0]/30'
+                      }`}
+                    >
+                      {displayBadge}
                     </span>
                   )}
                 </Link>

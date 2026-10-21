@@ -128,6 +128,26 @@ export interface SendOfferPayload {
 }
 
 export const messageService = {
+  async getUnreadCount(): Promise<{ unreadCount: number }> {
+    try {
+      const res = await apiFetch<{ success: boolean; data: { unreadCount: number } }>(
+        "/api/messages/unread-count"
+      );
+      return res.data;
+    } catch {
+      try {
+        const data = await this.getConversations({ limit: 50 });
+        const unreadCount = (data.items || []).reduce(
+          (sum, conv) => sum + (conv.unreadCount || 0),
+          0
+        );
+        return { unreadCount };
+      } catch {
+        return { unreadCount: 0 };
+      }
+    }
+  },
+
   async getConversations(params?: { page?: number; limit?: number }): Promise<PaginatedConversations> {
     const query = new URLSearchParams();
     if (params?.page) query.set("page", String(params.page));

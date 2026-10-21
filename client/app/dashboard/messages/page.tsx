@@ -105,6 +105,9 @@ function MessagesContent() {
               c.id === selectedConversation!.id ? { ...c, unreadCount: 0 } : c
             )
           );
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('messages-read'));
+          }
         }
       } catch (err: any) {
         toast.error('Failed to load message history');

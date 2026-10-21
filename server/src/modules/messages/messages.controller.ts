@@ -23,6 +23,16 @@ export class MessagesController {
     });
   }
 
+  static async getUnreadCount(req: Request, res: Response): Promise<void> {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const result = await messagesService.getUnreadCount(userId);
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      data: result,
+    });
+  }
+
   static async getConversationMessages(req: Request, res: Response): Promise<void> {
     const userId = (req as any).user?.id || (req as any).user?._id;
     const conversationId = String(req.params.id);

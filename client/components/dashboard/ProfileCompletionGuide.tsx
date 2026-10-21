@@ -96,7 +96,7 @@ export const ProfileCompletionGuide: React.FC<ProfileCompletionGuideProps> = ({
       completed: hasVerifiedSkill,
       badge: '+25%',
       icon: Award,
-      href: '/dashboard/assessments',
+      href: '/dashboard/skill-verification#assessments',
       actionLabel: 'Take Quiz',
     },
   ];

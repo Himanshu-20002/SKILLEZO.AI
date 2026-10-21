@@ -11,6 +11,9 @@ router.use(requireAuth);
 // List active conversations for current user
 router.get("/conversations", asyncHandler(MessagesController.getConversations));
 
+// Get unread messages count for current user
+router.get("/unread-count", asyncHandler(MessagesController.getUnreadCount));
+
 // Get conversation message thread
 router.get("/conversations/:id", asyncHandler(MessagesController.getConversationMessages));
 

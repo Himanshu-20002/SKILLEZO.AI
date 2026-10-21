@@ -89,9 +89,8 @@ SKILLEZO AI bridges the gap between candidate skill mastery and recruiter visibi
 | `/dashboard/skill-gap-analysis` | Skill Gap Analysis | Skill deficiency matrix, recommended courses, action items | 🟢 Active |
 | `/dashboard/employability-index` | Employability Score | Recruiter readiness score, Top % percentile rank benchmark | 🟢 Active |
 | `/dashboard/career-gps` | Career GPS | Step-by-step career path milestones & ETA timeline | 🟢 Active |
-| `/dashboard/skill-verification` | Skill Audit Engine | Filterable skill audit directory & telemetry inspection drawer | 🟢 Active |
+| `/dashboard/skill-verification` | Skill Verification & Assessments | Consolidated hub: verifiable credentials, audit history, and interactive skill assessment tracks | 🟢 Active |
 | `/dashboard/ai-career-coach` | AI Career Coach | Personalized AI guidance, resume tips, and interview coaching | 🟢 Active |
-| `/dashboard/assessments` | Skill Assessments | Technical skill quizzes, code challenges, and score badges | 🟢 Active |
 | `/dashboard/learning-hub` | Learning Hub | Curated courses, learning tracks, and certification paths | 🟢 Active |
 | `/dashboard/projects` | Hands-on Projects | Real-world project portfolio, code submissions, and reviews | 🟢 Active |
 | `/dashboard/progress-analytics` | Progress Analytics | Deep analytics on skill acquisition, time spent, and growth curves | 🟢 Active |

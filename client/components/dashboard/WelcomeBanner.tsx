@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Sparkles, ArrowRight, ShieldCheck, Zap, Award, FileText } from 'lucide-react';
+import { Sparkles, ArrowRight, ShieldCheck, Zap, Briefcase, Award, FileText } from 'lucide-react';
 import { useSession } from '@/lib/auth-client';
 import { profileService, CandidateProfile } from '@/services/profile.service';
 import { verificationService } from '@/services/verification.service';
@@ -144,32 +144,42 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
           {/* Action CTAs */}
           <div className="flex flex-wrap items-center gap-3 pt-1">
             {resumesCount === 0 ? (
-              <Link
-                href="/dashboard/profile"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <FileText className="w-4 h-4 text-blue-600" />
-                <span>Upload Resume</span>
-                <ArrowRight className="w-4 h-4 text-blue-600" />
-              </Link>
+              <>
+                <Link
+                  href="/dashboard/profile"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <span>Upload Resume</span>
+                  <ArrowRight className="w-4 h-4 text-blue-600" />
+                </Link>
+                <Link
+                  href="/dashboard/skill-verification"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-md text-xs sm:text-sm font-bold transition-all shadow-xs"
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-300" />
+                  <span>Verify Skills</span>
+                </Link>
+              </>
             ) : (
-              <Link
-                href="/dashboard/skill-verification"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <ShieldCheck className="w-4 h-4 text-blue-600" />
-                <span>Verify New Skill</span>
-                <ArrowRight className="w-4 h-4 text-blue-600" />
-              </Link>
+              <>
+                <Link
+                  href="/dashboard/skill-verification"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  <span>Verify Skills</span>
+                  <ArrowRight className="w-4 h-4 text-blue-600" />
+                </Link>
+                <Link
+                  href="/dashboard/job-center"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-md text-xs sm:text-sm font-bold transition-all shadow-xs"
+                >
+                  <Briefcase className="w-4 h-4 text-cyan-300" />
+                  <span>Explore Jobs</span>
+                </Link>
+              </>
             )}
-
-            <Link
-              href="/dashboard/assessments"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-md text-xs sm:text-sm font-bold transition-all shadow-xs"
-            >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Take Skill Assessment</span>
-            </Link>
           </div>
         </div>
 

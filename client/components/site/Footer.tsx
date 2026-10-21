@@ -40,8 +40,8 @@ const COLUMNS = [
   {
     title: "Resources",
     links: [
-      { label: "Skill Assessments", href: "/dashboard/assessments" },
-      { label: "Skill Verification", href: "/dashboard/skill-verification" },
+      { label: "Skill Verification Hub", href: "/dashboard/skill-verification" },
+      { label: "Learning Hub", href: "/dashboard/learning-hub" },
       { label: "Portfolio Projects", href: "/dashboard/projects" },
       { label: "Recruiter Portal", href: "/recruiter/applications" },
     ],
