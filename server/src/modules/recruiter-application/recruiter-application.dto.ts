@@ -59,6 +59,7 @@ export interface RecruiterApplicationDetailsDTO {
     location?: string;
     bio?: string;
     employabilityScore?: number;
+    skills?: string[];
     verifiedSkills?: any[];
   };
   resume: any;

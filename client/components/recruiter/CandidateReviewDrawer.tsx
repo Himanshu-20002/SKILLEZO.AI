@@ -1,25 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   FileText,
-  Award,
   Calendar,
   ExternalLink,
   ShieldCheck,
   CheckCircle2,
   Clock,
-  Send,
   MessageSquare,
   TrendingUp,
   Download,
-  AlertCircle,
   Briefcase,
   Mail,
-  User,
-  Hash,
   Gift,
+  XCircle,
 } from 'lucide-react';
 import {
   recruiterService,
@@ -52,12 +48,12 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
 }) => {
   const [details, setDetails] = useState<RecruiterApplicationDetails | null>(null);
   const [history, setHistory] = useState<StatusHistoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState<'resume' | 'messages' | 'history'>('resume');
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isConfirmingRevoke, setIsConfirmingRevoke] = useState(false);
 
   useEffect(() => {
     if (!application) return;
@@ -65,7 +61,6 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
     let isMounted = true;
     async function loadData() {
       try {
-        setLoading(true);
         const [appData, historyData] = await Promise.all([
           recruiterService.getApplicationDetails(application!.id),
           recruiterService.getStatusHistory(application!.id),
@@ -75,9 +70,7 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
           setHistory(historyData);
         }
       } catch {
-        // Use initial props fallback
-      } finally {
-        if (isMounted) setLoading(false);
+        // Retain initial application props as fallback
       }
     }
     loadData();
@@ -86,74 +79,64 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
     };
   }, [application]);
 
+  // Unified, single-pass calculation for verified and self-reported skills
+  const { verifiedSkills, claimedSkillsList, uniqueSkills } = useMemo(() => {
+    const verified = details?.candidate?.verifiedSkills || [];
+    const verifiedSet = new Set(verified.map((v) => v.name.toLowerCase().trim()));
+    const rawSkills = [
+      ...(details?.candidate?.skills || []),
+      ...(application?.candidate?.skills || []),
+      ...verified.map((v) => v.name),
+    ];
+    const unique = Array.from(
+      new Set(rawSkills.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean))
+    );
+    const claimed = unique.filter((s) => !verifiedSet.has(s.toLowerCase()));
+    return { verifiedSkills: verified, claimedSkillsList: claimed, uniqueSkills: unique };
+  }, [details?.candidate?.verifiedSkills, details?.candidate?.skills, application?.candidate?.skills]);
+
   if (!application) return null;
 
   const currentStage = details?.status || application.status;
-  const stageConfig = STAGE_CONFIGS[currentStage] || STAGE_CONFIGS.applied;
+  const isOfferAccepted = details?.offerDetails?.status === 'accepted';
+  const isOfferDeclined = details?.offerDetails?.status === 'declined';
+  const isHired = currentStage === 'hired' || isOfferAccepted;
+  const isRejected = currentStage === 'rejected' || isOfferDeclined;
+  const isOffered = currentStage === 'offered' && !isHired && !isRejected;
+  const isInterview = currentStage === 'interview';
+  const isApplied = currentStage === 'applied' || (currentStage as string) === 'under_review';
+
+  const effectiveStage: ApplicationStage = isHired
+    ? 'hired'
+    : isRejected
+      ? 'rejected'
+      : currentStage;
+  const stageConfig = STAGE_CONFIGS[effectiveStage] || STAGE_CONFIGS.applied;
+
+  const handleOfferStatusDetected = (status: 'accepted' | 'declined', offerDetails?: any) => {
+    const nextStage: ApplicationStage = status === 'accepted' ? 'hired' : 'rejected';
+    if (currentStage !== nextStage) {
+      onStatusUpdated(application.id, nextStage);
+      if (details) {
+        setDetails({
+          ...details,
+          status: nextStage,
+          offerDetails: offerDetails || details.offerDetails,
+        });
+      }
+    }
+  };
+
   const candidateName =
     details?.candidate?.name ||
     application.candidate?.name ||
-    (details?.candidate?.email
-      ? details.candidate.email.split('@')[0].replace(/[._]/g, ' ')
-      : 'Candidate Applicant');
+    (details?.candidate?.email || application.candidate?.email)?.split('@')[0]?.replace(/[._]/g, ' ') ||
+    'Candidate Applicant';
 
   const matchScore =
-    details?.candidate?.employabilityScore ||
-    application.candidate?.employabilityScore ||
-    Math.floor(84 + (application.id.charCodeAt(0) % 14));
-
-  // Verified badges (cryptographically verified through SKILLEZO interactive test runner)
-  const verifiedBadges = [
-    {
-      name: 'React 19 & Next.js 15',
-      proficiency: 'Expert',
-      score: 98,
-      hash: 'SKZ-CERT-A904B87C21DF88',
-      tags: ['react', 'next.js', 'react 19', 'next.js 15'],
-    },
-    {
-      name: 'TypeScript Strict Architecture',
-      proficiency: 'Advanced',
-      score: 94,
-      hash: 'SKZ-CERT-88F41D9C0B31E7',
-      tags: ['typescript'],
-    },
-    {
-      name: 'Cloud & Distributed Systems',
-      proficiency: 'Advanced',
-      score: 89,
-      hash: 'SKZ-CERT-E11B34C20D1F42',
-      tags: ['node.js', 'cloud', 'system architecture'],
-    },
-  ];
-
-  // Set of all verified skill tags
-  const verifiedTagSet = new Set(
-    verifiedBadges.flatMap((b) => b.tags.map((t) => t.toLowerCase()))
-  );
-
-  const rawSkills: string[] =
-    application.candidate?.skills && application.candidate.skills.length > 0
-      ? application.candidate.skills
-      : ['React', 'TypeScript', 'Node.js', 'MongoDB', 'System Architecture'];
-
-  // Deduplicate and trim skills
-  const uniqueSkills = Array.from(
-    new Set(rawSkills.map((s) => s.trim()).filter(Boolean))
-  );
-
-  // Group into Verified Competencies vs Claimed/Self-Reported Skills
-  const verifiedSkillsList = uniqueSkills.filter((s) =>
-    verifiedTagSet.has(s.toLowerCase())
-  );
-  const displayVerifiedSkills =
-    verifiedSkillsList.length > 0
-      ? verifiedSkillsList
-      : ['React', 'Next.js', 'TypeScript', 'Node.js'];
-
-  const claimedSkillsList = uniqueSkills.filter(
-    (s) => !verifiedTagSet.has(s.toLowerCase())
-  );
+    details?.candidate?.employabilityScore ??
+    application.candidate?.employabilityScore ??
+    null;
 
   const handleStageChange = async (nextStatus: ApplicationStage) => {
     try {
@@ -260,10 +243,16 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-black flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>{matchScore}% Match</span>
-            </div>
+            {matchScore !== null ? (
+              <div className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-black flex items-center gap-1">
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>{matchScore}% Match</span>
+              </div>
+            ) : (
+              <div className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-xs font-semibold flex items-center gap-1">
+                <span>Profile Review</span>
+              </div>
+            )}
 
             <button
               onClick={onClose}
@@ -273,6 +262,39 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Celebratory Hired Banner */}
+        {isHired && (
+          <div className="mx-5 sm:mx-6 mt-3.5 mb-1 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent border border-emerald-500/30 flex items-center justify-between gap-3 text-xs shrink-0 shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-extrabold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5 truncate">
+                  <span>🎉 Candidate Officially Hired</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold shrink-0">
+                    Offer Accepted
+                  </span>
+                </p>
+                <p className="text-emerald-700 dark:text-emerald-400 text-[11px] truncate">
+                  {details?.offerDetails?.joiningDate
+                    ? `Joining on ${new Date(details.offerDetails.joiningDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}`
+                    : 'Employment offer confirmed by candidate.'}
+                  {details?.offerDetails?.annualCompensation ? ` • Compensation: ${details.offerDetails.annualCompensation}` : ''}
+                </p>
+              </div>
+            </div>
+            {activeTab !== 'messages' && (
+              <button
+                onClick={() => setActiveTab('messages')}
+                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition"
+              >
+                View Offer Chat
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 px-6 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-white dark:bg-[#0E1535]">
@@ -314,7 +336,11 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
         </div>
 
         {/* Drawer Body Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div
+          className={`flex-1 min-h-0 flex flex-col ${
+            activeTab === 'messages' ? 'overflow-hidden p-0' : 'overflow-y-auto p-6 space-y-6'
+          }`}
+        >
           {/* Tab 1: Candidate Career Dossier & Resume */}
           {activeTab === 'resume' && (
             <div className="space-y-4">
@@ -367,11 +393,17 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
                 {/* Candidate Overview */}
                 <div className="space-y-2 border-b border-slate-200/80 dark:border-slate-800/80 pb-4">
                   <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                    {details?.candidate?.headline || application.candidate?.headline || 'Full Stack Engineer & Cloud Developer'}
+                    {details?.candidate?.headline || application.candidate?.headline || details?.job?.title || application.job?.title || 'Candidate Profile'}
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    {details?.candidate?.bio || 'Verified talent candidate registered with SKILLEZO AI Career OS. Master credentials, technical competencies, and employability score verified cryptographically.'}
-                  </p>
+                  {details?.candidate?.bio ? (
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      {details.candidate.bio}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-400 dark:text-slate-500 italic">
+                      No profile summary provided by candidate.
+                    </p>
+                  )}
                 </div>
 
                 {/* Quick Details Grid */}
@@ -379,73 +411,112 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0E1535] border border-slate-200/80 dark:border-slate-800">
                     <span className="text-[10px] uppercase font-bold text-slate-400">Target Role</span>
                     <p className="font-semibold text-slate-900 dark:text-white mt-0.5">
-                      {details?.job?.title || application.job?.title || 'Engineering Lead'}
+                      {details?.job?.title || application.job?.title || 'Applied Position'}
                     </p>
                   </div>
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0E1535] border border-slate-200/80 dark:border-slate-800">
                     <span className="text-[10px] uppercase font-bold text-slate-400">Employability Index</span>
-                    <p className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                      {matchScore}/100 Top Tier
+                    <p className={`font-semibold mt-0.5 ${matchScore !== null ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                      {matchScore !== null ? `${matchScore}/100 Verified Index` : 'Pending Evaluation'}
                     </p>
                   </div>
                 </div>
 
-                {/* Skills Breakdown: Clearly distinguishes Verified Test Badges vs Self-Reported Resume Skills */}
+                {/* Skills Breakdown: Authentic Verified Test Badges vs Self-Reported Resume Skills */}
                 <div className="space-y-4 pt-1">
                   {/* Section A: Verified Technical Competencies */}
-                  <div className="space-y-2 p-3.5 rounded-xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <span className="text-[11px] uppercase font-bold text-emerald-700 dark:text-emerald-300 tracking-wide">
-                          Verified Technical Competencies
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                          {displayVerifiedSkills.length} Test Verified
-                        </span>
+                  {verifiedSkills.length > 0 ? (
+                    <div className="space-y-2.5 p-3.5 rounded-xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-[11px] uppercase font-bold text-emerald-700 dark:text-emerald-300 tracking-wide">
+                            Verified Technical Competencies
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                            {verifiedSkills.length} Test Verified
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
+                        Skills authenticated via SKILLEZO interactive test runner and verification ledger.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        {verifiedSkills.map((v, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-[#0E1535] border border-emerald-500/30 shadow-xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                  {v.name}
+                                </p>
+                                <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                                  {v.proficiency} • {v.score}%
+                                </p>
+                              </div>
+                            </div>
+                            {v.credentialHash && (
+                              <span
+                                className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 shrink-0"
+                                title={`Credential Hash: ${v.credentialHash}`}
+                              >
+                                {v.credentialHash.slice(0, 10)}...
+                              </span>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
-                      Cryptographically verified via SKILLEZO interactive test runner.
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {displayVerifiedSkills.map((sk, i) => (
-                        <span
-                          key={i}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-[#0E1535] text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shadow-xs"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>{sk}</span>
-                        </span>
-                      ))}
+                  ) : (
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0E1535] border border-slate-200 dark:border-slate-800 flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400 shrink-0 mt-0.5">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          No Verified Skill Badges Yet
+                        </h4>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                          Candidate has not completed official SKILLEZO assessment tests for verified badge issuance. Self-reported profile skills are listed below.
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Section B: Self-Reported Skills (Claimed on Resume) */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[11px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wide">
-                          Self-Reported Skills (Resume Claimed)
+                          Self-Reported Skills (Profile & Resume)
                         </span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                          {claimedSkillsList.length} Claimed
+                          {claimedSkillsList.length} Listed
                         </span>
                       </div>
                       <span className="text-[10px] text-slate-400">
                         Self-declared by candidate
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {claimedSkillsList.map((sk, i) => (
-                        <span
-                          key={i}
-                          className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-[#151D42] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/80"
-                        >
-                          {sk}
-                        </span>
-                      ))}
-                    </div>
+                    {claimedSkillsList.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {claimedSkillsList.map((sk, i) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-[#151D42] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/80"
+                          >
+                            {sk}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 dark:text-slate-500 italic py-1">
+                        No additional self-reported skills provided.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -492,53 +563,206 @@ export const CandidateReviewDrawer: React.FC<CandidateReviewDrawerProps> = ({
               candidateName={candidateName}
               candidateId={application.candidate?.id || details?.candidate?.id || ''}
               onScheduleInterviewClick={() => setIsScheduleModalOpen(true)}
+              onOfferStatusDetected={handleOfferStatusDetected}
+              isHired={isHired}
             />
           )}
         </div>
 
-        {/* Drawer Bottom Action Bar: Fast Stage Transition Buttons */}
-        <div className="p-4 sm:p-5 border-t border-slate-200/90 dark:border-slate-800 shrink-0 bg-slate-50/80 dark:bg-[#111736] flex flex-wrap items-center justify-between gap-3">
-          <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-            Advance Stage:
-          </span>
+        {/* Drawer Bottom Action Bar: State-Aware Transition Actions */}
+        <div
+          className={`p-4 sm:p-5 border-t shrink-0 flex flex-wrap items-center justify-between gap-3 ${isHired
+              ? 'border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent dark:bg-[#0c1f28]'
+              : isRejected
+                ? 'border-rose-500/20 bg-rose-500/5 dark:bg-[#1f1325]'
+                : isOffered
+                  ? 'border-amber-500/20 bg-amber-500/5 dark:bg-[#151a38]'
+                  : 'border-slate-200/90 dark:border-slate-800 bg-slate-50/80 dark:bg-[#111736]'
+            }`}
+        >
+          {/* Status Context Pill / Stage Info */}
+          <div className="flex items-center gap-2.5">
+            {isHired ? (
+              <>
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-extrabold text-emerald-800 dark:text-emerald-300">
+                      Candidate Hired
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
+                      Offer Accepted
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {details?.offerDetails?.joiningDate
+                      ? `Joining on ${new Date(details.offerDetails.joiningDate).toLocaleDateString(undefined, { dateStyle: 'medium' })} • Onboarding Confirmed`
+                      : 'Official job offer accepted by candidate.'}
+                  </span>
+                </div>
+              </>
+            ) : isRejected ? (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/30">
+                  <XCircle className="w-4 h-4 text-rose-500" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-rose-700 dark:text-rose-300 block">
+                    Application Closed (Rejected)
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {details?.offerDetails?.declineReason
+                      ? `Declined: "${details.offerDetails.declineReason}"`
+                      : 'Candidate rejected for this position'}
+                  </span>
+                </div>
+              </>
+            ) : isOffered ? (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
+                  <Gift className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-amber-700 dark:text-amber-300 block">
+                    Offer Extended
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Awaiting candidate decision or manual confirmation
+                  </span>
+                </div>
+              </>
+            ) : (
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <stageConfig.icon className="w-3.5 h-3.5 text-[#3D5AFE]" />
+                Advance Stage:
+              </span>
+            )}
+          </div>
 
+          {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              disabled={updating || currentStage === 'shortlisted'}
-              onClick={() => {
-                handleStageChange('shortlisted');
-                setActiveTab('messages');
-              }}
-              className="px-3.5 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer"
-            >
-              Shortlist
-            </button>
+            {isHired ? (
+              <>
+                {activeTab !== 'messages' ? (
+                  <button
+                    onClick={() => setActiveTab('messages')}
+                    className="px-3.5 py-2 rounded-xl bg-[#3D5AFE] hover:bg-[#324ad9] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Open Chat</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setActiveTab('resume')}
+                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182046] dark:hover:bg-[#1f2a5c] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#3D5AFE]" />
+                    <span>View Resume</span>
+                  </button>
+                )}
 
-            <button
-              disabled={updating}
-              onClick={() => setIsScheduleModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Schedule Interview</span>
-            </button>
+                {!isConfirmingRevoke ? (
+                  <button
+                    onClick={() => setIsConfirmingRevoke(true)}
+                    className="px-3 py-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 text-xs font-medium transition cursor-pointer"
+                    title="Revoke hire if candidate reneged or failed background check"
+                  >
+                    Revoke Hire
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1.5 rounded-xl">
+                    <span className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold">
+                      Revoke hire?
+                    </span>
+                    <button
+                      disabled={updating}
+                      onClick={() => {
+                        handleStageChange('rejected');
+                        setIsConfirmingRevoke(false);
+                      }}
+                      className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10px] font-bold transition cursor-pointer"
+                    >
+                      Yes, Revoke
+                    </button>
+                    <button
+                      onClick={() => setIsConfirmingRevoke(false)}
+                      className="px-2 py-1 text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-[10px] font-medium transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : isRejected ? (
+              <button
+                disabled={updating}
+                onClick={() => handleStageChange('under_review')}
+                className="px-3.5 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 text-xs font-bold transition cursor-pointer"
+              >
+                Reopen Review
+              </button>
+            ) : (
+              <>
+                {/* Shortlist - only on new applications */}
+                {isApplied && (
+                  <button
+                    disabled={updating}
+                    onClick={() => {
+                      handleStageChange('shortlisted');
+                      setActiveTab('messages');
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer"
+                  >
+                    Shortlist
+                  </button>
+                )}
 
-            <button
-              disabled={updating}
-              onClick={() => setIsOfferModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
-            >
-              <Gift className="w-3.5 h-3.5" />
-              <span>{currentStage === 'offered' ? 'Update Offer' : 'Send Offer'}</span>
-            </button>
+                {/* Schedule Interview - for applied, shortlisted, interview */}
+                {!isOffered && (
+                  <button
+                    disabled={updating}
+                    onClick={() => setIsScheduleModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{isInterview ? 'Schedule Next Round' : 'Schedule Interview'}</span>
+                  </button>
+                )}
 
-            <button
-              disabled={updating || currentStage === 'rejected'}
-              onClick={() => handleStageChange('rejected')}
-              className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer"
-            >
-              Reject
-            </button>
+                {/* Send/Update Offer */}
+                <button
+                  disabled={updating}
+                  onClick={() => setIsOfferModalOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
+                >
+                  <Gift className="w-3.5 h-3.5" />
+                  <span>{isOffered ? 'Update Offer' : 'Send Offer'}</span>
+                </button>
+
+                {/* Mark as Hired - verbal/offline acceptance */}
+                {isOffered && (
+                  <button
+                    disabled={updating}
+                    onClick={() => handleStageChange('hired')}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition disabled:opacity-40 cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Mark as Hired</span>
+                  </button>
+                )}
+
+                {/* Reject / Withdraw */}
+                <button
+                  disabled={updating}
+                  onClick={() => handleStageChange('rejected')}
+                  className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs font-bold transition disabled:opacity-40 cursor-pointer"
+                >
+                  {isOffered ? 'Withdraw / Reject' : 'Reject'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

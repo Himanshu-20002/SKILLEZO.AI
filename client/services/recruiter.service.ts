@@ -64,6 +64,7 @@ export interface RecruiterApplicationDetails {
     location?: string;
     bio?: string;
     employabilityScore?: number;
+    skills?: string[];
     verifiedSkills?: Array<{
       name: string;
       proficiency: string;

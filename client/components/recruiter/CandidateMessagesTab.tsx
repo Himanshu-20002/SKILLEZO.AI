@@ -26,6 +26,8 @@ interface CandidateMessagesTabProps {
   candidateName: string;
   candidateId: string;
   onScheduleInterviewClick: () => void;
+  onOfferStatusDetected?: (status: 'accepted' | 'declined', offerDetails?: any) => void;
+  isHired?: boolean;
 }
 
 export const CandidateMessagesTab: React.FC<CandidateMessagesTabProps> = ({
@@ -34,6 +36,8 @@ export const CandidateMessagesTab: React.FC<CandidateMessagesTabProps> = ({
   candidateName,
   candidateId,
   onScheduleInterviewClick,
+  onOfferStatusDetected,
+  isHired,
 }) => {
   const [conversationId, setConversationId] = useState<string | null>(
     initialConversationId || null
@@ -50,10 +54,11 @@ export const CandidateMessagesTab: React.FC<CandidateMessagesTabProps> = ({
 
   useEffect(() => {
     let isMounted = true;
+    let pollInterval: NodeJS.Timeout | null = null;
 
-    async function loadThread() {
+    async function loadThread(showLoading = true) {
       try {
-        setLoading(true);
+        if (showLoading) setLoading(true);
         // If we don't have conversationId yet, search user conversations for this application
         let convId = conversationId;
         if (!convId) {
@@ -69,6 +74,13 @@ export const CandidateMessagesTab: React.FC<CandidateMessagesTabProps> = ({
           const res = await messageService.getConversationMessages(convId);
           if (isMounted) {
             setMessages(res.messages || []);
+            // Check if there is an offer response in the thread
+            const offerMsg = res.messages?.find(
+              (m) => m.type === 'offer_letter' && m.offerDetails?.status && m.offerDetails.status !== 'pending'
+            );
+            if (offerMsg?.offerDetails?.status) {
+              onOfferStatusDetected?.(offerMsg.offerDetails.status as 'accepted' | 'declined', offerMsg.offerDetails);
+            }
           }
         } else {
           if (isMounted) setMessages([]);
@@ -76,16 +88,22 @@ export const CandidateMessagesTab: React.FC<CandidateMessagesTabProps> = ({
       } catch (err: any) {
         console.error('[CandidateMessagesTab] Error loading conversation:', err);
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted && showLoading) setLoading(false);
       }
     }
 
-    loadThread();
+    loadThread(true);
+
+    // Light periodic polling while viewing chat to detect live candidate response
+    pollInterval = setInterval(() => {
+      loadThread(false);
+    }, 6000);
 
     return () => {
       isMounted = false;
+      if (pollInterval) clearInterval(pollInterval);
     };
-  }, [applicationId, conversationId]);
+  }, [applicationId, conversationId, onOfferStatusDetected]);
 
   useEffect(() => {
     scrollToBottom();
@@ -118,10 +136,10 @@ export const CandidateMessagesTab: React.FC<CandidateMessagesTabProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-[520px] bg-slate-50/60 dark:bg-[#0B112B] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col h-full bg-slate-50/60 dark:bg-[#0B112B] overflow-hidden">
       {/* Tab Top Bar */}
-      <div className="p-3.5 px-4 bg-white dark:bg-[#111736] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-2">
+      <div className="p-3.5 px-5 bg-white dark:bg-[#111736] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-[#3D5AFE]/10 text-[#3D5AFE] flex items-center justify-center font-bold text-xs">
             {candidateName.charAt(0).toUpperCase()}
           </div>
@@ -136,17 +154,24 @@ export const CandidateMessagesTab: React.FC<CandidateMessagesTabProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={onScheduleInterviewClick}
-          className="px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-        >
-          <Calendar className="w-3.5 h-3.5" />
-          <span>Schedule Interview</span>
-        </button>
+        {isHired ? (
+          <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold flex items-center gap-1.5 shadow-xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Offer Accepted</span>
+          </span>
+        ) : (
+          <button
+            onClick={onScheduleInterviewClick}
+            className="px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Schedule Interview</span>
+          </button>
+        )}
       </div>
 
       {/* Message History Feed */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-3">
         {loading ? (
           <div className="h-full flex items-center justify-center text-slate-400 text-xs gap-2">
             <RefreshCw className="w-4 h-4 animate-spin" />

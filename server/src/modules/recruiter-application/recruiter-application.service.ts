@@ -11,6 +11,7 @@ import { CompanyMemberModel } from "@/database/models/CompanyMember.model";
 import { JobModel } from "@/database/models/Job.model";
 import { UserModel } from "@/database/models/User.model";
 import { ProfileModel } from "@/database/models/Profile.model";
+import { VerificationModel } from "@/database/models/Verification.model";
 import { Readable } from "stream";
 import { Types } from "mongoose";
 import { ResumeModel } from "@/database/models/Resume.model";
@@ -143,7 +144,7 @@ export class RecruiterApplicationService {
         .find({ _id: { $in: userObjectIds as any[] } }, { projection: { name: 1, email: 1 } })
         .toArray(),
       ProfileModel.find({ userId: { $in: userIds } })
-        .select("userId name headline employabilityScore skills targetRole")
+        .select("userId name headline employabilityScore skills targetRole profileCompleteness")
         .lean(),
     ]);
 
@@ -160,7 +161,7 @@ export class RecruiterApplicationService {
         userDoc?.name ||
         (userDoc?.email ? userDoc.email.split("@")[0].replace(/[._]/g, " ") : "Candidate Applicant");
 
-      const candidateSkills = (profileDoc?.skills || []).map((s: any) => (typeof s === "string" ? s : s.name));
+      const candidateSkills = (profileDoc?.skills || []).map((s: any) => (typeof s === "string" ? s : s?.name)).filter(Boolean);
 
       return {
         id: app._id.toString(),
@@ -177,7 +178,7 @@ export class RecruiterApplicationService {
           name: candidateName,
           email: userDoc?.email,
           headline: profileDoc?.headline || profileDoc?.targetRole || undefined,
-          employabilityScore: profileDoc?.profileCompleteness?.score || undefined,
+          employabilityScore: profileDoc?.employabilityScore ?? profileDoc?.profileCompleteness?.score ?? undefined,
           skills: candidateSkills,
         },
         conversationId: (app as any).conversationId ? (app as any).conversationId.toString() : null,
@@ -274,11 +275,12 @@ export class RecruiterApplicationService {
       userObjId = new Types.ObjectId(application.userId);
     } catch {}
 
-    const [userDoc, profileDoc] = await Promise.all([
+    const [userDoc, profileDoc, verificationDocs] = await Promise.all([
       userObjId
         ? UserModel.collection.findOne({ _id: userObjId }, { projection: { name: 1, email: 1 } })
         : null,
       ProfileModel.findOne({ userId: application.userId }).lean(),
+      VerificationModel.find({ userId: application.userId, status: "verified" }).lean().catch(() => []),
     ]);
 
     const candidateName =
@@ -289,13 +291,40 @@ export class RecruiterApplicationService {
       ? [profileDoc.location.city, profileDoc.location.country].filter(Boolean).join(", ")
       : undefined;
 
-    const verifiedSkillsList = (profileDoc?.skills || [])
-      .filter((s) => s.verified)
-      .map((s) => ({
-        name: s.name,
-        proficiency: s.proficiency || "Intermediate",
-        score: s.score || (s.level ? s.level * 20 : 80),
-      }));
+    const verifiedMap = new Map<string, any>();
+    (verificationDocs || []).forEach((v: any) => {
+      if (v.skillName) {
+        verifiedMap.set(v.skillName.toLowerCase(), {
+          name: v.skillName,
+          proficiency: v.proficiency || "Intermediate",
+          score: v.score || 80,
+          credentialHash: v.credentialHash || null,
+        });
+      }
+    });
+
+    (profileDoc?.skills || []).forEach((s: any) => {
+      if (s.verified && s.name && !verifiedMap.has(s.name.toLowerCase())) {
+        verifiedMap.set(s.name.toLowerCase(), {
+          name: s.name,
+          proficiency: s.proficiency || "Intermediate",
+          score: s.score || (s.level ? s.level * 20 : 80),
+          credentialHash: null,
+        });
+      }
+    });
+
+    const verifiedSkillsList = Array.from(verifiedMap.values());
+
+    const profileSkills = (profileDoc?.skills || []).map((s: any) => (typeof s === "string" ? s : s?.name)).filter(Boolean);
+    const resumeSkillsRaw =
+      resumeSnapshot?.resumeDocument?.skills ||
+      (resumeDoc && resumeDoc.resumeDocument && resumeDoc.resumeDocument.skills) ||
+      [];
+    const resumeSkills = Array.isArray(resumeSkillsRaw)
+      ? resumeSkillsRaw.map((s: any) => (typeof s === "string" ? s : s?.name)).filter(Boolean)
+      : [];
+    const candidateSkillsList = Array.from(new Set([...profileSkills, ...resumeSkills]));
 
     return {
       id: application._id.toString(),
@@ -322,7 +351,8 @@ export class RecruiterApplicationService {
         phone: profileDoc?.phone || undefined,
         location: locationStr,
         bio: profileDoc?.bio || undefined,
-        employabilityScore: (profileDoc as any)?.profileCompleteness?.score || undefined,
+        employabilityScore: (profileDoc as any)?.employabilityScore ?? (profileDoc as any)?.profileCompleteness?.score ?? undefined,
+        skills: candidateSkillsList,
         verifiedSkills: verifiedSkillsList,
       },
       resume: resumeDoc && typeof resumeDoc === "object" && resumeDoc.fileName
@@ -497,6 +527,7 @@ export class RecruiterApplicationService {
       ],
       [ApplicationStatus.SHORTLISTED]: [
         ApplicationStatus.INTERVIEW,
+        ApplicationStatus.OFFERED,
         ApplicationStatus.REJECTED,
       ],
       [ApplicationStatus.INTERVIEW]: [
@@ -507,8 +538,12 @@ export class RecruiterApplicationService {
         ApplicationStatus.HIRED,
         ApplicationStatus.REJECTED,
       ],
-      [ApplicationStatus.HIRED]: [], // Terminal
-      [ApplicationStatus.REJECTED]: [], // Terminal
+      [ApplicationStatus.HIRED]: [
+        ApplicationStatus.REJECTED,
+      ], // Terminal - allows revoking/cancelling if candidate reneges
+      [ApplicationStatus.REJECTED]: [
+        ApplicationStatus.UNDER_REVIEW,
+      ], // Allows reopening review
     };
 
     const allowed = allowedTransitions[application.status] || [];
