@@ -1,9 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Shield } from "lucide-react";
 
-export const metadata = {
-  title: "Privacy Policy | Skillezo",
-  description: "Privacy Policy for Skillezo AI career intelligence platform.",
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "Privacy Policy and Data Protection standards for SKILLEZO.AI career intelligence platform.",
+  alternates: {
+    canonical: "https://www.skillezo.com/privacy",
+  },
+  openGraph: {
+    title: "Privacy Policy | SKILLEZO.AI",
+    description: "Learn how SKILLEZO.AI protects your career data and privacy.",
+    url: "https://www.skillezo.com/privacy",
+  },
 };
 
 export default function PrivacyPage() {

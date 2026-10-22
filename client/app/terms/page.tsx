@@ -1,9 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, FileText } from "lucide-react";
 
-export const metadata = {
-  title: "Terms of Service | Skillezo",
-  description: "Terms of Service for Skillezo AI career intelligence platform.",
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Terms of Service and user agreement for SKILLEZO.AI career intelligence platform.",
+  alternates: {
+    canonical: "https://www.skillezo.com/terms",
+  },
+  openGraph: {
+    title: "Terms of Service | SKILLEZO.AI",
+    description: "Official Terms of Service and usage agreement for SKILLEZO.AI.",
+    url: "https://www.skillezo.com/terms",
+  },
 };
 
 export default function TermsPage() {
