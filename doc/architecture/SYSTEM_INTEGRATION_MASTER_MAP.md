@@ -103,7 +103,7 @@ flowchart TD
 1. User opens `/dashboard/job-center`.
 2. `jobService.searchJobs({ query: "React", page: 1 })` executes.
 3. In local dev: Next.js dev proxy translates `/api/v1/jobs` ➔ `http://localhost:5000/api/jobs`.
-4. In production: Request goes directly to Railway backend `https://skillezoai-production.up.railway.app/api/jobs`.
+4. In production: Request goes directly to Railway backend `https://skillezo-production.up.railway.app/api/jobs`.
 5. Request carries `Authorization: Bearer <token>` and session cookies.
 6. Express executes `requireAuth` middleware -> extracts candidate User ID.
 7. `JobsService.searchJobs()` executes MongoDB query and returns typed jobs + pagination metadata.

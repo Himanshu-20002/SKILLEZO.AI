@@ -191,7 +191,7 @@ export function getAuth() {
         "https://*.vercel.app",
         "https://skillezo-ai-rho.vercel.app",
         "https://skillezo-ai.vercel.app",
-        "https://skillezoai-production.up.railway.app",
+        "https://skillezo-production.up.railway.app",
         "*.up.railway.app",
         "http://localhost:3000",
         "http://localhost:5000",

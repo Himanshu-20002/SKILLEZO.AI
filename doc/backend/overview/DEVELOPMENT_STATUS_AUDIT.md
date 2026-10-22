@@ -193,7 +193,7 @@ The following features are **fully implemented, tested, and verified end-to-end*
 ## 7. Broken / Problematic Work
 
 ### 1. Next.js Local Dev Proxy Rewrite Default Target
-- **Issue:** `client/next.config.ts:L6` sets `destination: "${backendUrl}/api/:path*"` where `backendUrl` defaults to `"https://skillezoai-production.up.railway.app"`. In `client/.env.local`, `BACKEND_INTERNAL_URL` is missing.
+- **Issue:** `client/next.config.ts:L6` sets `destination: "${backendUrl}/api/:path*"` where `backendUrl` defaults to `"https://skillezo-production.up.railway.app"`. In `client/.env.local`, `BACKEND_INTERNAL_URL` is missing.
 - **Impact:** Any client request relying on relative path `/api/...` proxies to the remote Railway backend instead of `http://localhost:5000` during local development unless `BACKEND_INTERNAL_URL` is explicitly set in `.env.local`.
 - **Severity:** 🔴 **Blocking for Local Testing**
 

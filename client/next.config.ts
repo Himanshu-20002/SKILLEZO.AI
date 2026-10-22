@@ -38,7 +38,7 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_INTERNAL_URL || "https://skillezoai-production.up.railway.app";
+    const backendUrl = process.env.BACKEND_INTERNAL_URL || "https://skillezo-production.up.railway.app";
     return [
       {
         source: "/api/:path*",
