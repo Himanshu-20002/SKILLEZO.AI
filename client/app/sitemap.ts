@@ -1,25 +1,24 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.skillezo.com";
-  const lastModified = new Date();
+  const baseUrl = "https://www.skillezo.com";
 
   return [
     {
       url: `${baseUrl}`,
-      lastModified,
-      changeFrequency: "daily",
+      lastModified: new Date("2026-10-22T00:00:00.000Z"),
+      changeFrequency: "weekly",
       priority: 1.0,
     },
     {
       url: `${baseUrl}/privacy`,
-      lastModified,
+      lastModified: new Date("2026-10-22T00:00:00.000Z"),
       changeFrequency: "monthly",
       priority: 0.5,
     },
     {
       url: `${baseUrl}/terms`,
-      lastModified,
+      lastModified: new Date("2026-10-22T00:00:00.000Z"),
       changeFrequency: "monthly",
       priority: 0.5,
     },
