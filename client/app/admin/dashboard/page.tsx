@@ -32,6 +32,7 @@ import {
   Megaphone,
   Send,
   X,
+  GraduationCap,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useSession } from '@/lib/auth-client';
@@ -43,9 +44,10 @@ import {
   AdminJobItem,
   AdminResumeItem,
 } from '@/services/admin.service';
+import { AdminPdfUploadPanel } from '@/components/dashboard/learning-hub/admin/AdminPdfUploadPanel';
 import { API_BASE_URL } from '@/lib/api';
 
-type AdminTab = 'overview' | 'users' | 'jobs' | 'resumes';
+type AdminTab = 'overview' | 'users' | 'jobs' | 'resumes' | 'learning-hub';
 
 function AdminDashboardContent() {
   const router = useRouter();
@@ -56,16 +58,23 @@ function AdminDashboardContent() {
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<AdminTab>(
-    tabParam && ['overview', 'users', 'jobs', 'resumes'].includes(tabParam) ? tabParam : 'overview'
+    tabParam && ['overview', 'users', 'jobs', 'resumes', 'learning-hub'].includes(tabParam)
+      ? tabParam
+      : 'overview'
   );
 
   useEffect(() => {
-    if (tabParam && ['overview', 'users', 'jobs', 'resumes'].includes(tabParam)) {
+    if (tabParam && ['overview', 'users', 'jobs', 'resumes', 'learning-hub'].includes(tabParam)) {
       setActiveTab(tabParam);
     } else if (!tabParam) {
       setActiveTab('overview');
     }
   }, [tabParam]);
+
+  const handleTabChange = (tab: AdminTab) => {
+    setActiveTab(tab);
+    router.push(`/admin/dashboard?tab=${tab}`);
+  };
 
   // Metrics State
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
@@ -418,6 +427,82 @@ function AdminDashboardContent() {
             </button>
           </div>
         )}
+
+        {/* Admin Navigation Tab Bar */}
+        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => handleTabChange('overview')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              activeTab === 'overview'
+                ? 'bg-[#3D5AFE] text-white shadow-md shadow-[#3D5AFE]/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            <span>Telemetry Overview</span>
+          </button>
+
+          <button
+            onClick={() => handleTabChange('users')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              activeTab === 'users'
+                ? 'bg-[#3D5AFE] text-white shadow-md shadow-[#3D5AFE]/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>User Directory</span>
+            {metrics?.users?.total ? (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
+                {metrics.users.total}
+              </span>
+            ) : null}
+          </button>
+
+          <button
+            onClick={() => handleTabChange('jobs')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              activeTab === 'jobs'
+                ? 'bg-[#3D5AFE] text-white shadow-md shadow-[#3D5AFE]/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+            }`}
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Job Moderation</span>
+            {metrics?.jobs?.total ? (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
+                {metrics.jobs.total}
+              </span>
+            ) : null}
+          </button>
+
+          <button
+            onClick={() => handleTabChange('resumes')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              activeTab === 'resumes'
+                ? 'bg-[#3D5AFE] text-white shadow-md shadow-[#3D5AFE]/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Resume Intelligence</span>
+          </button>
+
+          <button
+            onClick={() => handleTabChange('learning-hub')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              activeTab === 'learning-hub'
+                ? 'bg-[#3D5AFE] text-white shadow-md shadow-[#3D5AFE]/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span>Learning Vault & PDFs</span>
+            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 uppercase">
+              AI Ingest
+            </span>
+          </button>
+        </div>
 
         {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
@@ -947,6 +1032,11 @@ function AdminDashboardContent() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* TAB 5: LEARNING VAULT & PDF INGESTION */}
+        {activeTab === 'learning-hub' && (
+          <AdminPdfUploadPanel />
         )}
 
         {/* Broadcast Announcement Modal */}

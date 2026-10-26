@@ -220,6 +220,27 @@ export class LearningHubController {
   }
 
   /**
+   * DELETE /api/learning-hub/admin/pdfs/:id
+   */
+  public static async deletePdf(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const deleted = await PdfVaultService.deletePdf(id);
+      if (!deleted) {
+        res.status(HTTP_STATUS.NOT_FOUND).json(
+          errorResponse(ERROR_CODES.NOT_FOUND, "PDF document not found or already deleted")
+        );
+        return;
+      }
+      res.status(HTTP_STATUS.OK).json(successResponse({ deleted: true, id }));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to delete PDF document")
+      );
+    }
+  }
+
+  /**
    * POST /api/learning-hub/admin/generate-drill
    */
   public static async generateSkillDrill(req: Request, res: Response): Promise<void> {

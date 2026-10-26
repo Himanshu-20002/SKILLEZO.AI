@@ -26,6 +26,7 @@ learningHubRouter.post(
   pdfUploadMiddleware.single("file"),
   LearningHubController.uploadPdf
 );
+learningHubRouter.delete("/admin/pdfs/:id", LearningHubController.deletePdf);
 learningHubRouter.post("/admin/generate-drill", LearningHubController.generateSkillDrill);
 
 // Practice Arena & AI Quiz Runner Routes

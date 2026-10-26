@@ -326,4 +326,19 @@ export class PdfVaultService {
       questions,
     };
   }
+
+  /**
+   * Admin: Delete a PDF document from the vault
+   */
+  public static async deletePdf(id: string): Promise<boolean> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new Error("Invalid PDF resource ID");
+    }
+    const result = await LearningResourceModel.deleteOne({
+      _id: new Types.ObjectId(id),
+      type: "pdf_document",
+    });
+    return result.deletedCount > 0;
+  }
 }
+

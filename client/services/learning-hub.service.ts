@@ -81,6 +81,44 @@ export const learningHubService = {
       return null;
     }
   },
+
+  /**
+   * Upload and index a PDF file as an administrator
+   */
+  async uploadAdminPdf(formData: FormData): Promise<PdfDocumentItem | null> {
+    try {
+      const res = await apiFetch<{
+        success: boolean;
+        data: PdfDocumentItem;
+      }>('/api/learning-hub/admin/upload-pdf', {
+        method: 'POST',
+        body: formData,
+      });
+      return res.data;
+    } catch (err) {
+      console.error('[learningHubService] Failed to upload admin PDF:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Delete a PDF document from the vault as an administrator
+   */
+  async deleteAdminPdf(id: string): Promise<boolean> {
+    try {
+      const res = await apiFetch<{
+        success: boolean;
+        data: { deleted: boolean; id: string };
+      }>(`/api/learning-hub/admin/pdfs/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      return !!res.data?.deleted;
+    } catch (err) {
+      console.error('[learningHubService] Failed to delete admin PDF:', err);
+      throw err;
+    }
+  },
+
   /**
    * Fetch tracks catalog with optional category, difficulty, or search query
    */
