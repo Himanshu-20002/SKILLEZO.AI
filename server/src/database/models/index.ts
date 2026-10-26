@@ -16,3 +16,6 @@ export * from "./TokenAccount.model";
 export * from "./TokenUsageLog.model";
 export * from "./Conversation.model";
 export * from "./Message.model";
+export * from "./LearningTrack.model";
+export * from "./LearningResource.model";
+export * from "./UserLearningProgress.model";

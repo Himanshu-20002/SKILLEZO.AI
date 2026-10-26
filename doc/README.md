@@ -16,7 +16,8 @@ doc/
 │   ├── CAREER_GPS_ARCHITECTURE.md
 │   ├── MASTER_RESUME_AND_TAILORED_VARIANTS_ARCHITECTURE.md
 │   ├── ZERO_COST_REDIS_AND_CACHE_SCALING_PLAN.md
-│   └── CAREER_PROFILE_RESUME_ARCHITECTURE.md
+│   ├── CAREER_PROFILE_RESUME_ARCHITECTURE.md
+│   └── LEARNING_HUB_MASTER_GAME_PLAN.md
 │
 ├── frontend/                      # Client UI, Next.js routes & components
 │   ├── README.md                  # Frontend Architecture & Component Directory
@@ -92,6 +93,7 @@ doc/
 | **Career GPS Architecture** | Longitudinal skill mapping & milestone progression | [`architecture/CAREER_GPS_ARCHITECTURE.md`](./architecture/CAREER_GPS_ARCHITECTURE.md) |
 | **Variants Architecture** | Master profile inheritance model for tailored resumes | [`architecture/MASTER_RESUME_AND_TAILORED_VARIANTS_ARCHITECTURE.md`](./architecture/MASTER_RESUME_AND_TAILORED_VARIANTS_ARCHITECTURE.md) |
 | **Redis & Cache Scaling** | Zero-cost cache strategy & cache-invalidation rules | [`architecture/ZERO_COST_REDIS_AND_CACHE_SCALING_PLAN.md`](./architecture/ZERO_COST_REDIS_AND_CACHE_SCALING_PLAN.md) |
+| **Learning Hub Architecture** | Hybrid content model, PDF bank & Gemini assessment engine | [`architecture/LEARNING_HUB_MASTER_GAME_PLAN.md`](./architecture/LEARNING_HUB_MASTER_GAME_PLAN.md) |
 
 ---
 
@@ -100,4 +102,6 @@ doc/
 Technical sprint specifications and engineering phase roadmaps are located under [`sprints-and-plans/`](./sprints-and-plans/):
 - **Sprint Specifications (Sprints 1 through 8):** [`sprints-and-plans/sprints/`](./sprints-and-plans/sprints/)
 - **Phase Implementation Roadmaps & Prompts:** [`sprints-and-plans/phase-plans/`](./sprints-and-plans/phase-plans/)
+  - [Phase 23 (Part 1): Learning Hub Foundation & Catalog Plan](sprints-and-plans/phase-plans/PHASE_23_LEARNING_HUB_PHASE_1_FOUNDATION_PLAN.md)
+  - [Phase 23 (Part 2): Learning Hub PDF Bank & Gemini Ingestion Plan](sprints-and-plans/phase-plans/PHASE_23_LEARNING_HUB_PHASE_2_PDF_AND_AI_INGESTION_PLAN.md)
 
