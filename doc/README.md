@@ -106,4 +106,5 @@ Technical sprint specifications and engineering phase roadmaps are located under
   - [Phase 23 (Part 1): Learning Hub Foundation & Catalog Plan](sprints-and-plans/phase-plans/PHASE_23_LEARNING_HUB_PHASE_1_FOUNDATION_PLAN.md)
   - [Phase 23 (Part 2): Learning Hub PDF Bank & Gemini Ingestion Plan](sprints-and-plans/phase-plans/PHASE_23_LEARNING_HUB_PHASE_2_PDF_AND_AI_INGESTION_PLAN.md)
   - [Phase 23 (Part 3): Learning Hub Practice Arena & Quiz Runner Plan](sprints-and-plans/phase-plans/PHASE_23_LEARNING_HUB_PHASE_3_PRACTICE_ARENA_AND_QUIZ_RUNNER_PLAN.md)
+  - [Phase 23 (Part 4): Learning Hub Ecosystem Integration & Verification Plan](sprints-and-plans/phase-plans/PHASE_23_LEARNING_HUB_PHASE_4_ECOSYSTEM_INTEGRATION_AND_VERIFICATION_PLAN.md)
 
