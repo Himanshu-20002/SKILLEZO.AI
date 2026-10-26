@@ -10,6 +10,7 @@ import {
   ActiveQuizSession,
   SubmitQuizPayload,
   QuizSubmissionResult,
+  ClaimVerificationResult,
 } from '@/types/learning-hub';
 
 export const learningHubService = {
@@ -320,6 +321,24 @@ export const learningHubService = {
       return res.data;
     } catch (err) {
       console.error('[learningHubService] Failed to generate blitz:', err);
+      return null;
+    }
+  },
+
+  /**
+   * Claim official cryptographic skill verification upon scoring >= 70%
+   */
+  async claimVerification(resourceId: string): Promise<ClaimVerificationResult | null> {
+    try {
+      const res = await apiFetch<{
+        success: boolean;
+        data: ClaimVerificationResult;
+      }>(`/api/learning-hub/resources/${encodeURIComponent(resourceId)}/claim-verification`, {
+        method: 'POST',
+      });
+      return res.data;
+    } catch (err) {
+      console.error('[learningHubService] Failed to claim verification:', err);
       return null;
     }
   },

@@ -13,8 +13,13 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
+  Copy,
+  Check,
+  ExternalLink,
 } from 'lucide-react';
-import { QuizSubmissionResult } from '@/types/learning-hub';
+import { QuizSubmissionResult, ClaimVerificationResult } from '@/types/learning-hub';
+import { learningHubService } from '@/services/learning-hub.service';
+import { toast } from 'sonner';
 
 interface QuizResultModalProps {
   isOpen: boolean;
@@ -32,6 +37,9 @@ export function QuizResultModal({
   onGoToVerification,
 }: QuizResultModalProps) {
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimedResult, setClaimedResult] = useState<ClaimVerificationResult | null>(null);
+  const [copiedHash, setCopiedHash] = useState(false);
 
   if (!isOpen || !result) return null;
 
@@ -40,6 +48,31 @@ export function QuizResultModal({
 
   const toggleExpand = (qId: string) => {
     setExpandedQuestionId((prev) => (prev === qId ? null : qId));
+  };
+
+  const handleClaim = async () => {
+    if (!result.resourceId) return;
+    setIsClaiming(true);
+    try {
+      const res = await learningHubService.claimVerification(result.resourceId);
+      if (res && res.success) {
+        setClaimedResult(res);
+        toast.success(res.message || 'Cryptographic skill certificate minted successfully!');
+      } else {
+        toast.error('Failed to claim certificate. Ensure you have achieved at least 70%.');
+      }
+    } catch {
+      toast.error('Failed to communicate with verification service.');
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
+  const handleCopyHash = (hash: string) => {
+    navigator.clipboard.writeText(hash);
+    setCopiedHash(true);
+    toast.success('Certificate hash copied to clipboard');
+    setTimeout(() => setCopiedHash(false), 2000);
   };
 
   return (
@@ -114,6 +147,50 @@ export function QuizResultModal({
                   : 'Review the detailed concept rationales below for missed questions and retake the blitz to achieve mastery.'}
               </p>
             </div>
+
+            {/* Minted Certificate Card */}
+            {claimedResult && (
+              <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border border-emerald-500/40 text-left space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      Official Cryptographic Certificate Minted
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white uppercase tracking-wider">
+                    {claimedResult.proficiency}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-emerald-500/30 font-mono text-xs">
+                  <span className="text-emerald-700 dark:text-emerald-300 font-bold tracking-wider">
+                    {claimedResult.credentialHash}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyHash(claimedResult.credentialHash)}
+                    className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                    title="Copy Certificate Hash"
+                  >
+                    {copiedHash ? (
+                      <Check className="w-4 h-4 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+                  <span>Skill '{claimedResult.skillName}' verified on your Profile</span>
+                  {claimedResult.employabilityIndex && (
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      Employability Index: {claimedResult.employabilityIndex.overallScore}/100
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Question Breakdown List */}
@@ -246,17 +323,40 @@ export function QuizResultModal({
           </button>
 
           <div className="flex items-center gap-2">
+            {passed && !claimedResult && (
+              <button
+                type="button"
+                onClick={handleClaim}
+                disabled={isClaiming}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-95 transition-all flex items-center gap-1.5 shadow-sm shadow-emerald-600/30 disabled:opacity-50"
+              >
+                {isClaiming ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Minting Certificate...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Claim Verified Credential</span>
+                  </>
+                )}
+              </button>
+            )}
+
             {passed && onGoToVerification && (
               <button
+                type="button"
                 onClick={onGoToVerification}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1.5 shadow-sm shadow-emerald-600/20"
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors flex items-center gap-1.5"
               >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Verify Skill Certificate</span>
+                <span>Verification Hub</span>
+                <ExternalLink className="w-3.5 h-3.5" />
               </button>
             )}
 
             <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#3D5AFE] text-white hover:bg-[#324bdf] transition-colors"
             >

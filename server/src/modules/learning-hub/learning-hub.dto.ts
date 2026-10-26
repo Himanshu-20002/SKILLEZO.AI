@@ -139,3 +139,18 @@ export const GenerateBlitzSchema = z.object({
 
 export type GenerateBlitzDTO = z.infer<typeof GenerateBlitzSchema>;
 
+export interface ClaimVerificationResponseDTO {
+  success: boolean;
+  skillName: string;
+  category: string;
+  proficiency: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+  score: number;
+  credentialHash: string;
+  issueDate: string;
+  employabilityIndex?: {
+    overallScore: number;
+    technicalReadinessScore: number;
+  } | null;
+  message: string;
+}
+

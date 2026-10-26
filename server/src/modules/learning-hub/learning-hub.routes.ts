@@ -33,3 +33,4 @@ learningHubRouter.get("/practice/drills", LearningHubController.listPracticeDril
 learningHubRouter.post("/practice/generate-blitz", LearningHubController.generateBlitz);
 learningHubRouter.get("/resources/:id/questions", LearningHubController.getResourceQuestions);
 learningHubRouter.post("/resources/:id/submit-quiz", LearningHubController.submitQuiz);
+learningHubRouter.post("/resources/:id/claim-verification", LearningHubController.claimVerification);

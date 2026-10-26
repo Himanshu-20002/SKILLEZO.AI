@@ -156,3 +156,18 @@ export interface ActiveQuizSession {
   questions: PdfQuizQuestion[];
 }
 
+export interface ClaimVerificationResult {
+  success: boolean;
+  skillName: string;
+  category: string;
+  proficiency: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+  score: number;
+  credentialHash: string;
+  issueDate: string;
+  employabilityIndex?: {
+    overallScore: number;
+    technicalReadinessScore: number;
+  } | null;
+  message: string;
+}
+

@@ -322,4 +322,21 @@ export class LearningHubController {
       );
     }
   }
+
+  /**
+   * POST /api/learning-hub/resources/:id/claim-verification
+   */
+  public static async claimVerification(req: Request, res: Response): Promise<void> {
+    try {
+      const resourceId = String(req.params.id);
+      const userId = req.user?.id || (req.headers["x-user-id"] as string) || "candidate_demo";
+
+      const result = await LearningHubService.claimVerification(userId, resourceId);
+      res.status(HTTP_STATUS.OK).json(successResponse(result));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to claim verification")
+      );
+    }
+  }
 }

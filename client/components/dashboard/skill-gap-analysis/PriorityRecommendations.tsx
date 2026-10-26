@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, Lightbulb } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowRight, Lightbulb, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PriorityRecommendationItem {
@@ -22,6 +23,7 @@ export const PriorityRecommendations: React.FC<PriorityRecommendationsProps> = (
   recommendations,
   onAddToRoadmap,
 }) => {
+  const router = useRouter();
   return (
     <div className="rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-sm">
       <div className="flex items-center gap-2.5">
@@ -65,19 +67,33 @@ export const PriorityRecommendations: React.FC<PriorityRecommendationsProps> = (
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-[11px]">{rec.reason}</p>
             </div>
 
-            <button
-              onClick={() => {
-                if (onAddToRoadmap) {
-                  onAddToRoadmap(rec.skill);
-                } else {
-                  toast.success(`Added ${rec.skill} action to Career GPS roadmap`);
-                }
-              }}
-              className="inline-flex items-center justify-center gap-1.5 w-full py-2 rounded-xl bg-indigo-50 hover:bg-[#3D5AFE] text-[#3D5AFE] hover:text-white dark:bg-slate-800 dark:hover:bg-[#3D5AFE] text-slate-800 dark:text-slate-200 dark:hover:text-white text-xs font-semibold cursor-pointer transition-all"
-            >
-              <span>{rec.suggestedAction}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <div className="space-y-1.5 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  router.push(`/dashboard/learning-hub?search=${encodeURIComponent(rec.skill)}&tab=practice`);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 w-full py-2 rounded-xl bg-[#3D5AFE] hover:bg-[#324bdf] text-white text-xs font-semibold cursor-pointer transition-all shadow-sm shadow-[#3D5AFE]/20"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Practice on Learning Hub</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (onAddToRoadmap) {
+                    onAddToRoadmap(rec.skill);
+                  } else {
+                    toast.success(`Added ${rec.skill} action to Career GPS roadmap`);
+                  }
+                }}
+                className="inline-flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 text-[11px] font-medium transition-colors"
+              >
+                <span>{rec.suggestedAction}</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         ))}
       </div>

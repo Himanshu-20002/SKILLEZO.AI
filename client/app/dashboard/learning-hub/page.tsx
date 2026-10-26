@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import {
   GraduationCap,
   Sparkles,
@@ -22,7 +22,7 @@ import {
   PdfQuizConverterModal,
   PracticeArenaView,
 } from '@/components/dashboard/learning-hub';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { EmptyState } from '@/components/dashboard/common/EmptyState';
 import {
   TrackCatalogItem,
@@ -35,8 +35,9 @@ import { learningHubService } from '@/services/learning-hub.service';
 import { toast } from 'sonner';
 import { Search, SlidersHorizontal, RefreshCw } from 'lucide-react';
 
-export default function LearningHubPage() {
+function LearningHubPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [tracks, setTracks] = useState<TrackCatalogItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [stats, setStats] = useState<UserLearningStats>({
@@ -76,6 +77,21 @@ export default function LearningHubPage() {
   const [isQuizConverterOpen, setIsQuizConverterOpen] = useState(false);
   const [isConvertingPdfId, setIsConvertingPdfId] = useState<string | null>(null);
   const [isConvertingQuiz, setIsConvertingQuiz] = useState(false);
+
+  // Listen for query parameters from deep-links (e.g. from Skill Gap Analysis)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const searchParam = searchParams.get('search');
+
+    if (tabParam === 'practice' || tabParam === 'pdf_vault' || tabParam === 'tracks') {
+      setActiveTab(tabParam);
+    }
+
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      setPdfSearchQuery(searchParam);
+    }
+  }, [searchParams]);
 
   // Fetch all initial data
   const loadData = useCallback(async () => {
@@ -484,5 +500,22 @@ export default function LearningHubPage() {
       </div>
 
     </DashboardLayout>
+  );
+}
+
+export default function LearningHubPage() {
+  return (
+    <Suspense
+      fallback={
+        <DashboardLayout>
+          <div className="py-20 text-center space-y-3">
+            <div className="w-8 h-8 mx-auto border-2 border-[#3D5AFE] border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs text-slate-500">Loading AI Learning Hub...</p>
+          </div>
+        </DashboardLayout>
+      }
+    >
+      <LearningHubPageContent />
+    </Suspense>
   );
 }

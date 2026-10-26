@@ -12,7 +12,8 @@ import {
   Sparkles,
   X,
   Loader2,
-  RotateCcw
+  RotateCcw,
+  Zap,
 } from 'lucide-react';
 import { CompetencyItem } from '@/types/career-intelligence';
 
@@ -166,15 +167,23 @@ export const CompetencyTable: React.FC<CompetencyTableProps> = ({
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-end">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href={`/dashboard/learning-hub?search=${encodeURIComponent(comp.skill)}&tab=practice`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#3D5AFE] dark:text-[#8C9EFF] hover:bg-[#3D5AFE]/10 rounded-lg border border-[#3D5AFE]/30 transition-colors"
+                          title="Practice this skill on Learning Hub"
+                        >
+                          <Zap className="w-3 h-3" />
+                          <span>Practice</span>
+                        </Link>
                         <div className="inline-flex items-center rounded-lg border border-[#3D5AFE]/30 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs overflow-hidden">
                           <button
                             onClick={() => onAddToRoadmap(comp)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#3D5AFE] hover:bg-[#304FFE] text-white font-semibold text-[11px] transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-[#3D5AFE] hover:bg-[#304FFE] text-white font-semibold text-[11px] transition-colors cursor-pointer"
                             title="Add as an active milestone in Career GPS"
                           >
                             <Plus className="w-3 h-3" />
-                            <span>Add to Roadmap</span>
+                            <span>Add</span>
                           </button>
                           <button
                             onClick={() => {
@@ -187,7 +196,7 @@ export const CompetencyTable: React.FC<CompetencyTableProps> = ({
                             title="I already have this skill — verify and add to my profile"
                           >
                             <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                            <span>I know this</span>
+                            <span>Verify</span>
                           </button>
                         </div>
                       </div>
