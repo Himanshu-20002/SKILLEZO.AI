@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import { LearningHubService } from "./learning-hub.service";
-import { CatalogQuerySchema, GenerateDrillSchema } from "./learning-hub.dto";
+import {
+  CatalogQuerySchema,
+  GenerateDrillSchema,
+  SubmitQuizRequestSchema,
+  GenerateBlitzSchema,
+} from "./learning-hub.dto";
 import { PdfVaultService } from "./pdf-vault.service";
 import { GeminiContentGenerator } from "./gemini-content.generator";
 import { successResponse, errorResponse } from "@/core/utils/apiResponse";
@@ -233,6 +238,87 @@ export class LearningHubController {
     } catch (err: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
         errorResponse(ERROR_CODES.INTERNAL_SERVER_ERROR, err.message || "Failed to generate AI skill drill")
+      );
+    }
+  }
+
+  /**
+   * POST /api/learning-hub/resources/:id/submit-quiz
+   */
+  public static async submitQuiz(req: Request, res: Response): Promise<void> {
+    try {
+      const parsed = SubmitQuizRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json(
+          errorResponse(ERROR_CODES.VALIDATION_ERROR, parsed.error.issues[0]?.message || "Invalid quiz submission data")
+        );
+        return;
+      }
+
+      const resourceId = String(req.params.id);
+      const userId = req.user?.id || (req.headers["x-user-id"] as string) || "candidate_demo";
+
+      const result = await LearningHubService.submitQuiz(userId, resourceId, parsed.data);
+      res.status(HTTP_STATUS.OK).json(successResponse(result));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to grade quiz submission")
+      );
+    }
+  }
+
+  /**
+   * GET /api/learning-hub/practice/drills
+   */
+  public static async listPracticeDrills(req: Request, res: Response): Promise<void> {
+    try {
+      const category = req.query.category as string | undefined;
+      const search = req.query.search as string | undefined;
+      const userId = req.user?.id || (req.headers["x-user-id"] as string);
+
+      const drills = await LearningHubService.listPracticeDrills(category, search, userId);
+      res.status(HTTP_STATUS.OK).json(successResponse(drills));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+        errorResponse(ERROR_CODES.INTERNAL_SERVER_ERROR, err.message || "Failed to fetch practice drills")
+      );
+    }
+  }
+
+  /**
+   * POST /api/learning-hub/practice/generate-blitz
+   */
+  public static async generateBlitz(req: Request, res: Response): Promise<void> {
+    try {
+      const parsed = GenerateBlitzSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json(
+          errorResponse(ERROR_CODES.VALIDATION_ERROR, parsed.error.issues[0]?.message || "Invalid blitz generation parameters")
+        );
+        return;
+      }
+
+      const userId = req.user?.id || (req.headers["x-user-id"] as string) || "candidate_demo";
+      const result = await LearningHubService.generateBlitz(userId, parsed.data);
+      res.status(HTTP_STATUS.CREATED).json(successResponse(result));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+        errorResponse(ERROR_CODES.INTERNAL_SERVER_ERROR, err.message || "Failed to generate AI blitz")
+      );
+    }
+  }
+
+  /**
+   * GET /api/learning-hub/resources/:id/questions
+   */
+  public static async getResourceQuestions(req: Request, res: Response): Promise<void> {
+    try {
+      const resourceId = String(req.params.id);
+      const result = await LearningHubService.getResourceQuestions(resourceId);
+      res.status(HTTP_STATUS.OK).json(successResponse(result));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.NOT_FOUND).json(
+        errorResponse(ERROR_CODES.NOT_FOUND, err.message || "Failed to fetch quiz questions")
       );
     }
   }

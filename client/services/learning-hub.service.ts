@@ -6,6 +6,10 @@ import {
   UserLearningStats,
   PdfDocumentItem,
   ConvertedQuizResult,
+  PracticeDrillItem,
+  ActiveQuizSession,
+  SubmitQuizPayload,
+  QuizSubmissionResult,
 } from '@/types/learning-hub';
 
 export const learningHubService = {
@@ -214,4 +218,183 @@ export const learningHubService = {
       return null;
     }
   },
+
+  /**
+   * List available practice drills and quizzes
+   */
+  async listPracticeDrills(params?: {
+    category?: string;
+    search?: string;
+  }): Promise<PracticeDrillItem[]> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params?.category && params.category !== 'All') {
+        searchParams.set('category', params.category);
+      }
+      if (params?.search) {
+        searchParams.set('search', params.search);
+      }
+
+      const queryStr = searchParams.toString();
+      const endpoint = `/api/learning-hub/practice/drills${queryStr ? `?${queryStr}` : ''}`;
+
+      const res = await apiFetch<{
+        success: boolean;
+        data: PracticeDrillItem[];
+      }>(endpoint);
+
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+      return FALLBACK_PRACTICE_DRILLS;
+    } catch (err) {
+      console.error('[learningHubService] Failed to list practice drills:', err);
+      return FALLBACK_PRACTICE_DRILLS;
+    }
+  },
+
+  /**
+   * Get questions for an interactive quiz runner session
+   */
+  async getResourceQuestions(resourceId: string): Promise<ActiveQuizSession | null> {
+    try {
+      const res = await apiFetch<{
+        success: boolean;
+        data: ActiveQuizSession;
+      }>(`/api/learning-hub/resources/${encodeURIComponent(resourceId)}/questions`);
+      return res.data;
+    } catch (err) {
+      console.error('[learningHubService] Failed to fetch quiz questions:', err);
+      return null;
+    }
+  },
+
+  /**
+   * Submit quiz answers deterministically
+   */
+  async submitQuiz(
+    resourceId: string,
+    payload: SubmitQuizPayload
+  ): Promise<QuizSubmissionResult | null> {
+    try {
+      const res = await apiFetch<{
+        success: boolean;
+        data: QuizSubmissionResult;
+      }>(`/api/learning-hub/resources/${encodeURIComponent(resourceId)}/submit-quiz`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      return res.data;
+    } catch (err) {
+      console.error('[learningHubService] Failed to submit quiz:', err);
+      return null;
+    }
+  },
+
+  /**
+   * On-demand generation of a targeted 5-question code blitz via Gemini
+   */
+  async generateBlitz(payload: {
+    skill: string;
+    category?: string;
+    difficulty?: string;
+  }): Promise<{
+    drillId: string;
+    title: string;
+    questionsCount: number;
+    questions: any[];
+  } | null> {
+    try {
+      const res = await apiFetch<{
+        success: boolean;
+        data: {
+          drillId: string;
+          title: string;
+          questionsCount: number;
+          questions: any[];
+        };
+      }>(`/api/learning-hub/practice/generate-blitz`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      return res.data;
+    } catch (err) {
+      console.error('[learningHubService] Failed to generate blitz:', err);
+      return null;
+    }
+  },
 };
+
+const FALLBACK_PRACTICE_DRILLS: PracticeDrillItem[] = [
+  {
+    id: 'drill_react_19',
+    title: 'React 19 Actions & Transition Lifecycle Blitz',
+    slug: 'react-19-actions-blitz',
+    category: 'Frontend',
+    skills: ['React 19', 'useActionState', 'useOptimistic', 'Transitions'],
+    difficulty: 'advanced',
+    estimatedMinutes: 10,
+    questionsCount: 5,
+    type: 'quiz',
+    hasQuestions: true,
+    userPassed: false,
+    source: 'skillezo_original',
+  },
+  {
+    id: 'drill_nodejs_concurrency',
+    title: 'Node.js Event Loop Phases & Concurrency Drill',
+    slug: 'nodejs-event-loop-drill',
+    category: 'Backend',
+    skills: ['Node.js', 'Event Loop', 'process.nextTick', 'Worker Threads'],
+    difficulty: 'advanced',
+    estimatedMinutes: 12,
+    questionsCount: 5,
+    type: 'quiz',
+    hasQuestions: true,
+    userPassed: true,
+    bestScore: 80,
+    source: 'skillezo_original',
+  },
+  {
+    id: 'drill_postgres_indexing',
+    title: 'PostgreSQL B-Tree vs GIN Indexing & Query Tuning',
+    slug: 'postgres-indexing-drill',
+    category: 'Database',
+    skills: ['PostgreSQL', 'Indexing', 'EXPLAIN ANALYZE', 'Performance'],
+    difficulty: 'intermediate',
+    estimatedMinutes: 10,
+    questionsCount: 5,
+    type: 'quiz',
+    hasQuestions: true,
+    userPassed: false,
+    source: 'skillezo_original',
+  },
+  {
+    id: 'drill_docker_k8s',
+    title: 'Docker Multi-Stage Builds & Kubernetes Pod Probes',
+    slug: 'docker-k8s-drill',
+    category: 'DevOps',
+    skills: ['Docker', 'Kubernetes', 'Health Checks', 'Containers'],
+    difficulty: 'intermediate',
+    estimatedMinutes: 10,
+    questionsCount: 5,
+    type: 'quiz',
+    hasQuestions: true,
+    userPassed: false,
+    source: 'skillezo_original',
+  },
+  {
+    id: 'drill_system_design',
+    title: 'System Design: Distributed Caching & Sharding Tradeoffs',
+    slug: 'system-design-caching-drill',
+    category: 'System Design',
+    skills: ['System Design', 'Redis', 'Consistency', 'Partitioning'],
+    difficulty: 'advanced',
+    estimatedMinutes: 15,
+    questionsCount: 5,
+    type: 'quiz',
+    hasQuestions: true,
+    userPassed: false,
+    source: 'skillezo_original',
+  },
+];

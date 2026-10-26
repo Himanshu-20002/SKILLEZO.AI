@@ -1,9 +1,10 @@
 import { Types } from "mongoose";
 import { LearningTrackModel, ILearningTrack } from "@/database/models/LearningTrack.model";
-import { LearningResourceModel, ILearningResource } from "@/database/models/LearningResource.model";
+import { LearningResourceModel, ILearningResource, IQuizQuestion } from "@/database/models/LearningResource.model";
 import { UserLearningProgressModel, IUserLearningProgress } from "@/database/models/UserLearningProgress.model";
 import { ProfileModel } from "@/database/models/Profile.model";
 import { CareerPlanModel } from "@/database/models/CareerPlan.model";
+import { GeminiContentGenerator } from "./gemini-content.generator";
 import {
   CatalogQueryDTO,
   TrackCatalogItemDTO,
@@ -12,6 +13,10 @@ import {
   UserLearningStatsDTO,
   TrackModuleDTO,
   ResourceSummaryDTO,
+  SubmitQuizRequestDTO,
+  SubmitQuizResponseDTO,
+  PracticeDrillSummaryDTO,
+  GenerateBlitzDTO,
 } from "./learning-hub.dto";
 
 export class LearningHubService {
@@ -398,6 +403,247 @@ export class LearningHubService {
       completedResourcesCount: progress.completedResourceIds.length,
       totalLearningMinutes: progress.totalLearningMinutes,
       inProgressTrack,
+    };
+  }
+
+  /**
+   * Grade quiz submission deterministically and update user progress
+   */
+  public static async submitQuiz(
+    userId: string,
+    resourceId: string,
+    dto: SubmitQuizRequestDTO
+  ): Promise<SubmitQuizResponseDTO> {
+    if (!Types.ObjectId.isValid(resourceId)) {
+      throw new Error("Invalid resource ID");
+    }
+
+    const resObjId = new Types.ObjectId(resourceId);
+    const resource = await LearningResourceModel.findById(resObjId).lean();
+    if (!resource) {
+      throw new Error("Learning resource not found");
+    }
+
+    const questions: IQuizQuestion[] = resource.content?.questions || [];
+    if (questions.length === 0) {
+      throw new Error("No quiz questions available for this resource");
+    }
+
+    const results = questions.map((q) => {
+      const selectedIndex = dto.selectedAnswers[q.id] ?? -1;
+      const isCorrect = selectedIndex === q.correctOptionIndex;
+      return {
+        questionId: q.id,
+        question: q.question,
+        codeSnippet: q.codeSnippet,
+        selectedOptionIndex: selectedIndex,
+        correctOptionIndex: q.correctOptionIndex,
+        isCorrect,
+        explanation: q.explanation,
+      };
+    });
+
+    const correctAnswersCount = results.filter((r) => r.isCorrect).length;
+    const score = Math.round((correctAnswersCount / questions.length) * 100);
+    const passingScore = 70;
+    const passed = score >= passingScore;
+
+    // Record attempt in user progress
+    const progress = await this.getOrCreateUserProgress(userId);
+
+    const answersMap = new Map<string, number>();
+    Object.entries(dto.selectedAnswers).forEach(([k, v]) => {
+      answersMap.set(k, v);
+    });
+
+    progress.quizAttempts.push({
+      resourceId: resObjId,
+      score,
+      passingScore,
+      passed,
+      selectedAnswers: answersMap as any,
+      attemptedAt: new Date(),
+    });
+
+    if (passed) {
+      if (!progress.completedResourceIds.some((id) => id.equals(resObjId))) {
+        progress.completedResourceIds.push(resObjId);
+        progress.totalLearningMinutes += resource.estimatedMinutes || 10;
+      }
+    }
+
+    progress.lastActiveAt = new Date();
+    await progress.save();
+
+    return {
+      resourceId: resource._id.toString(),
+      resourceTitle: resource.title,
+      score,
+      passingScore,
+      passed,
+      totalQuestions: questions.length,
+      correctAnswersCount,
+      timeSpentSeconds: dto.timeSpentSeconds || 0,
+      attemptedAt: new Date().toISOString(),
+      results,
+    };
+  }
+
+  /**
+   * List available practice drills & quizzes with user's performance status
+   */
+  public static async listPracticeDrills(
+    category?: string,
+    search?: string,
+    userId?: string
+  ): Promise<PracticeDrillSummaryDTO[]> {
+    const filter: Record<string, any> = {
+      reviewStatus: "published",
+      $or: [
+        { type: "quiz" },
+        { "content.questions.0": { $exists: true } },
+      ],
+    };
+
+    if (category && category.toLowerCase() !== "all") {
+      filter.category = new RegExp(`^${category}$`, "i");
+    }
+
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      filter.$and = [
+        {
+          $or: [
+            { title: searchRegex },
+            { skills: searchRegex },
+            { category: searchRegex },
+          ],
+        },
+      ];
+    }
+
+    const resources = await LearningResourceModel.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    let userProgress: IUserLearningProgress | null = null;
+    if (userId) {
+      userProgress = await UserLearningProgressModel.findOne({ userId }).lean();
+    }
+
+    // Build map of best scores per resource
+    const bestScoreMap = new Map<string, { bestScore: number; passed: boolean }>();
+    if (userProgress?.quizAttempts) {
+      userProgress.quizAttempts.forEach((attempt) => {
+        const rId = attempt.resourceId.toString();
+        const existing = bestScoreMap.get(rId);
+        if (!existing || attempt.score > existing.bestScore) {
+          bestScoreMap.set(rId, {
+            bestScore: attempt.score,
+            passed: attempt.passed || existing?.passed || false,
+          });
+        }
+      });
+    }
+
+    return resources.map((r) => {
+      const idStr = r._id.toString();
+      const questions = r.content?.questions || [];
+      const userStat = bestScoreMap.get(idStr);
+
+      return {
+        id: idStr,
+        title: r.title,
+        slug: r.slug,
+        category: r.category,
+        skills: r.skills,
+        difficulty: r.difficulty,
+        estimatedMinutes: r.estimatedMinutes || 10,
+        questionsCount: questions.length,
+        type: r.type,
+        hasQuestions: questions.length > 0,
+        userPassed: userStat?.passed,
+        bestScore: userStat?.bestScore,
+        source: r.source || "skillezo_original",
+      };
+    });
+  }
+
+  /**
+   * On-demand generation of a targeted 5-question code blitz using Gemini
+   */
+  public static async generateBlitz(
+    userId: string,
+    dto: GenerateBlitzDTO
+  ): Promise<{
+    drillId: string;
+    title: string;
+    questionsCount: number;
+    questions: IQuizQuestion[];
+  }> {
+    const drill = await GeminiContentGenerator.generateSkillDrill(
+      dto.skill,
+      dto.category || "Technical",
+      dto.difficulty || "intermediate"
+    );
+
+    const slug = `${dto.skill.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-blitz-${Date.now().toString().slice(-4)}`;
+
+    const newResource = await LearningResourceModel.create({
+      title: drill.lessonTitle || `${dto.skill} Rapid-Fire Code Blitz`,
+      slug,
+      type: "quiz",
+      category: dto.category || "Technical",
+      skills: [dto.skill],
+      difficulty: dto.difficulty || "intermediate",
+      estimatedMinutes: 10,
+      content: {
+        markdown: drill.markdown,
+        questions: drill.questions,
+      },
+      source: "gemini_generated",
+      reviewStatus: "published",
+    });
+
+    return {
+      drillId: newResource._id.toString(),
+      title: newResource.title,
+      questionsCount: drill.questions.length,
+      questions: drill.questions,
+    };
+  }
+
+  /**
+   * Get questions for an interactive quiz session
+   */
+  public static async getResourceQuestions(
+    resourceId: string
+  ): Promise<{
+    id: string;
+    title: string;
+    category: string;
+    difficulty: string;
+    estimatedMinutes: number;
+    questions: IQuizQuestion[];
+  }> {
+    if (!Types.ObjectId.isValid(resourceId)) {
+      throw new Error("Invalid resource ID");
+    }
+
+    const r = await LearningResourceModel.findById(resourceId).lean();
+    if (!r) {
+      throw new Error("Learning resource not found");
+    }
+
+    const questions: IQuizQuestion[] = r.content?.questions || [];
+
+    return {
+      id: r._id.toString(),
+      title: r.title,
+      category: r.category,
+      difficulty: r.difficulty,
+      estimatedMinutes: r.estimatedMinutes || 10,
+      questions,
     };
   }
 }

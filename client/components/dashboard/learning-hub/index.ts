@@ -4,3 +4,4 @@ export * from './TrackFilterBar';
 export * from './TrackCard';
 export * from './TrackSyllabusModal';
 export * from './pdf-vault';
+export * from './practice';

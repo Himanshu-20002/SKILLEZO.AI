@@ -103,3 +103,56 @@ export interface ConvertedQuizResult {
   questions: PdfQuizQuestion[];
 }
 
+export interface PracticeDrillItem {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  skills: string[];
+  difficulty: LearningDifficulty;
+  estimatedMinutes: number;
+  questionsCount: number;
+  type: 'quiz' | 'pdf_document' | 'code_drill';
+  hasQuestions: boolean;
+  userPassed?: boolean;
+  bestScore?: number;
+  source: string;
+}
+
+export interface SubmitQuizPayload {
+  selectedAnswers: Record<string, number>;
+  timeSpentSeconds?: number;
+}
+
+export interface QuizQuestionResult {
+  questionId: string;
+  question: string;
+  codeSnippet?: string;
+  selectedOptionIndex: number;
+  correctOptionIndex: number;
+  isCorrect: boolean;
+  explanation: string;
+}
+
+export interface QuizSubmissionResult {
+  resourceId: string;
+  resourceTitle: string;
+  score: number;
+  passingScore: number;
+  passed: boolean;
+  totalQuestions: number;
+  correctAnswersCount: number;
+  timeSpentSeconds?: number;
+  attemptedAt: string;
+  results: QuizQuestionResult[];
+}
+
+export interface ActiveQuizSession {
+  resourceId: string;
+  title: string;
+  category: string;
+  difficulty: LearningDifficulty;
+  estimatedMinutes: number;
+  questions: PdfQuizQuestion[];
+}
+

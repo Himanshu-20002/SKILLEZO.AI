@@ -17,7 +17,8 @@ doc/
 │   ├── MASTER_RESUME_AND_TAILORED_VARIANTS_ARCHITECTURE.md
 │   ├── ZERO_COST_REDIS_AND_CACHE_SCALING_PLAN.md
 │   ├── CAREER_PROFILE_RESUME_ARCHITECTURE.md
-│   └── LEARNING_HUB_MASTER_GAME_PLAN.md
+│   ├── LEARNING_HUB_MASTER_GAME_PLAN.md
+│   └── LEARNING_HUB_FULL_ARCHITECTURE_AND_DATA_FLOW.md
 │
 ├── frontend/                      # Client UI, Next.js routes & components
 │   ├── README.md                  # Frontend Architecture & Component Directory
@@ -104,4 +105,5 @@ Technical sprint specifications and engineering phase roadmaps are located under
 - **Phase Implementation Roadmaps & Prompts:** [`sprints-and-plans/phase-plans/`](./sprints-and-plans/phase-plans/)
   - [Phase 23 (Part 1): Learning Hub Foundation & Catalog Plan](sprints-and-plans/phase-plans/PHASE_23_LEARNING_HUB_PHASE_1_FOUNDATION_PLAN.md)
   - [Phase 23 (Part 2): Learning Hub PDF Bank & Gemini Ingestion Plan](sprints-and-plans/phase-plans/PHASE_23_LEARNING_HUB_PHASE_2_PDF_AND_AI_INGESTION_PLAN.md)
+  - [Phase 23 (Part 3): Learning Hub Practice Arena & Quiz Runner Plan](sprints-and-plans/phase-plans/PHASE_23_LEARNING_HUB_PHASE_3_PRACTICE_ARENA_AND_QUIZ_RUNNER_PLAN.md)
 

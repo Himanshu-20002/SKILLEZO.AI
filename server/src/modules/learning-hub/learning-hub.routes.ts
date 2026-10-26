@@ -27,3 +27,9 @@ learningHubRouter.post(
   LearningHubController.uploadPdf
 );
 learningHubRouter.post("/admin/generate-drill", LearningHubController.generateSkillDrill);
+
+// Practice Arena & AI Quiz Runner Routes
+learningHubRouter.get("/practice/drills", LearningHubController.listPracticeDrills);
+learningHubRouter.post("/practice/generate-blitz", LearningHubController.generateBlitz);
+learningHubRouter.get("/resources/:id/questions", LearningHubController.getResourceQuestions);
+learningHubRouter.post("/resources/:id/submit-quiz", LearningHubController.submitQuiz);

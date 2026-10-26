@@ -85,3 +85,57 @@ export const UploadPdfMetadataSchema = z.object({
   difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional().default("intermediate"),
 });
 
+export const SubmitQuizRequestSchema = z.object({
+  selectedAnswers: z.record(z.string(), z.number()),
+  timeSpentSeconds: z.number().optional().default(0),
+});
+
+export type SubmitQuizRequestDTO = z.infer<typeof SubmitQuizRequestSchema>;
+
+export interface SubmitQuizResultItemDTO {
+  questionId: string;
+  question: string;
+  codeSnippet?: string;
+  selectedOptionIndex: number;
+  correctOptionIndex: number;
+  isCorrect: boolean;
+  explanation: string;
+}
+
+export interface SubmitQuizResponseDTO {
+  resourceId: string;
+  resourceTitle: string;
+  score: number;
+  passingScore: number;
+  passed: boolean;
+  totalQuestions: number;
+  correctAnswersCount: number;
+  timeSpentSeconds?: number;
+  attemptedAt: string;
+  results: SubmitQuizResultItemDTO[];
+}
+
+export interface PracticeDrillSummaryDTO {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  skills: string[];
+  difficulty: LearningDifficultyType;
+  estimatedMinutes: number;
+  questionsCount: number;
+  type: ResourceType;
+  hasQuestions: boolean;
+  userPassed?: boolean;
+  bestScore?: number;
+  source: string;
+}
+
+export const GenerateBlitzSchema = z.object({
+  skill: z.string().min(1, "Skill name is required"),
+  category: z.string().optional().default("Technical"),
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional().default("intermediate"),
+});
+
+export type GenerateBlitzDTO = z.infer<typeof GenerateBlitzSchema>;
+

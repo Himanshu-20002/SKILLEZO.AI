@@ -20,7 +20,9 @@ import {
   PdfCard,
   PdfPreviewModal,
   PdfQuizConverterModal,
+  PracticeArenaView,
 } from '@/components/dashboard/learning-hub';
+import { useRouter } from 'next/navigation';
 import { EmptyState } from '@/components/dashboard/common/EmptyState';
 import {
   TrackCatalogItem,
@@ -34,6 +36,7 @@ import { toast } from 'sonner';
 import { Search, SlidersHorizontal, RefreshCw } from 'lucide-react';
 
 export default function LearningHubPage() {
+  const router = useRouter();
   const [tracks, setTracks] = useState<TrackCatalogItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [stats, setStats] = useState<UserLearningStats>({
@@ -51,6 +54,11 @@ export default function LearningHubPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'tracks' | 'pdf_vault' | 'practice'>('tracks');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [pendingDrillLaunch, setPendingDrillLaunch] = useState<{
+    title: string;
+    questions: any[];
+    category?: string;
+  } | null>(null);
   const [difficulty, setDifficulty] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrack, setSelectedTrack] = useState<TrackCatalogItem | null>(null);
@@ -420,48 +428,13 @@ export default function LearningHubPage() {
           </div>
         )}
 
-        {/* Tab 3: Practice Arena (Phase 3 Preview) */}
+        {/* Tab 3: Practice Arena (Hydrated Phase 3) */}
         {activeTab === 'practice' && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center max-w-2xl mx-auto shadow-sm">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center mb-4">
-              <Zap className="w-7 h-7" />
-            </div>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 mb-3 inline-block">
-              Scheduled for Phase 3 Implementation
-            </span>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-              Practice Drills & AI Quiz Arena
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-              Rapid-fire, 5-question code blitzes mapped to your missing skills with real-time syntax-highlighted
-              code evaluations and Gemini-powered explanations for every answer.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left mb-6">
-              <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40">
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                  ⏱️ Timed Question Stepper
-                </div>
-                <div className="text-[11px] text-slate-400">
-                  Real interview pressure drills with instantaneous answer rationale.
-                </div>
-              </div>
-              <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40">
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                  🛡️ Verification Bridge
-                </div>
-                <div className="text-[11px] text-slate-400">
-                  Scoring ≥70% mints cryptographic SHA-256 certificate hashes into your profile.
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => setActiveTab('tracks')}
-              className="py-2.5 px-5 rounded-xl text-xs font-semibold bg-[#3D5AFE] text-white hover:bg-[#324bdf] transition-colors inline-flex items-center gap-1.5"
-            >
-              <span>Explore Active Phase 1 Tracks</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <PracticeArenaView
+            initialDrillLaunch={pendingDrillLaunch}
+            onClearInitialDrillLaunch={() => setPendingDrillLaunch(null)}
+            onGoToVerification={() => router.push('/dashboard/skill-verification')}
+          />
         )}
 
         {/* Track Syllabus Modal */}
@@ -497,6 +470,13 @@ export default function LearningHubPage() {
             setSelectedQuizResult(null);
           }}
           onStartPractice={() => {
+            if (selectedQuizResult) {
+              setPendingDrillLaunch({
+                title: selectedQuizResult.pdfTitle,
+                questions: selectedQuizResult.questions,
+                category: 'PDF Extraction Drill',
+              });
+            }
             setIsQuizConverterOpen(false);
             setActiveTab('practice');
           }}
