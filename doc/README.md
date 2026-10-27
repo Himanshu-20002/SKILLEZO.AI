@@ -8,7 +8,8 @@ Welcome to the central documentation hub of **SKILLEZO.AI**. This index provides
 
 ```
 doc/
-├── README.md                      # [You Are Here] Central Documentation Index
+├── README.md                                  # [You Are Here] Central Documentation Index
+├── CLIENT_WALKTHROUGH_MASTER_VIDEO_SCRIPT.md  # 🎬 Master Client Video Walkthrough & Presentation Script
 │
 ├── architecture/                  # Global blueprints & integration maps
 │   ├── NOTIFICATION_SYSTEM_ARCHITECTURE.md
