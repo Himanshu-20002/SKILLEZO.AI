@@ -767,7 +767,7 @@ export class LearningHubService {
       if (analysis) {
         employabilityIndex = {
           overallScore: analysis.overallScore,
-          technicalReadinessScore: analysis.pillars?.technicalReadiness?.score || 80,
+          technicalReadinessScore: (analysis as any).pillars?.technicalReadiness?.score || (analysis as any).breakdown?.technicalReadiness || 80,
         };
       }
     } catch {

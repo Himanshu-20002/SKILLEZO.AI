@@ -8,6 +8,7 @@
     "type-check": "tsc --noEmit",
     "build": "tsup",
     "start": "node dist/server.js",
+    "seed:admin": "ts-node --transpile-only -r tsconfig-paths/register src/database/seed-admin.ts",
     "seed:jobs": "tsx src/database/seed-jobs.ts",
     "seed:learning-hub": "tsx src/database/seed-learning-hub.ts",
     "seed:pdf-vault": "tsx src/database/seed-pdf-vault.ts",

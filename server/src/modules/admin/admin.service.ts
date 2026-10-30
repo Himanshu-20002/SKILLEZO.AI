@@ -11,6 +11,7 @@ import { HTTP_STATUS } from "@/core/constants/http-status";
 import { ERROR_CODES } from "@/core/constants/error-codes";
 import { SUPER_ADMIN_EMAIL } from "@/core/auth/middleware/requireRole";
 import { cacheService } from "@/core/cache";
+import { resumeAtsEngine } from "@/modules/resume/resume.ats";
 import {
   AdminUserQuery,
   AdminJobQuery,
@@ -71,11 +72,33 @@ export class AdminService {
     ]);
 
     // Calculate average ATS score across parsed resumes
-    const scoreAgg = await ResumeModel.aggregate([
-      { $match: { "analysis.atsScore": { $exists: true, $ne: null } } },
-      { $group: { _id: null, avgScore: { $avg: "$analysis.atsScore" } } },
-    ]);
-    const avgAtsScore = scoreAgg.length > 0 ? Math.round(scoreAgg[0].avgScore) : 74;
+    let avgAtsScore = 80;
+    try {
+      const parsedSample = await ResumeModel.find({ status: "parsed" })
+        .sort({ updatedAt: -1 })
+        .limit(20)
+        .select({ extractedData: 1, rawText: 1 })
+        .lean();
+
+      if (parsedSample.length > 0) {
+        let totalScore = 0;
+        let counted = 0;
+        for (const sample of parsedSample) {
+          if (sample.extractedData || sample.rawText) {
+            const score = resumeAtsEngine.analyze((sample.extractedData || {}) as any, sample.rawText || "").atsScore;
+            if (score) {
+              totalScore += score;
+              counted++;
+            }
+          }
+        }
+        if (counted > 0) {
+          avgAtsScore = Math.round(totalScore / counted);
+        }
+      }
+    } catch {
+      avgAtsScore = 80;
+    }
 
     // 4. Job Applications & Skill Verifications
     const [totalApplications, totalVerifications] = await Promise.all([
@@ -447,12 +470,36 @@ export class AdminService {
     const filter: Record<string, any> = {};
     if (query.search && query.search.trim()) {
       const regex = new RegExp(query.search.trim(), "i");
-      filter.$or = [
-        { originalName: regex },
-        { targetRole: regex },
-        { "parsedData.personalInfo.name": regex },
-        { "parsedData.personalInfo.email": regex },
+      const userColl = this.getUserCollection();
+
+      // Find matching users by name or email
+      const matchedUsers = await userColl
+        .find({
+          $or: [{ name: regex }, { email: regex }],
+        })
+        .project({ _id: 1, id: 1 })
+        .toArray();
+
+      const matchedUserIds = matchedUsers
+        .flatMap((u: any) => [u._id?.toString(), u.id])
+        .filter(Boolean);
+
+      const orConditions: any[] = [
+        { originalFileName: regex },
+        { fileName: regex },
+        { title: regex },
+        { targetJobTitle: regex },
+        { "extractedData.personalInfo.fullName": regex },
+        { "extractedData.personalInfo.email": regex },
+        { "resumeDocument.personalInfo.fullName": regex },
+        { "resumeDocument.personalInfo.email": regex },
       ];
+
+      if (matchedUserIds.length > 0) {
+        orConditions.push({ userId: { $in: matchedUserIds } });
+      }
+
+      filter.$or = orConditions;
     }
 
     const [total, rawResumes] = await Promise.all([
@@ -464,20 +511,94 @@ export class AdminService {
         .lean(),
     ]);
 
-    const resumes = rawResumes.map((r: any) => ({
-      id: r._id.toString(),
-      userId: r.userId,
-      originalName: r.originalName,
-      targetRole: r.targetRole || r.parsedData?.personalInfo?.targetRole || "General Candidate",
-      candidateName: r.parsedData?.personalInfo?.name || "Candidate",
-      candidateEmail: r.parsedData?.personalInfo?.email || "N/A",
-      fileSize: r.fileSize,
-      status: r.status,
-      atsScore: r.analysis?.atsScore ?? 70,
-      skillsCount: r.parsedData?.skills?.length || 0,
-      projectsCount: r.parsedData?.projects?.length || 0,
-      createdAt: r.createdAt,
-    }));
+    const userIds = Array.from(new Set(rawResumes.map((r: any) => r.userId).filter(Boolean)));
+    const queryUserIds: any[] = [];
+    for (const uid of userIds) {
+      queryUserIds.push(uid);
+      if (mongoose.Types.ObjectId.isValid(uid)) {
+        queryUserIds.push(new mongoose.Types.ObjectId(uid));
+      }
+    }
+
+    const userColl = this.getUserCollection();
+    const [rawUsers, profiles] = await Promise.all([
+      queryUserIds.length > 0
+        ? userColl.find({ _id: { $in: queryUserIds } }).toArray()
+        : [],
+      userIds.length > 0
+        ? ProfileModel.find({ userId: { $in: userIds } }).lean()
+        : [],
+    ]);
+
+    const userMap = new Map<string, any>();
+    for (const u of rawUsers) {
+      if (u._id) userMap.set(u._id.toString(), u);
+      if (u.id) userMap.set(u.id.toString(), u);
+    }
+
+    const profileMap = new Map<string, any>();
+    for (const p of profiles) {
+      if (p.userId) profileMap.set(p.userId.toString(), p);
+    }
+
+    const resumes = rawResumes.map((r: any) => {
+      const user = userMap.get(r.userId?.toString());
+      const profile = profileMap.get(r.userId?.toString());
+
+      const candidateName =
+        r.extractedData?.personalInfo?.fullName ||
+        r.resumeDocument?.personalInfo?.fullName ||
+        user?.name ||
+        (user?.email ? user.email.split("@")[0] : "Candidate");
+
+      const candidateEmail =
+        r.extractedData?.personalInfo?.email ||
+        r.resumeDocument?.personalInfo?.email ||
+        user?.email ||
+        "N/A";
+
+      const targetRole =
+        r.targetJobTitle ||
+        profile?.targetRole ||
+        r.title ||
+        (r.originalFileName ? r.originalFileName.replace(/\.[^/.]+$/, "") : "General Candidate");
+
+      let atsScore = 75;
+      try {
+        if (r.extractedData || r.rawText) {
+          atsScore = resumeAtsEngine.analyze((r.extractedData || {}) as any, r.rawText || "").atsScore || 75;
+        }
+      } catch {
+        atsScore = 75;
+      }
+
+      const skillsCount =
+        r.extractedData?.skills?.length ||
+        r.resumeDocument?.skills?.length ||
+        profile?.skills?.length ||
+        0;
+
+      const projectsCount =
+        r.extractedData?.projects?.length ||
+        r.resumeDocument?.projects?.length ||
+        profile?.projects?.length ||
+        0;
+
+      return {
+        id: r._id.toString(),
+        userId: r.userId,
+        originalName: r.originalFileName || r.fileName || r.title || "resume.pdf",
+        targetRole,
+        candidateName,
+        candidateEmail,
+        fileSize: r.fileSize || 0,
+        status: r.status,
+        atsScore,
+        skillsCount,
+        projectsCount,
+        createdAt: r.createdAt,
+      };
+    });
 
     return {
       resumes,

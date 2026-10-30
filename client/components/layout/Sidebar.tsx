@@ -171,16 +171,6 @@ export const adminSidebarSections: NavSection[] = [
       },
     ],
   },
-  {
-    title: 'SYSTEM & TELEMETRY',
-    items: [
-      {
-        label: 'System Telemetry',
-        href: '/admin/dashboard?tab=overview',
-        icon: ShieldCheck,
-      },
-    ],
-  },
 ];
 
 export const sidebarNavItems: NavItem[] = [

@@ -224,7 +224,7 @@ export class LearningHubController {
    */
   public static async deletePdf(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const deleted = await PdfVaultService.deletePdf(id);
       if (!deleted) {
         res.status(HTTP_STATUS.NOT_FOUND).json(

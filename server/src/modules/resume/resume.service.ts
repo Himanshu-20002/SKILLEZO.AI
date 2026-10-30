@@ -43,6 +43,7 @@ import {
 } from "@/modules/resume-intelligence/builder/builder.validator";
 import { GeminiProvider } from "@/core/ai/providers/gemini.provider";
 import { ProfileService } from "@/modules/profile/profile.service";
+import { ResumePdfService } from "./resume.pdf.service";
 import { UserModel } from "@/database/models/User.model";
 import path from "path";
 import fs from "fs";
@@ -131,6 +132,12 @@ export class ResumeService {
         file.originalname.toLowerCase().endsWith(".pdf");
 
       if (fileBuffer && isPdf) {
+        try {
+          await this.storageService.save(file, storageKey);
+        } catch (saveErr: any) {
+          console.warn("[ResumeService] Local disk write non-fatal:", saveErr?.message);
+        }
+
         try {
           rawText = await this.parserService.extractRawTextFromBuffer(fileBuffer);
           extractedData = await this.parserService.parseResumeBuffer(fileBuffer);
@@ -468,31 +475,44 @@ export class ResumeService {
     };
   }
 
-  async getResumeStream(userId: string, resumeId: string): Promise<{ stream: Readable; fileName: string; mimeType: string; fileSize: number }> {
-    const resume = await this.getResumeById(userId, resumeId);
-    if (!resume.storageKey) {
+  async getResumeStream(userId: string, resumeId: string, isAdmin = false): Promise<{ stream: Readable; fileName: string; mimeType: string; fileSize: number }> {
+    const resume = isAdmin
+      ? await this.resumeRepository.findById(resumeId)
+      : await this.getResumeById(userId, resumeId);
+    if (!resume) {
       throw new AppError(
-        "Resume file not found on storage",
+        "Resume not found",
         HTTP_STATUS.NOT_FOUND,
-        ERROR_CODES.RESUME_FILE_NOT_FOUND
-      );
-    }
-    const exists = await this.storageService.exists(resume.storageKey);
-
-    if (!exists) {
-      throw new AppError(
-        "Resume file not found on storage",
-        HTTP_STATUS.NOT_FOUND,
-        ERROR_CODES.RESUME_FILE_NOT_FOUND
+        ERROR_CODES.RESUME_NOT_FOUND
       );
     }
 
-    const stream = await this.storageService.getStream(resume.storageKey);
+    // 1. If physical file exists on local storage, stream it directly
+    if (resume.storageKey) {
+      const exists = await this.storageService.exists(resume.storageKey);
+      if (exists) {
+        const stream = await this.storageService.getStream(resume.storageKey);
+        return {
+          stream,
+          fileName: resume.originalFileName || resume.fileName || "resume.pdf",
+          mimeType: resume.mimeType || "application/pdf",
+          fileSize: resume.fileSize || 0,
+        };
+      }
+    }
+
+    // 2. Zero-Cost Vector PDF Generator fallback (from extracted structured data / resumeDocument)
+    const pdfBuffer = await ResumePdfService.generatePdfBuffer(resume);
+    const cleanFileName =
+      resume.originalFileName?.toLowerCase().endsWith(".pdf")
+        ? resume.originalFileName
+        : `${resume.title || "candidate-resume"}.pdf`;
+
     return {
-      stream,
-      fileName: resume.originalFileName || resume.fileName || "resume.pdf",
-      mimeType: resume.mimeType || "application/pdf",
-      fileSize: resume.fileSize || 0,
+      stream: Readable.from(pdfBuffer),
+      fileName: cleanFileName,
+      mimeType: "application/pdf",
+      fileSize: pdfBuffer.length,
     };
   }
 

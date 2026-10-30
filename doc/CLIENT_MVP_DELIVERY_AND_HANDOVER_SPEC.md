@@ -8,9 +8,9 @@
 
 ---
 
-## 🌟 1. Executive Summary: What We Built
+## 🌟 1. Executive Summary: Autonomous Career Intelligence & Verified Talent Exchange
 
-**SKILLEZO.AI** is an all-in-one **Career Growth and Verified Hiring Platform**. 
+**SKILLEZO.AI** is an enterprise-grade **AI Career Acceleration & Pre-Vetted Talent Ecosystem** engineered to transform candidate hiring readiness into quantifiable, tamper-proof proof of competency for modern recruitment teams. 
 
 Today’s hiring market has two big problems:
 1. **For Candidates:** Traditional job sites only list jobs. They don’t tell candidates why their resume gets rejected, what skills they are missing, or how to fix them.
@@ -115,7 +115,7 @@ graph TD
 To explore and test the platform firsthand, use these pre-configured accounts:
 
 ### 👤 Candidate Demo Account
-* **Login URL:** `http://localhost:3000/login` *(or your live production domain)*
+* **Login URL:** `http://skillezo.com/login` *(or your live production domain)*
 * **Email:** `testuser@gmail.com`
 * **Password:** `password123` *(or use Google One-Click Login)*
 * **Role:** Candidate
@@ -124,7 +124,7 @@ To explore and test the platform firsthand, use these pre-configured accounts:
 ---
 
 ### 👔 Recruiter & Administrator Demo Account
-* **Login URL:** `http://localhost:3000/login` *(or your live production domain)*
+* **Login URL:** `http://skillezo.com/login` *(or your live production domain)*
 * **Email:** `admin@gmail.com`
 * **Password:** `password123`
 * **Role:** Administrator & Employer
