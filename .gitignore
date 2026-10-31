@@ -42,5 +42,4 @@ coverage/
 *.sw?
 Thumbs.db
 
-# Local Reports & Trackers (kept locally only, never pushed to Git)
-tracker/Report/
+

@@ -287,9 +287,15 @@ function LearningHubPageContent() {
             }`}
           >
             <Zap className="w-4 h-4" />
-            <span>Practice & Quiz Blitz</span>
-            <span className="px-1.5 py-0.2 rounded text-[10px] bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold border border-purple-500/30">
-              Phase 3 Preview
+            <span>Code Sandbox & Drills</span>
+            <span
+              className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
+                activeTab === 'practice'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+              }`}
+            >
+              Live Sandbox
             </span>
           </button>
         </div>

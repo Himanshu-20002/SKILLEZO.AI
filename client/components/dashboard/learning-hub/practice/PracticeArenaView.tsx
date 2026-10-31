@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Clock,
   Layers,
+  Code2,
 } from 'lucide-react';
 import { PracticeDrillItem, QuizSubmissionResult, PdfQuizQuestion } from '@/types/learning-hub';
 import { learningHubService } from '@/services/learning-hub.service';
@@ -19,6 +20,7 @@ import { DrillCard } from './DrillCard';
 import { QuizRunnerModal } from './QuizRunnerModal';
 import { QuizResultModal } from './QuizResultModal';
 import { GenerateBlitzModal } from './GenerateBlitzModal';
+import { CodeSandboxView } from './CodeSandboxView';
 
 interface PracticeArenaViewProps {
   onGoToVerification?: () => void;
@@ -35,6 +37,7 @@ export function PracticeArenaView({
   initialDrillLaunch,
   onClearInitialDrillLaunch,
 }: PracticeArenaViewProps) {
+  const [arenaMode, setArenaMode] = useState<'sandbox' | 'drills'>('sandbox');
   const [drills, setDrills] = useState<PracticeDrillItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState('All');
@@ -79,6 +82,7 @@ export function PracticeArenaView({
   // Handle external launch from PDF Vault "Start Practice"
   useEffect(() => {
     if (initialDrillLaunch && initialDrillLaunch.questions.length > 0) {
+      setArenaMode('drills');
       setRunnerTitle(initialDrillLaunch.title);
       setRunnerCategory(initialDrillLaunch.category || 'PDF Extraction Drill');
       setRunnerQuestions(initialDrillLaunch.questions);
@@ -227,109 +231,169 @@ export function PracticeArenaView({
 
   return (
     <div className="space-y-6">
-      {/* Hero Banner with Stats & AI Trigger */}
-      <div className="relative rounded-3xl p-6 md:p-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 text-white overflow-hidden shadow-lg">
-        {/* Glow backdrop */}
-        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-[#3D5AFE]/20 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#3D5AFE]/30 text-[#8C9EFF] border border-[#3D5AFE]/40 uppercase tracking-wider flex items-center gap-1">
-                <Zap className="w-3 h-3 text-[#3D5AFE]" />
-                Interactive Arena
-              </span>
-              <span className="text-xs text-slate-400 font-medium">
-                Instant Syntax Evaluation & Gemini Rationales
-              </span>
-            </div>
-
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight">
-              Rapid-Fire Technical Practice Drills
-            </h2>
-            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-              Test your engineering intuition on focused 5-question code blitzes. Score ≥70% to prove
-              competency and earn verified credentials for your candidate profile.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
-            <button
-              onClick={() => setIsGenerateOpen(true)}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl text-xs font-bold bg-white text-slate-900 hover:bg-slate-100 transition-all flex items-center justify-center gap-2 shadow-md hover:scale-[1.02]"
-            >
-              <Sparkles className="w-4 h-4 text-purple-600" />
-              <span>Generate AI Code Blitz</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Chips & Search Bar */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Category Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                category === cat
-                  ? 'bg-[#3D5AFE] text-white shadow-sm shadow-[#3D5AFE]/25'
-                  : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Search Input */}
-        <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search drills, topics, skills..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#3D5AFE] transition-colors placeholder:text-slate-400"
-          />
-        </div>
-      </div>
-
-      {/* Drill Cards Grid */}
-      {loading ? (
-        <div className="py-20 text-center space-y-3">
-          <div className="w-8 h-8 mx-auto border-2 border-[#3D5AFE] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-slate-500">Loading practice drills...</p>
-        </div>
-      ) : drills.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center max-w-md mx-auto space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
-            <Zap className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-            No Drills Match Filters
-          </h3>
-          <p className="text-xs text-slate-500">
-            Try adjusting your search terms or generate a custom AI blitz for your target skill.
-          </p>
+      {/* Sub-Navigation: Mode Switcher between Monaco Code Sandbox & MCQ Blitz Drills */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-1 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-inner">
           <button
-            onClick={() => {
-              setCategory('All');
-              setSearchQuery('');
-            }}
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#3D5AFE] text-white hover:bg-[#324bdf] transition-colors"
+            onClick={() => setArenaMode('sandbox')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              arenaMode === 'sandbox'
+                ? 'bg-[#3D5AFE] text-white shadow-md shadow-[#3D5AFE]/30'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
           >
-            Clear Filters
+            <Code2 className="w-4 h-4" />
+            <span>Monaco Code Sandbox</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono border border-emerald-500/30">
+              Live
+            </span>
+          </button>
+
+          <button
+            onClick={() => setArenaMode('drills')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              arenaMode === 'drills'
+                ? 'bg-[#3D5AFE] text-white shadow-md shadow-[#3D5AFE]/30'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Zap className="w-4 h-4" />
+            <span>Rapid-Fire MCQ Drills</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+              {drills.length}
+            </span>
           </button>
         </div>
+
+        {arenaMode === 'sandbox' ? (
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[11px] font-medium">
+              Client Browser Sandbox • 0ms Network Latency • Free
+            </span>
+          </div>
+        ) : (
+          <button
+            onClick={() => setIsGenerateOpen(true)}
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-[#3D5AFE] text-white hover:bg-[#324bdf] transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-purple-200" />
+            <span>Generate AI Blitz</span>
+          </button>
+        )}
+      </div>
+
+      {/* View Mode 1: Live Monaco Code Sandbox */}
+      {arenaMode === 'sandbox' ? (
+        <CodeSandboxView />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {drills.map((drill) => (
-            <DrillCard key={drill.id} drill={drill} onStart={handleStartDrill} />
-          ))}
-        </div>
+        /* View Mode 2: Rapid-Fire MCQ Drills */
+        <>
+          {/* Hero Banner with Stats & AI Trigger */}
+          <div className="relative rounded-3xl p-6 md:p-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 text-white overflow-hidden shadow-lg">
+            {/* Glow backdrop */}
+            <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-[#3D5AFE]/20 blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-2 max-w-xl">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#3D5AFE]/30 text-[#8C9EFF] border border-[#3D5AFE]/40 uppercase tracking-wider flex items-center gap-1">
+                    <Zap className="w-3 h-3 text-[#3D5AFE]" />
+                    Interactive Arena
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">
+                    Instant Syntax Evaluation & Gemini Rationales
+                  </span>
+                </div>
+
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight">
+                  Rapid-Fire Technical Practice Drills
+                </h2>
+                <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+                  Test your engineering intuition on focused 5-question code blitzes. Score ≥70% to prove
+                  competency and earn verified credentials for your candidate profile.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+                <button
+                  onClick={() => setIsGenerateOpen(true)}
+                  className="w-full sm:w-auto px-5 py-3 rounded-2xl text-xs font-bold bg-white text-slate-900 hover:bg-slate-100 transition-all flex items-center justify-center gap-2 shadow-md hover:scale-[1.02]"
+                >
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  <span>Generate AI Code Blitz</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Chips & Search Bar */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            {/* Category Chips */}
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    category === cat
+                      ? 'bg-[#3D5AFE] text-white shadow-sm shadow-[#3D5AFE]/25'
+                      : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Search Input */}
+            <div className="relative w-full md:w-72">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search drills, topics, skills..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#3D5AFE] transition-colors placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+          {/* Drill Cards Grid */}
+          {loading ? (
+            <div className="py-20 text-center space-y-3">
+              <div className="w-8 h-8 mx-auto border-2 border-[#3D5AFE] border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs text-slate-500">Loading practice drills...</p>
+            </div>
+          ) : drills.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center max-w-md mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+                <Zap className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                No Drills Match Filters
+              </h3>
+              <p className="text-xs text-slate-500">
+                Try adjusting your search terms or generate a custom AI blitz for your target skill.
+              </p>
+              <button
+                onClick={() => {
+                  setCategory('All');
+                  setSearchQuery('');
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#3D5AFE] text-white hover:bg-[#324bdf] transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {drills.map((drill) => (
+                <DrillCard key={drill.id} drill={drill} onStart={handleStartDrill} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Quiz Runner Modal */}

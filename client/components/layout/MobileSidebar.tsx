@@ -114,63 +114,63 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
           ))}
         </div>
 
-        {/* Bottom Pinned Area (Candidate only): Opportunities above AI Credits */}
+        {/* Bottom Pinned Area (Candidate only): Opportunities & AI Credits */}
         {!isAdmin && !isAdminRoute && (
-          <div className="pt-2 pb-1 border-t border-slate-200/80 dark:border-slate-800/80 space-y-1 shrink-0">
-            {opportunitiesSection.title && (
-              <div className="px-3 pt-1 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                {opportunitiesSection.title}
-              </div>
-            )}
+          <div className="shrink-0 border-t border-slate-200/80 dark:border-slate-800/80 opportunities-bottom-dock flex flex-col">
+            <div className="pt-2.5 pb-0.5 space-y-1">
+              {opportunitiesSection.title && (
+                <div className="px-3 pt-1 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  {opportunitiesSection.title}
+                </div>
+              )}
 
-            {opportunitiesSection.items.map((item) => {
-              const isActive = isLinkActive(item.href);
-              const Icon = item.icon;
-              const isMessages = item.href === '/dashboard/messages';
-              const showUnread = isMessages && unreadMessagesCount > 0;
-              const displayBadge = isMessages
-                ? showUnread
-                  ? unreadMessagesCount > 99
-                    ? '99+'
-                    : String(unreadMessagesCount)
-                  : null
-                : item.badge;
+              {opportunitiesSection.items.map((item) => {
+                const isActive = isLinkActive(item.href);
+                const Icon = item.icon;
+                const isMessages = item.href === '/dashboard/messages';
+                const showUnread = isMessages && unreadMessagesCount > 0;
+                const displayBadge = isMessages
+                  ? showUnread
+                    ? unreadMessagesCount > 99
+                      ? '99+'
+                      : String(unreadMessagesCount)
+                    : null
+                  : item.badge;
 
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={onClose}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    isActive
-                      ? 'bg-[#3D5AFE]/10 dark:bg-[#3D5AFE]/20 text-[#3D5AFE] dark:text-white border-l-2 border-[#3D5AFE]'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#3D5AFE]' : 'text-slate-500 dark:text-slate-400'}`} />
-                  <span className="truncate">{item.label}</span>
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={onClose}
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                      isActive
+                        ? 'bg-[#3D5AFE]/10 dark:bg-[#3D5AFE]/20 text-[#3D5AFE] dark:text-white border-l-2 border-[#3D5AFE]'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100/70 dark:hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#3D5AFE]' : 'text-slate-500 dark:text-slate-400'}`} />
+                    <span className="truncate">{item.label}</span>
 
-                  {displayBadge && (
-                    <span
-                      className={`ml-auto font-bold uppercase tracking-wider ${
-                        isMessages
-                          ? 'text-[10px] px-2 py-0.5 rounded-full bg-rose-500 text-white shadow-xs'
-                          : 'text-[9px] px-1.5 py-0.5 rounded-full bg-[#00D9C0]/15 text-[#00897B] dark:text-[#00D9C0] border border-[#00D9C0]/30'
-                      }`}
-                    >
-                      {displayBadge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+                    {displayBadge && (
+                      <span
+                        className={`ml-auto font-bold uppercase tracking-wider ${
+                          isMessages
+                            ? 'text-[10px] px-2 py-0.5 rounded-full bg-rose-500 text-white shadow-xs'
+                            : 'text-[9px] px-1.5 py-0.5 rounded-full bg-[#00D9C0]/15 text-[#00897B] dark:text-[#00D9C0] border border-[#00D9C0]/30'
+                        }`}
+                      >
+                        {displayBadge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Bottom AI Token / Credit Card (Candidate only) */}
+            <SidebarTokenWidget onItemClick={onClose} />
           </div>
         )}
-
-        {/* Bottom AI Token / Credit Card (Candidate only) */}
-        <div className="pb-3 border-t border-slate-200/80 dark:border-slate-800/80">
-          <SidebarTokenWidget onItemClick={onClose} />
-        </div>
       </div>
     </div>
   );

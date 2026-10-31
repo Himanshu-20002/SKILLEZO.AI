@@ -9,9 +9,13 @@ Welcome to the central documentation hub of **SKILLEZO.AI**. This index provides
 ```
 doc/
 ├── README.md                                  # [You Are Here] Central Documentation Index
+├── NEXT_PHASE_PROJECT_SCOPE.md                # 🎯 Next-Phase Development Blueprint & Project Scope (v2.0)
 ├── CLIENT_MVP_DELIVERY_AND_HANDOVER_SPEC.md   # 🚀 Official Client MVP Delivery & Handover Specification
-├── CLIENT_WALKTHROUGH_MASTER_VIDEO_SCRIPT.md  # 🎬 Master Client Video Walkthrough & Presentation Script (10-12m)
-├── RECRUITER_CANDIDATE_FLOW_VIDEO_SCRIPT.md   # ⚡ Recruiter & Candidate Dual-Flow Video Script (6-8m)
+├── video-scripts/                             # 🎬 Product Walkthrough & Demonstration Video Scripts
+│   ├── README.md                              # Video Scripts Directory & Recording Checklist
+│   ├── CLIENT_WALKTHROUGH_MASTER_VIDEO_SCRIPT.md  # Master Client Video Walkthrough (10-12m)
+│   ├── RECRUITER_CANDIDATE_FLOW_VIDEO_SCRIPT.md   # Recruiter & Candidate Dual-Flow Script (6-8m)
+│   └── ADMIN_PANEL_WALKTHROUGH_VIDEO_SCRIPT.md    # Admin Command Center Walkthrough Script (4-5m)
 │
 ├── architecture/                  # Global blueprints & integration maps
 │   ├── NOTIFICATION_SYSTEM_ARCHITECTURE.md
