@@ -28,5 +28,9 @@ router.post("/jobs/trigger-sync", asyncHandler(AdminController.triggerJobIngesti
 // 4. Resumes & ATS intelligence
 router.get("/resumes", asyncHandler(AdminController.getResumes));
 
+// 5. Dynamic Platform Job Roles Management
+import { adminRolesRouter } from "@/modules/platform-roles/platform-roles.routes";
+router.use("/roles", adminRolesRouter);
+
 export const adminRouter = router;
 export default router;

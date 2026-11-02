@@ -61,10 +61,23 @@ function createWorkerScript(executableCode: string): string {
         
         const seen = new WeakSet();
         try {
-          return JSON.stringify(arg, (key, value) => {
+          const compact = JSON.stringify(arg, (key, value) => {
             if (typeof value === 'object' && value !== null) {
               if (seen.has(value)) return '[Circular Reference]';
               seen.add(value);
+            }
+            if (typeof value === 'bigint') return value.toString() + 'n';
+            if (typeof value === 'symbol') return value.toString();
+            return value;
+          });
+          if (compact !== undefined && compact.length <= 100) {
+            return compact.replace(/,(?=[^\\s])/g, ', ');
+          }
+          const seenMulti = new WeakSet();
+          return JSON.stringify(arg, (key, value) => {
+            if (typeof value === 'object' && value !== null) {
+              if (seenMulti.has(value)) return '[Circular Reference]';
+              seenMulti.add(value);
             }
             if (typeof value === 'bigint') return value.toString() + 'n';
             if (typeof value === 'symbol') return value.toString();
@@ -79,16 +92,20 @@ function createWorkerScript(executableCode: string): string {
 
       const customConsole = {
         log: (...args) => {
+          let content = args.map(safeStringify).join(' ');
+          if (content.startsWith('\\n')) content = content.replace(/^\\n+/, '');
           self.postMessage({
             type: 'log',
-            content: args.map(safeStringify).join(' '),
+            content: content,
             timestamp: getTimestamp()
           });
         },
         info: (...args) => {
+          let content = args.map(safeStringify).join(' ');
+          if (content.startsWith('\\n')) content = content.replace(/^\\n+/, '');
           self.postMessage({
             type: 'info',
-            content: args.map(safeStringify).join(' '),
+            content: content,
             timestamp: getTimestamp()
           });
         },
@@ -380,7 +397,9 @@ async function executePython(code: string): Promise<ExecutionResult> {
     // Set stdout and stderr hooks
     pyodide.setStdout({
       batched: (text: string) => {
-        if (text.length > 0) {
+        let clean = text;
+        if (clean.startsWith('\n')) clean = clean.replace(/^\n+/, '');
+        if (clean.length > 0) {
           logs.push({
             type: 'log',
             content: text,

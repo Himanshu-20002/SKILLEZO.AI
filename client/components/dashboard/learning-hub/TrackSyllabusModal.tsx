@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { TrackCatalogItem, TrackDetail, ResourceSummary } from '@/types/learning-hub';
 import { learningHubService } from '@/services/learning-hub.service';
+import { LessonViewerModal } from './LessonViewerModal';
 import { toast } from 'sonner';
 
 interface TrackSyllabusModalProps {
@@ -36,6 +37,7 @@ export const TrackSyllabusModal: React.FC<TrackSyllabusModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
   const [togglingResourceId, setTogglingResourceId] = useState<string | null>(null);
+  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && track) {
@@ -43,6 +45,7 @@ export const TrackSyllabusModal: React.FC<TrackSyllabusModalProps> = ({
     } else {
       setTrackDetail(null);
       setExpandedModules({});
+      setSelectedResourceId(null);
     }
   }, [isOpen, track]);
 
@@ -118,6 +121,38 @@ export const TrackSyllabusModal: React.FC<TrackSyllabusModalProps> = ({
       toast.error('Failed to update lesson status');
     } finally {
       setTogglingResourceId(null);
+    }
+  };
+
+  const handleResourceStatusChange = (resourceId: string, completed: boolean) => {
+    setTrackDetail((prev) => {
+      if (!prev) return null;
+      let completedCount = 0;
+      let totalCount = 0;
+
+      const updatedModules = prev.modules.map((mod) => ({
+        ...mod,
+        resources: mod.resources.map((r) => {
+          const isTarget = r.id === resourceId;
+          const isComp = isTarget ? completed : r.completed;
+          totalCount++;
+          if (isComp) completedCount++;
+          return isTarget ? { ...r, completed } : r;
+        }),
+      }));
+
+      const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+      return {
+        ...prev,
+        modules: updatedModules,
+        completedResourcesCount: completedCount,
+        progressPercent,
+      };
+    });
+
+    if (onResourceToggle) {
+      onResourceToggle(resourceId, completed);
     }
   };
 
@@ -222,21 +257,30 @@ export const TrackSyllabusModal: React.FC<TrackSyllabusModalProps> = ({
                     <div className="p-3 pt-0 border-t border-slate-100 dark:border-slate-800 space-y-2">
                       {mod.resources.map((res) => {
                         const isToggling = togglingResourceId === res.id;
+                        const isInternalLesson = res.type === 'lesson' || !res.externalUrl;
+                        const safeExternalUrl = res.externalUrl && /^https?:\/\//i.test(res.externalUrl) ? res.externalUrl : null;
+
                         return (
                           <div
                             key={res.id}
-                            className={`p-3 rounded-lg border transition-all flex items-center justify-between gap-3 ${
+                            onClick={() => setSelectedResourceId(res.id)}
+                            className={`p-3 rounded-lg border transition-all flex items-center justify-between gap-3 cursor-pointer group hover:shadow-xs ${
                               res.completed
-                                ? 'bg-emerald-500/5 border-emerald-500/20 dark:bg-emerald-950/10'
-                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                                ? 'bg-emerald-500/5 border-emerald-500/20 dark:bg-emerald-950/10 hover:border-emerald-500/30'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-[#3D5AFE]/40 hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
                             }`}
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
                               {/* Completion Toggle Button */}
                               <button
-                                onClick={() => handleToggleResource(res)}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleResource(res);
+                                }}
                                 disabled={isToggling}
-                                className="text-slate-300 hover:text-emerald-500 dark:text-slate-600 dark:hover:text-emerald-400 transition-colors shrink-0"
+                                title={res.completed ? "Mark as in-progress" : "Mark as completed"}
+                                className="text-slate-300 hover:text-emerald-500 dark:text-slate-600 dark:hover:text-emerald-400 transition-colors shrink-0 cursor-pointer"
                               >
                                 {res.completed ? (
                                   <CheckCircle2 className="w-5 h-5 text-emerald-500" />
@@ -245,9 +289,9 @@ export const TrackSyllabusModal: React.FC<TrackSyllabusModalProps> = ({
                                 )}
                               </button>
 
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#3D5AFE] dark:group-hover:text-[#61DAFB] transition-colors">
                                     {res.title}
                                   </span>
                                   {res.provider && (
@@ -264,17 +308,29 @@ export const TrackSyllabusModal: React.FC<TrackSyllabusModalProps> = ({
                               </div>
                             </div>
 
-                            {/* External Link or Action */}
-                            {res.externalUrl && (
-                              <a
-                                href={res.externalUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-[#3D5AFE] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                              </a>
-                            )}
+                            {/* Action CTA & External Link */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {isInternalLesson ? (
+                                <span className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-[#3D5AFE]/10 group-hover:bg-[#3D5AFE] text-[#3D5AFE] group-hover:text-white dark:text-[#61DAFB] transition-colors flex items-center gap-1">
+                                  Read Lesson
+                                </span>
+                              ) : safeExternalUrl ? (
+                                <a
+                                  href={safeExternalUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title="Open external documentation"
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-[#3D5AFE] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </a>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800">
+                                  View
+                                </span>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
@@ -290,16 +346,26 @@ export const TrackSyllabusModal: React.FC<TrackSyllabusModalProps> = ({
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center justify-between">
           <span className="text-xs text-slate-500 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-[#3D5AFE]" />
-            Tick lessons off to automatically boost your progress meter
+            Click any lesson to read in-app with verified architecture patterns
           </span>
           <button
             onClick={onClose}
-            className="py-2 px-4 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 transition-colors"
+            className="py-2 px-4 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 transition-colors cursor-pointer"
           >
             Close
           </button>
         </div>
       </div>
+
+      {/* Interactive In-App Lesson Viewer */}
+      {selectedResourceId && (
+        <LessonViewerModal
+          resourceId={selectedResourceId}
+          isOpen={Boolean(selectedResourceId)}
+          onClose={() => setSelectedResourceId(null)}
+          onStatusChange={handleResourceStatusChange}
+        />
+      )}
     </div>
   );
 };

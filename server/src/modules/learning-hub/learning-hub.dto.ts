@@ -154,3 +154,62 @@ export interface ClaimVerificationResponseDTO {
   message: string;
 }
 
+export interface LearningResourceDetailDTO {
+  id: string;
+  title: string;
+  slug: string;
+  type: ResourceType;
+  category: string;
+  skills: string[];
+  difficulty: LearningDifficultyType;
+  estimatedMinutes: number;
+  provider?: string;
+  externalUrl?: string;
+  markdown?: string;
+  completed: boolean;
+  source: string;
+  reviewStatus: string;
+  updatedAt: string;
+}
+
+export const CreateTrackSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  slug: z.string().min(2).optional(),
+  category: z.enum(["Frontend", "Backend", "Database", "Cloud", "DevOps", "System Design", "AI/ML"]),
+  description: z.string().min(5, "Description must be at least 5 characters"),
+  targetRoles: z.array(z.string()).min(1, "At least one target role is required"),
+  targetSkills: z.array(z.string()).min(1, "At least one target skill is required"),
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]),
+  estimatedMinutes: z.number().int().positive().default(60),
+  iconName: z.string().default("BookOpen"),
+  accentColor: z.string().default("#3D5AFE"),
+  published: z.boolean().default(true),
+  finalAssessmentTopicId: z.string().optional().nullable(),
+});
+export type CreateTrackDTO = z.infer<typeof CreateTrackSchema>;
+
+export const UpdateTrackSchema = CreateTrackSchema.partial();
+export type UpdateTrackDTO = z.infer<typeof UpdateTrackSchema>;
+
+export const CreateModuleSchema = z.object({
+  title: z.string().min(2, "Module title is required"),
+  description: z.string().optional().default(""),
+});
+export type CreateModuleDTO = z.infer<typeof CreateModuleSchema>;
+
+export const CreateResourceSchema = z.object({
+  title: z.string().min(2, "Lesson title is required"),
+  type: z.enum(["lesson", "external_doc", "external_video", "pdf_document", "quiz", "code_drill"]).default("lesson"),
+  category: z.string().min(2, "Category is required"),
+  skills: z.array(z.string()).default([]),
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]).default("intermediate"),
+  estimatedMinutes: z.number().int().positive().default(15),
+  provider: z.string().optional().default("SKILLEZO Engineering"),
+  markdown: z.string().optional().default(""),
+  externalUrl: z.string().regex(/^https?:\/\/.+/, "External URL must be a valid http or https URL").optional().or(z.literal("")),
+});
+export type CreateResourceDTO = z.infer<typeof CreateResourceSchema>;
+
+export const UpdateResourceSchema = CreateResourceSchema.partial();
+export type UpdateResourceDTO = z.infer<typeof UpdateResourceSchema>;
+

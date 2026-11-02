@@ -21,6 +21,7 @@ import {
 import { skillGapService } from '@/services/skill-gap.service';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { platformRolesService } from '@/services/platform-roles.service';
 
 const TARGET_ROLES = [
   'Full-Stack Engineer',
@@ -35,6 +36,15 @@ export default function CareerGPSPage() {
   const [data, setData] = useState<CareerGPSData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [targetRole, setTargetRole] = useState<string>('Full-Stack Engineer');
+  const [availableRoles, setAvailableRoles] = useState<string[]>(TARGET_ROLES);
+
+  useEffect(() => {
+    platformRolesService.getActiveRoles().then((roles) => {
+      if (roles && roles.length > 0) {
+        setAvailableRoles(roles.map((r) => r.name));
+      }
+    }).catch(() => {});
+  }, []);
 
   const fetchGpsData = useCallback(async (roleToLoad?: string) => {
     setIsLoading(true);
@@ -199,7 +209,7 @@ export default function CareerGPSPage() {
                   onChange={(e) => handleRoleChange(e.target.value)}
                   className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold py-1.5 pl-2.5 pr-7 rounded-lg border-0 focus:ring-2 focus:ring-[#3D5AFE] cursor-pointer appearance-none"
                 >
-                  {TARGET_ROLES.map((role) => (
+                  {availableRoles.map((role) => (
                     <option key={role} value={role}>
                       {role}
                     </option>

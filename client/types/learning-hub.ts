@@ -171,3 +171,57 @@ export interface ClaimVerificationResult {
   message: string;
 }
 
+export interface LearningResourceDetail extends ResourceSummary {
+  markdown?: string;
+  source?: string;
+  reviewStatus?: string;
+  updatedAt?: string;
+}
+
+export interface AdminTrackModule {
+  id: string;
+  title: string;
+  description?: string;
+  order: number;
+  resources: Array<ResourceSummary & { markdown?: string }>;
+}
+
+export interface AdminTrackDetail extends TrackCatalogItem {
+  published: boolean;
+  isFeatured: boolean;
+  modules: AdminTrackModule[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateTrackInput {
+  title: string;
+  slug?: string;
+  category: string;
+  description: string;
+  targetRoles: string[];
+  targetSkills: string[];
+  difficulty: LearningDifficulty;
+  estimatedMinutes: number;
+  iconName?: string;
+  accentColor?: string;
+  published?: boolean;
+}
+
+export interface CreateModuleInput {
+  title: string;
+  description?: string;
+}
+
+export interface CreateResourceInput {
+  title: string;
+  type: 'lesson' | 'external_doc' | 'external_video';
+  category: string;
+  skills: string[];
+  difficulty: LearningDifficulty;
+  estimatedMinutes: number;
+  provider?: string;
+  markdown?: string;
+  externalUrl?: string;
+}
+

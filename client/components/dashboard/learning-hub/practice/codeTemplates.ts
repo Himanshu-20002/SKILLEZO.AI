@@ -42,10 +42,10 @@ console.log("--- Running Two Sum Tests ---");
 console.log("Test 1: [2, 7, 11, 15], target = 9");
 console.log("Result:", twoSum([2, 7, 11, 15], 9)); // Expected: [0, 1]
 
-console.log("\\nTest 2: [3, 2, 4], target = 6");
+console.log("Test 2: [3, 2, 4], target = 6");
 console.log("Result:", twoSum([3, 2, 4], 6)); // Expected: [1, 2]
 
-console.log("\\nTest 3: [3, 3], target = 6");
+console.log("Test 3: [3, 3], target = 6");
 console.log("Result:", twoSum([3, 3], 6)); // Expected: [0, 1]
 `,
       typescript: `/**
@@ -91,7 +91,7 @@ print("--- Running Two Sum (Python) Tests ---")
 print("Test 1: [2, 7, 11, 15], target = 9")
 print("Result:", two_sum([2, 7, 11, 15], 9)) # Expected: [0, 1]
 
-print("\\nTest 2: [3, 2, 4], target = 6")
+print("Test 2: [3, 2, 4], target = 6")
 print("Result:", two_sum([3, 2, 4], 6))       # Expected: [1, 2]
 `,
     },
@@ -129,10 +129,10 @@ console.log("--- Running Valid Palindrome Tests ---");
 console.log("Test 1: 'A man, a plan, a canal: Panama'");
 console.log("Result:", isPalindrome("A man, a plan, a canal: Panama")); // Expected: true
 
-console.log("\\nTest 2: 'race a car'");
+console.log("Test 2: 'race a car'");
 console.log("Result:", isPalindrome("race a car")); // Expected: false
 
-console.log("\\nTest 3: ' ' (empty string)");
+console.log("Test 3: ' ' (empty string)");
 console.log("Result:", isPalindrome(" ")); // Expected: true
 `,
       typescript: `/**

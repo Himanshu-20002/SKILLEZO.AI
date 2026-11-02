@@ -32,6 +32,7 @@ import {
   Send,
   X,
   GraduationCap,
+  BookOpen,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useSession } from '@/lib/auth-client';
@@ -44,9 +45,11 @@ import {
   AdminResumeItem,
 } from '@/services/admin.service';
 import { AdminPdfUploadPanel } from '@/components/dashboard/learning-hub/admin/AdminPdfUploadPanel';
+import { AdminCurriculumPanel } from '@/components/dashboard/learning-hub/admin/AdminCurriculumPanel';
+import { AdminRolesPanel } from '@/components/dashboard/admin/AdminRolesPanel';
 import { API_BASE_URL } from '@/lib/api';
 
-type AdminTab = 'overview' | 'users' | 'jobs' | 'resumes' | 'learning-hub';
+type AdminTab = 'overview' | 'users' | 'jobs' | 'resumes' | 'learning-hub' | 'roles';
 
 function AdminDashboardContent() {
   const { data: session, isPending: sessionPending } = useSession();
@@ -56,13 +59,14 @@ function AdminDashboardContent() {
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<AdminTab>(
-    tabParam && ['overview', 'users', 'jobs', 'resumes', 'learning-hub'].includes(tabParam)
+    tabParam && ['overview', 'users', 'jobs', 'resumes', 'learning-hub', 'roles'].includes(tabParam)
       ? tabParam
       : 'overview'
   );
+  const [learningHubSubTab, setLearningHubSubTab] = useState<'curriculum' | 'vault'>('curriculum');
 
   useEffect(() => {
-    if (tabParam && ['overview', 'users', 'jobs', 'resumes', 'learning-hub'].includes(tabParam)) {
+    if (tabParam && ['overview', 'users', 'jobs', 'resumes', 'learning-hub', 'roles'].includes(tabParam)) {
       setActiveTab(tabParam);
     } else if (!tabParam) {
       setActiveTab('overview');
@@ -953,9 +957,49 @@ function AdminDashboardContent() {
           </div>
         )}
 
-        {/* TAB 5: LEARNING VAULT & PDF INGESTION */}
+        {/* TAB 5: LEARNING VAULT & CURRICULUM MANAGEMENT */}
         {activeTab === 'learning-hub' && (
-          <AdminPdfUploadPanel />
+          <div className="space-y-6">
+            {/* Sub-tab navigation */}
+            <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-[#0B1130] rounded-2xl border border-slate-200 dark:border-slate-800/80 w-fit">
+              <button
+                type="button"
+                onClick={() => setLearningHubSubTab('curriculum')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  learningHubSubTab === 'curriculum'
+                    ? 'bg-[#3D5AFE] text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Curriculum & Track Manager</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLearningHubSubTab('vault')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  learningHubSubTab === 'vault'
+                    ? 'bg-[#3D5AFE] text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>PDF Knowledge Vault Ingestion</span>
+              </button>
+            </div>
+
+            {learningHubSubTab === 'curriculum' ? (
+              <AdminCurriculumPanel />
+            ) : (
+              <AdminPdfUploadPanel />
+            )}
+          </div>
+        )}
+
+        
+        {/* TAB 6: PLATFORM TARGET JOB ROLES MANAGEMENT */}
+        {activeTab === 'roles' && (
+          <AdminRolesPanel />
         )}
 
         {/* Broadcast Announcement Modal */}

@@ -165,10 +165,16 @@ export const adminSidebarSections: NavSection[] = [
         badge: 'ATS',
       },
       {
-        label: 'Learning Vault & PDFs',
+        label: 'Learning & Curriculum',
         href: '/admin/dashboard?tab=learning-hub',
         icon: GraduationCap,
-        badge: 'VAULT',
+        badge: 'LEARN',
+      },
+      {
+        label: 'Platform Job Roles',
+        href: '/admin/dashboard?tab=roles',
+        icon: Target,
+        badge: 'ROLES',
       },
     ],
   },

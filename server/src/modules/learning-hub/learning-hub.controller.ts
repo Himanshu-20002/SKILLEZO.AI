@@ -5,6 +5,11 @@ import {
   GenerateDrillSchema,
   SubmitQuizRequestSchema,
   GenerateBlitzSchema,
+  CreateTrackSchema,
+  UpdateTrackSchema,
+  CreateModuleSchema,
+  CreateResourceSchema,
+  UpdateResourceSchema,
 } from "./learning-hub.dto";
 import { PdfVaultService } from "./pdf-vault.service";
 import { GeminiContentGenerator } from "./gemini-content.generator";
@@ -357,6 +362,231 @@ export class LearningHubController {
     } catch (err: any) {
       res.status(HTTP_STATUS.BAD_REQUEST).json(
         errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to claim verification")
+      );
+    }
+  }
+
+  /**
+   * GET /api/learning-hub/resources/:id
+   */
+  public static async getResource(req: Request, res: Response): Promise<void> {
+    try {
+      const resourceId = String(req.params.id);
+      const userId = req.user?.id || (req.headers["x-user-id"] as string);
+
+      const result = await LearningHubService.getResourceById(resourceId, userId);
+      res.status(HTTP_STATUS.OK).json(successResponse(result));
+    } catch (err: any) {
+      const isNotFound = err.message?.includes("not found");
+      const status = isNotFound ? HTTP_STATUS.NOT_FOUND : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const code = isNotFound ? ERROR_CODES.NOT_FOUND : ERROR_CODES.INTERNAL_SERVER_ERROR;
+      res.status(status).json(errorResponse(code, err.message || "Failed to fetch resource"));
+    }
+  }
+
+  /**
+   * GET /api/learning-hub/admin/tracks
+   */
+  public static async adminListTracks(req: Request, res: Response): Promise<void> {
+    try {
+      const tracks = await LearningHubService.adminListTracks();
+      res.status(HTTP_STATUS.OK).json(successResponse(tracks));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+        errorResponse(ERROR_CODES.INTERNAL_SERVER_ERROR, err.message || "Failed to fetch admin tracks")
+      );
+    }
+  }
+
+  /**
+   * POST /api/learning-hub/admin/tracks
+   */
+  public static async adminCreateTrack(req: Request, res: Response): Promise<void> {
+    try {
+      const parsed = CreateTrackSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json(
+          errorResponse(ERROR_CODES.VALIDATION_ERROR, parsed.error.issues[0]?.message || "Invalid track data")
+        );
+        return;
+      }
+      const track = await LearningHubService.adminCreateTrack(parsed.data);
+      res.status(HTTP_STATUS.CREATED).json(successResponse(track));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to create track")
+      );
+    }
+  }
+
+  /**
+   * PUT /api/learning-hub/admin/tracks/:id
+   */
+  public static async adminUpdateTrack(req: Request, res: Response): Promise<void> {
+    try {
+      const trackId = String(req.params.id);
+      const parsed = UpdateTrackSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json(
+          errorResponse(ERROR_CODES.VALIDATION_ERROR, parsed.error.issues[0]?.message || "Invalid track update data")
+        );
+        return;
+      }
+      const updated = await LearningHubService.adminUpdateTrack(trackId, parsed.data);
+      res.status(HTTP_STATUS.OK).json(successResponse(updated));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to update track")
+      );
+    }
+  }
+
+  /**
+   * DELETE /api/learning-hub/admin/tracks/:id
+   */
+  public static async adminDeleteTrack(req: Request, res: Response): Promise<void> {
+    try {
+      const trackId = String(req.params.id);
+      const deleted = await LearningHubService.adminDeleteTrack(trackId);
+      if (!deleted) {
+        res.status(HTTP_STATUS.NOT_FOUND).json(
+          errorResponse(ERROR_CODES.NOT_FOUND, "Track not found or already deleted")
+        );
+        return;
+      }
+      res.status(HTTP_STATUS.OK).json(successResponse({ deleted: true, id: trackId }));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to delete track")
+      );
+    }
+  }
+
+  /**
+   * POST /api/learning-hub/admin/tracks/:id/modules
+   */
+  public static async adminAddModule(req: Request, res: Response): Promise<void> {
+    try {
+      const trackId = String(req.params.id);
+      const parsed = CreateModuleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json(
+          errorResponse(ERROR_CODES.VALIDATION_ERROR, parsed.error.issues[0]?.message || "Invalid module data")
+        );
+        return;
+      }
+      const moduleItem = await LearningHubService.adminAddModule(trackId, parsed.data);
+      res.status(HTTP_STATUS.CREATED).json(successResponse(moduleItem));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to add module")
+      );
+    }
+  }
+
+  /**
+   * PUT /api/learning-hub/admin/tracks/:id/modules/:moduleId
+   */
+  public static async adminUpdateModule(req: Request, res: Response): Promise<void> {
+    try {
+      const trackId = String(req.params.id);
+      const moduleId = String(req.params.moduleId);
+      const parsed = CreateModuleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json(
+          errorResponse(ERROR_CODES.VALIDATION_ERROR, parsed.error.issues[0]?.message || "Invalid module data")
+        );
+        return;
+      }
+      const updated = await LearningHubService.adminUpdateModule(trackId, moduleId, parsed.data);
+      res.status(HTTP_STATUS.OK).json(successResponse(updated));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to update module")
+      );
+    }
+  }
+
+  /**
+   * DELETE /api/learning-hub/admin/tracks/:id/modules/:moduleId
+   */
+  public static async adminDeleteModule(req: Request, res: Response): Promise<void> {
+    try {
+      const trackId = String(req.params.id);
+      const moduleId = String(req.params.moduleId);
+      const deleted = await LearningHubService.adminDeleteModule(trackId, moduleId);
+      if (!deleted) {
+        res.status(HTTP_STATUS.NOT_FOUND).json(
+          errorResponse(ERROR_CODES.NOT_FOUND, "Module not found in track")
+        );
+        return;
+      }
+      res.status(HTTP_STATUS.OK).json(successResponse({ deleted: true, trackId, moduleId }));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to delete module")
+      );
+    }
+  }
+
+  /**
+   * POST /api/learning-hub/admin/tracks/:id/modules/:moduleId/resources
+   */
+  public static async adminCreateResource(req: Request, res: Response): Promise<void> {
+    try {
+      const trackId = String(req.params.id);
+      const moduleId = String(req.params.moduleId);
+      const parsed = CreateResourceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json(
+          errorResponse(ERROR_CODES.VALIDATION_ERROR, parsed.error.issues[0]?.message || "Invalid resource data")
+        );
+        return;
+      }
+      const resource = await LearningHubService.adminCreateResource(trackId, moduleId, parsed.data);
+      res.status(HTTP_STATUS.CREATED).json(successResponse(resource));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to create resource")
+      );
+    }
+  }
+
+  /**
+   * PUT /api/learning-hub/admin/resources/:id
+   */
+  public static async adminUpdateResource(req: Request, res: Response): Promise<void> {
+    try {
+      const resourceId = String(req.params.id);
+      const parsed = UpdateResourceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json(
+          errorResponse(ERROR_CODES.VALIDATION_ERROR, parsed.error.issues[0]?.message || "Invalid resource update data")
+        );
+        return;
+      }
+      const updated = await LearningHubService.adminUpdateResource(resourceId, parsed.data);
+      res.status(HTTP_STATUS.OK).json(successResponse(updated));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to update resource")
+      );
+    }
+  }
+
+  /**
+   * DELETE /api/learning-hub/admin/tracks/:id/modules/:moduleId/resources/:resourceId
+   */
+  public static async adminDeleteResource(req: Request, res: Response): Promise<void> {
+    try {
+      const trackId = String(req.params.id);
+      const moduleId = String(req.params.moduleId);
+      const resourceId = String(req.params.resourceId);
+      const deleted = await LearningHubService.adminDeleteResource(trackId, moduleId, resourceId);
+      res.status(HTTP_STATUS.OK).json(successResponse({ deleted, trackId, moduleId, resourceId }));
+    } catch (err: any) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json(
+        errorResponse(ERROR_CODES.BAD_REQUEST, err.message || "Failed to delete resource")
       );
     }
   }

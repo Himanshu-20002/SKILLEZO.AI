@@ -22,6 +22,12 @@ import {
   PracticeDrillSummaryDTO,
   GenerateBlitzDTO,
   ClaimVerificationResponseDTO,
+  LearningResourceDetailDTO,
+  CreateTrackDTO,
+  UpdateTrackDTO,
+  CreateModuleDTO,
+  CreateResourceDTO,
+  UpdateResourceDTO,
 } from "./learning-hub.dto";
 
 export class LearningHubService {
@@ -788,5 +794,366 @@ export class LearningHubService {
       employabilityIndex,
       message: `Successfully verified '${skillName}'. Cryptographic certificate ${credentialHash} minted and profile updated!`,
     };
+  }
+
+  /**
+   * GET single resource details (including full markdown/externalUrl)
+   */
+  public static async getResourceById(
+    resourceId: string,
+    userId?: string
+  ): Promise<LearningResourceDetailDTO> {
+    const resource = await LearningResourceModel.findById(resourceId).lean();
+    if (!resource) {
+      throw new Error(`Resource '${resourceId}' not found`);
+    }
+
+    let isCompleted = false;
+    if (userId) {
+      const userProgress = await UserLearningProgressModel.findOne({ userId }).lean();
+      isCompleted = userProgress?.completedResourceIds?.some(
+        (id) => id.toString() === resourceId
+      ) || false;
+    }
+
+    return {
+      id: resource._id.toString(),
+      title: resource.title,
+      slug: resource.slug,
+      type: resource.type,
+      category: resource.category,
+      skills: resource.skills || [],
+      difficulty: resource.difficulty,
+      estimatedMinutes: resource.estimatedMinutes,
+      provider: resource.content?.provider || "SKILLEZO",
+      externalUrl: resource.content?.externalUrl,
+      markdown: resource.content?.markdown || "",
+      completed: isCompleted,
+      source: resource.source,
+      reviewStatus: resource.reviewStatus,
+      updatedAt: resource.updatedAt ? resource.updatedAt.toISOString() : new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Admin: List all tracks with module & resource counts
+   */
+  public static async adminListTracks(): Promise<any[]> {
+    const tracks = await LearningTrackModel.find().sort({ createdAt: -1 }).lean();
+    const allResourceIds = tracks.flatMap((t) => t.modules.flatMap((m) => m.resourceIds));
+    const resources = await LearningResourceModel.find({ _id: { $in: allResourceIds } }).lean();
+    const resourceMap = new Map<string, any>();
+    resources.forEach((r) => resourceMap.set(r._id.toString(), r));
+
+    return tracks.map((t) => {
+      const populatedModules = t.modules.map((m) => ({
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        order: m.order,
+        resources: m.resourceIds
+          .map((rid) => {
+            const res = resourceMap.get(rid.toString());
+            if (!res) return null;
+            return {
+              id: res._id.toString(),
+              title: res.title,
+              slug: res.slug,
+              type: res.type,
+              category: res.category,
+              skills: res.skills,
+              difficulty: res.difficulty,
+              estimatedMinutes: res.estimatedMinutes,
+              provider: res.content?.provider,
+              externalUrl: res.content?.externalUrl,
+              markdown: res.content?.markdown,
+            };
+          })
+          .filter(Boolean),
+      }));
+
+      return {
+        id: t._id.toString(),
+        title: t.title,
+        slug: t.slug,
+        category: t.category,
+        description: t.description,
+        targetRoles: t.targetRoles,
+        targetSkills: t.targetSkills,
+        difficulty: t.difficulty,
+        estimatedMinutes: t.estimatedMinutes,
+        iconName: t.iconName,
+        accentColor: t.accentColor,
+        isFeatured: t.isFeatured,
+        published: t.published,
+        enrollmentCount: t.enrollmentCount,
+        totalModules: t.modules.length,
+        totalResources: t.modules.reduce((sum, m) => sum + m.resourceIds.length, 0),
+        modules: populatedModules,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+      };
+    });
+  }
+
+  /**
+   * Admin: Create new track
+   */
+  public static async adminCreateTrack(data: CreateTrackDTO): Promise<any> {
+    const slug = (data.slug || data.title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+    const existing = await LearningTrackModel.findOne({ slug });
+    if (existing) {
+      throw new Error(`Track with slug '${slug}' already exists`);
+    }
+
+    const track = await LearningTrackModel.create({
+      title: data.title,
+      slug,
+      category: data.category,
+      description: data.description,
+      targetRoles: data.targetRoles,
+      targetSkills: data.targetSkills,
+      difficulty: data.difficulty,
+      estimatedMinutes: data.estimatedMinutes,
+      iconName: data.iconName || "BookOpen",
+      accentColor: data.accentColor || "#3D5AFE",
+      published: data.published ?? true,
+      modules: [],
+      enrollmentCount: 0,
+      isFeatured: false,
+      finalAssessmentTopicId: data.finalAssessmentTopicId || undefined,
+    });
+
+    return track;
+  }
+
+  /**
+   * Admin: Update track
+   */
+  public static async adminUpdateTrack(trackId: string, data: UpdateTrackDTO): Promise<any> {
+    const track = await LearningTrackModel.findById(trackId);
+    if (!track) {
+      throw new Error(`Track '${trackId}' not found`);
+    }
+
+    if (data.title !== undefined) track.title = data.title;
+    if (data.description !== undefined) track.description = data.description;
+    if (data.category !== undefined) track.category = data.category as any;
+    if (data.targetRoles !== undefined) track.targetRoles = data.targetRoles;
+    if (data.targetSkills !== undefined) track.targetSkills = data.targetSkills;
+    if (data.difficulty !== undefined) track.difficulty = data.difficulty as any;
+    if (data.estimatedMinutes !== undefined) track.estimatedMinutes = data.estimatedMinutes;
+    if (data.iconName !== undefined) track.iconName = data.iconName;
+    if (data.accentColor !== undefined) track.accentColor = data.accentColor;
+    if (data.published !== undefined) track.published = data.published;
+    if (data.finalAssessmentTopicId !== undefined) {
+      track.finalAssessmentTopicId = data.finalAssessmentTopicId || undefined;
+    }
+
+    await track.save();
+    return track;
+  }
+
+  /**
+   * Admin: Delete track
+   */
+  public static async adminDeleteTrack(trackId: string): Promise<boolean> {
+    const track = await LearningTrackModel.findByIdAndDelete(trackId);
+    return Boolean(track);
+  }
+
+  /**
+   * Admin: Add module to track
+   */
+  public static async adminAddModule(trackId: string, data: CreateModuleDTO): Promise<any> {
+    const track = await LearningTrackModel.findById(trackId);
+    if (!track) {
+      throw new Error(`Track '${trackId}' not found`);
+    }
+
+    const moduleId = `mod_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const newModule = {
+      id: moduleId,
+      title: data.title,
+      description: data.description || "",
+      order: track.modules.length + 1,
+      resourceIds: [],
+    };
+
+    track.modules.push(newModule);
+    await track.save();
+    return newModule;
+  }
+
+  /**
+   * Admin: Update module
+   */
+  public static async adminUpdateModule(
+    trackId: string,
+    moduleId: string,
+    data: CreateModuleDTO
+  ): Promise<any> {
+    const track = await LearningTrackModel.findById(trackId);
+    if (!track) {
+      throw new Error(`Track '${trackId}' not found`);
+    }
+
+    const mod = track.modules.find((m) => m.id === moduleId);
+    if (!mod) {
+      throw new Error(`Module '${moduleId}' not found in track`);
+    }
+
+    if (data.title !== undefined) mod.title = data.title;
+    if (data.description !== undefined) mod.description = data.description;
+
+    await track.save();
+    return mod;
+  }
+
+  /**
+   * Admin: Delete module
+   */
+  public static async adminDeleteModule(trackId: string, moduleId: string): Promise<boolean> {
+    const track = await LearningTrackModel.findById(trackId);
+    if (!track) {
+      throw new Error(`Track '${trackId}' not found`);
+    }
+
+    const initialLength = track.modules.length;
+    track.modules = track.modules.filter((m) => m.id !== moduleId) as any;
+    if (track.modules.length === initialLength) {
+      return false;
+    }
+
+    await track.save();
+    return true;
+  }
+
+  /**
+   * Admin: Create and attach resource (Lesson / Doc / Video) to module
+   */
+  public static async adminCreateResource(
+    trackId: string,
+    moduleId: string,
+    data: CreateResourceDTO
+  ): Promise<any> {
+    const track = await LearningTrackModel.findById(trackId);
+    if (!track) {
+      throw new Error(`Track '${trackId}' not found`);
+    }
+
+    const mod = track.modules.find((m) => m.id === moduleId);
+    if (!mod) {
+      throw new Error(`Module '${moduleId}' not found in track`);
+    }
+
+    const slug = (data.title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "") + `-${Date.now().toString(36)}`;
+
+    const resource = await LearningResourceModel.create({
+      title: data.title,
+      slug,
+      type: data.type,
+      category: data.category,
+      skills: data.skills,
+      difficulty: data.difficulty,
+      estimatedMinutes: data.estimatedMinutes,
+      content: {
+        provider: data.provider || "SKILLEZO Engineering",
+        markdown: data.markdown || "",
+        externalUrl: data.externalUrl || undefined,
+      },
+      source: "skillezo_original",
+      reviewStatus: "published",
+    });
+
+    mod.resourceIds.push(resource._id);
+    await track.save();
+
+    return {
+      id: resource._id.toString(),
+      title: resource.title,
+      slug: resource.slug,
+      type: resource.type,
+      category: resource.category,
+      skills: resource.skills,
+      difficulty: resource.difficulty,
+      estimatedMinutes: resource.estimatedMinutes,
+      provider: resource.content?.provider,
+      externalUrl: resource.content?.externalUrl,
+      markdown: resource.content?.markdown,
+    };
+  }
+
+  /**
+   * Admin: Update resource (Lesson / Doc / Video)
+   */
+  public static async adminUpdateResource(
+    resourceId: string,
+    data: UpdateResourceDTO
+  ): Promise<any> {
+    const resource = await LearningResourceModel.findById(resourceId);
+    if (!resource) {
+      throw new Error(`Resource '${resourceId}' not found`);
+    }
+
+    if (data.title !== undefined) resource.title = data.title;
+    if (data.type !== undefined) resource.type = data.type;
+    if (data.category !== undefined) resource.category = data.category;
+    if (data.skills !== undefined) resource.skills = data.skills;
+    if (data.difficulty !== undefined) resource.difficulty = data.difficulty;
+    if (data.estimatedMinutes !== undefined) resource.estimatedMinutes = data.estimatedMinutes;
+
+    if (!resource.content) {
+      resource.content = {};
+    }
+    if (data.provider !== undefined) resource.content.provider = data.provider;
+    if (data.markdown !== undefined) resource.content.markdown = data.markdown;
+    if (data.externalUrl !== undefined) resource.content.externalUrl = data.externalUrl || undefined;
+
+    await resource.save();
+
+    return {
+      id: resource._id.toString(),
+      title: resource.title,
+      slug: resource.slug,
+      type: resource.type,
+      category: resource.category,
+      skills: resource.skills,
+      difficulty: resource.difficulty,
+      estimatedMinutes: resource.estimatedMinutes,
+      provider: resource.content?.provider,
+      externalUrl: resource.content?.externalUrl,
+      markdown: resource.content?.markdown,
+    };
+  }
+
+  /**
+   * Admin: Delete resource
+   */
+  public static async adminDeleteResource(
+    trackId: string,
+    moduleId: string,
+    resourceId: string
+  ): Promise<boolean> {
+    const track = await LearningTrackModel.findById(trackId);
+    if (track) {
+      const mod = track.modules.find((m) => m.id === moduleId);
+      if (mod) {
+        mod.resourceIds = mod.resourceIds.filter(
+          (id) => id.toString() !== resourceId
+        ) as any;
+        await track.save();
+      }
+    }
+
+    await LearningResourceModel.findByIdAndDelete(resourceId);
+    return true;
   }
 }

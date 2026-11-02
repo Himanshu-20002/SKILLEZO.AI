@@ -11,6 +11,11 @@ import {
   SubmitQuizPayload,
   QuizSubmissionResult,
   ClaimVerificationResult,
+  LearningResourceDetail,
+  AdminTrackDetail,
+  CreateTrackInput,
+  CreateModuleInput,
+  CreateResourceInput,
 } from '@/types/learning-hub';
 
 export const learningHubService = {
@@ -256,6 +261,196 @@ export const learningHubService = {
       console.error('[learningHubService] Failed to update resource progress:', err);
       return null;
     }
+  },
+
+  /**
+   * Fetch full resource details (including markdown, provider, externalUrl)
+   */
+  async getResourceById(id: string): Promise<LearningResourceDetail | null> {
+    try {
+      const res = await apiFetch<{
+        success: boolean;
+        data: LearningResourceDetail;
+      }>(`/api/learning-hub/resources/${encodeURIComponent(id)}`);
+      return res.data;
+    } catch (err) {
+      console.error('[learningHubService] Failed to get resource details:', err);
+      return null;
+    }
+  },
+
+  /**
+   * Admin: List all tracks (including drafts)
+   */
+  async adminListTracks(): Promise<AdminTrackDetail[]> {
+    try {
+      const res = await apiFetch<{
+        success: boolean;
+        data: AdminTrackDetail[];
+      }>('/api/learning-hub/admin/tracks');
+      return res.data || [];
+    } catch (err) {
+      console.error('[learningHubService] Failed to list admin tracks:', err);
+      return [];
+    }
+  },
+
+  /**
+   * Admin: Create track
+   */
+  async adminCreateTrack(data: CreateTrackInput): Promise<any> {
+    const res = await apiFetch<{
+      success: boolean;
+      data: any;
+    }>('/api/learning-hub/admin/tracks', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.data;
+  },
+
+  /**
+   * Admin: Update track
+   */
+  async adminUpdateTrack(id: string, data: Partial<CreateTrackInput>): Promise<any> {
+    const res = await apiFetch<{
+      success: boolean;
+      data: any;
+    }>(`/api/learning-hub/admin/tracks/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return res.data;
+  },
+
+  /**
+   * Admin: Delete track
+   */
+  async adminDeleteTrack(id: string): Promise<boolean> {
+    const res = await apiFetch<{
+      success: boolean;
+      data: { deleted: boolean };
+    }>(`/api/learning-hub/admin/tracks/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    return res.data?.deleted ?? false;
+  },
+
+  /**
+   * Admin: Add module to track
+   */
+  async adminAddModule(trackId: string, data: CreateModuleInput): Promise<any> {
+    const res = await apiFetch<{
+      success: boolean;
+      data: any;
+    }>(`/api/learning-hub/admin/tracks/${encodeURIComponent(trackId)}/modules`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.data;
+  },
+
+  /**
+   * Admin: Update module
+   */
+  async adminUpdateModule(
+    trackId: string,
+    moduleId: string,
+    data: CreateModuleInput
+  ): Promise<any> {
+    const res = await apiFetch<{
+      success: boolean;
+      data: any;
+    }>(
+      `/api/learning-hub/admin/tracks/${encodeURIComponent(trackId)}/modules/${encodeURIComponent(
+        moduleId
+      )}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * Admin: Delete module
+   */
+  async adminDeleteModule(trackId: string, moduleId: string): Promise<boolean> {
+    const res = await apiFetch<{
+      success: boolean;
+      data: { deleted: boolean };
+    }>(
+      `/api/learning-hub/admin/tracks/${encodeURIComponent(trackId)}/modules/${encodeURIComponent(
+        moduleId
+      )}`,
+      {
+        method: 'DELETE',
+      }
+    );
+    return res.data?.deleted ?? false;
+  },
+
+  /**
+   * Admin: Create and attach resource to module
+   */
+  async adminCreateResource(
+    trackId: string,
+    moduleId: string,
+    data: CreateResourceInput
+  ): Promise<any> {
+    const res = await apiFetch<{
+      success: boolean;
+      data: any;
+    }>(
+      `/api/learning-hub/admin/tracks/${encodeURIComponent(trackId)}/modules/${encodeURIComponent(
+        moduleId
+      )}/resources`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * Admin: Update resource
+   */
+  async adminUpdateResource(
+    resourceId: string,
+    data: Partial<CreateResourceInput>
+  ): Promise<any> {
+    const res = await apiFetch<{
+      success: boolean;
+      data: any;
+    }>(`/api/learning-hub/admin/resources/${encodeURIComponent(resourceId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return res.data;
+  },
+
+  /**
+   * Admin: Delete resource from module
+   */
+  async adminDeleteResource(
+    trackId: string,
+    moduleId: string,
+    resourceId: string
+  ): Promise<boolean> {
+    const res = await apiFetch<{
+      success: boolean;
+      data: { deleted: boolean };
+    }>(
+      `/api/learning-hub/admin/tracks/${encodeURIComponent(trackId)}/modules/${encodeURIComponent(
+        moduleId
+      )}/resources/${encodeURIComponent(resourceId)}`,
+      {
+        method: 'DELETE',
+      }
+    );
+    return res.data?.deleted ?? false;
   },
 
   /**

@@ -10,6 +10,8 @@ try {
 
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import path from "path";
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 dotenv.config();
 
 import { LearningTrackModel } from "./models/LearningTrack.model";
@@ -326,6 +328,224 @@ export async function seedLearningHub() {
               content: {
                 provider: "GitHub / System Design Primer",
                 externalUrl: "https://github.com/donnemartin/system-design-primer#cache",
+              },
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: "Generative AI, LLM Orchestration & Vector Search Architecture",
+      slug: "generative-ai-llm-vector-search",
+      category: "AI/ML" as const,
+      description: "Master Retrieval-Augmented Generation (RAG), vector embeddings, semantic search, function calling, and autonomous multi-agent pipelines.",
+      targetRoles: ["AI/ML Specialist", "Full-Stack Engineer", "Backend Engineer"],
+      targetSkills: ["Generative AI", "Python", "LangChain", "Vector Databases", "Embeddings", "PyTorch"],
+      difficulty: "advanced" as const,
+      estimatedMinutes: 220,
+      iconName: "Cpu",
+      accentColor: "#10B981",
+      finalAssessmentTopicId: "machine_learning",
+      isFeatured: true,
+      modules: [
+        {
+          id: "mod_ai_1",
+          title: "Module 1: RAG Architecture & Vector Indexing",
+          description: "Understanding chunking strategies, cosine similarity, dense embeddings, and vector databases.",
+          order: 1,
+          resources: [
+            {
+              title: "RAG Architecture: Chunking Strategies, Cosine Similarity & Vector Storage",
+              slug: "rag-architecture-vector-indexing",
+              type: "lesson" as const,
+              category: "AI/ML",
+              skills: ["Generative AI", "Vector Databases", "Embeddings"],
+              difficulty: "advanced" as const,
+              estimatedMinutes: 25,
+              content: {
+                provider: "SKILLEZO AI Lab",
+                markdown: `# RAG Architecture: Chunking Strategies, Cosine Similarity & Vector Storage\n\nRetrieval-Augmented Generation (RAG) grounds Large Language Models in private domain data without expensive retraining.\n\n### The 4-Phase RAG Pipeline\n1. **Document Ingestion & Chunking**: Recursive character chunking with 15-20% sliding window overlap to maintain contextual continuity.\n2. **Dense Vector Embeddings**: Transforming text tokens into high-dimensional semantic vectors using dense embedding models (e.g. text-embedding-3 or Gemini Embeddings).\n3. **Approximate Nearest Neighbor (ANN) Indexing**: Using HNSW (Hierarchical Navigable Small World) graphs or IVF-PQ in Pinecone / Chroma / PgVector.\n4. **Context Injection**: Augmenting the model's system prompt with retrieved top-k chunks before generation.\n\n\`\`\`python\nfrom langchain_community.vectorstores import Chroma\nfrom langchain_openai import OpenAIEmbeddings\n\n# Initialize vector store with cosine distance\nembeddings = OpenAIEmbeddings(model="text-embedding-3-small")\nvector_db = Chroma(\n    collection_name="enterprise_docs",\n    embedding_function=embeddings,\n    persist_directory="./chroma_db"\n)\n\n# Query top-3 semantically similar context chunks\nresults = vector_db.similarity_search("How does the payment idempotency key work?", k=3)\n\`\`\`\n\n### Optimization Tips\n- Always evaluate **Precision@K** and **Recall@K**.\n- Use **Hybrid Search** (combining BM25 keyword matching with dense vector similarity) to handle technical jargon and exact IDs.`,
+              },
+            },
+            {
+              title: "LangChain Official RAG Implementation Guide",
+              slug: "langchain-official-rag-guide",
+              type: "external_doc" as const,
+              category: "AI/ML",
+              skills: ["Generative AI", "LangChain"],
+              difficulty: "intermediate" as const,
+              estimatedMinutes: 20,
+              content: {
+                provider: "LangChain Docs",
+                externalUrl: "https://python.langchain.com/docs/tutorials/rag/",
+              },
+            },
+          ],
+        },
+        {
+          id: "mod_ai_2",
+          title: "Module 2: Agentic Workflows & Multi-Turn Tool Calling",
+          description: "Declarative function schemas, deterministic tool execution, and guardrail validation.",
+          order: 2,
+          resources: [
+            {
+              title: "Agentic Workflows & Multi-Turn Tool Calling with Gemini & OpenAI APIs",
+              slug: "agentic-tool-calling-workflows",
+              type: "lesson" as const,
+              category: "AI/ML",
+              skills: ["Generative AI", "Python", "Tool Calling"],
+              difficulty: "advanced" as const,
+              estimatedMinutes: 30,
+              content: {
+                provider: "SKILLEZO AI Lab",
+                markdown: `# Agentic Workflows & Multi-Turn Tool Calling\n\nAutonomous agents leverage structured tool definitions to perform external operations, query live databases, and calculate deterministic results.\n\n### The ReAct (Reason + Act) Loop\n1. **Model Reason**: The LLM parses the user prompt and determines if an external tool is required.\n2. **Tool Invocation**: The model outputs a structured JSON function call arguments payload.\n3. **Host Execution**: The backend securely executes the validated function inside an isolated environment.\n4. **Observation Feedback**: The tool output is appended to the message trajectory for synthesis.\n\n\`\`\`python\nimport json\n\ntools_definition = [{\n    "name": "lookup_candidate_employability",\n    "description": "Retrieve hiring readiness score and skill gap metrics.",\n    "parameters": {\n        "type": "object",\n        "properties": {\n            "candidateId": {"type": "string"},\n            "targetRole": {"type": "string"}\n        },\n        "required": ["candidateId"]\n    }\n}]\n\`\`\`\n\n### Guardrail Requirements\n- Never execute raw shell commands directly from LLM output without strict schema validation and parameter sandboxing.`,
+              },
+            },
+            {
+              title: "DeepLearning.AI: Building Agentic Workflows Masterclass",
+              slug: "deeplearning-agentic-workflows-video",
+              type: "external_video" as const,
+              category: "AI/ML",
+              skills: ["Generative AI"],
+              difficulty: "advanced" as const,
+              estimatedMinutes: 35,
+              content: {
+                provider: "DeepLearning.AI / YouTube",
+                externalUrl: "https://www.youtube.com/watch?v=sal78ACtGTc",
+              },
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: "React Native, Cross-Platform UI & Mobile Offline-First Architecture",
+      slug: "react-native-mobile-architecture",
+      category: "Frontend" as const,
+      description: "Engineer native-performance cross-platform iOS & Android mobile applications using React Native Fabric, TurboModules, and offline-first SQLite synchronization.",
+      targetRoles: ["Mobile App Developer", "Frontend Engineer", "Full-Stack Engineer"],
+      targetSkills: ["React Native", "Expo", "TypeScript", "Mobile Architecture", "Offline Sync", "iOS", "Android"],
+      difficulty: "intermediate" as const,
+      estimatedMinutes: 190,
+      iconName: "Smartphone",
+      accentColor: "#F59E0B",
+      finalAssessmentTopicId: "react",
+      isFeatured: true,
+      modules: [
+        {
+          id: "mod_mobile_1",
+          title: "Module 1: React Native Fabric Renderer & TurboModules",
+          description: "Understanding the New Architecture: JSI (JavaScript Interface), direct C++ bindings, and eliminating async serialization bottlenecks.",
+          order: 1,
+          resources: [
+            {
+              title: "React Native Fabric Renderer, TurboModules & New Architecture",
+              slug: "react-native-fabric-turbomodules",
+              type: "lesson" as const,
+              category: "Frontend",
+              skills: ["React Native", "Mobile Architecture"],
+              difficulty: "advanced" as const,
+              estimatedMinutes: 25,
+              content: {
+                provider: "SKILLEZO Mobile Team",
+                markdown: `# React Native Fabric Renderer, TurboModules & New Architecture\n\nThe legacy React Native architecture relied on an asynchronous JSON bridge across JS and Native threads. The New Architecture eliminates this bottleneck entirely.\n\n### Key Architectural Pillars\n1. **JavaScript Interface (JSI)**: Allows JavaScript to directly hold references to C++ host objects and invoke native methods synchronously.\n2. **Fabric Renderer**: Unified C++ core rendering engine that supports concurrent rendering and synchronized priority updates.\n3. **TurboModules**: Native modules loaded lazily on demand rather than all at application boot.\n\n\`\`\`tsx\nimport React from 'react';\nimport { StyleSheet, View, Text, Pressable } from 'react-native';\n\nexport const FastActionButton = ({ title, onPress }: { title: string; onPress: () => void }) => (\n  <Pressable\n    style={({ pressed }) => [\n      styles.btn,\n      pressed && styles.pressed\n    ]}\n    onPress={onPress}\n  >\n    <Text style={styles.text}>{title}</Text>\n  </Pressable>\n);\n\nconst styles = StyleSheet.create({\n  btn: { padding: 14, borderRadius: 12, backgroundColor: '#3D5AFE' },\n  pressed: { opacity: 0.8 },\n  text: { color: '#ffffff', fontWeight: 'bold', textAlign: 'center' }\n});\n\`\`\``,
+              },
+            },
+            {
+              title: "Official React Native New Architecture Guide",
+              slug: "official-react-native-new-architecture",
+              type: "external_doc" as const,
+              category: "Frontend",
+              skills: ["React Native"],
+              difficulty: "intermediate" as const,
+              estimatedMinutes: 15,
+              content: {
+                provider: "React Native Docs",
+                externalUrl: "https://reactnative.dev/docs/the-new-architecture/landing-page",
+              },
+            },
+          ],
+        },
+        {
+          id: "mod_mobile_2",
+          title: "Module 2: Offline-First SQLite Sync & Persistent State",
+          description: "Delta synchronization, conflict resolution strategies, and optimistic UI updates for disconnected mobile environments.",
+          order: 2,
+          resources: [
+            {
+              title: "Offline-First Sync Engine: Conflict Resolution & Optimistic Cache",
+              slug: "offline-first-mobile-sync-engine",
+              type: "lesson" as const,
+              category: "Frontend",
+              skills: ["React Native", "Offline Sync", "Mobile Architecture"],
+              difficulty: "intermediate" as const,
+              estimatedMinutes: 25,
+              content: {
+                provider: "SKILLEZO Mobile Team",
+                markdown: `# Offline-First Sync Engine: Conflict Resolution & Optimistic Cache\n\nMobile apps operate in unpredictable network conditions. An offline-first architecture treats local storage as the primary source of truth.\n\n### Synchronization Lifecycle\n1. **Local-First Mutations**: User actions immediately mutate the local SQLite/MMKV database and reflect on UI.\n2. **Outbox Queue**: Each mutation is assigned an idempotency UUID and appended to a persistent outbox queue.\n3. **Network Reconciliation**: When connectivity restores, the queue flushes sequentially to the server endpoint.\n4. **Conflict Resolution**: Server-side vector clocks or timestamp-based 'Last-Write-Wins' with field-level merging determine final state.`,
+              },
+            },
+            {
+              title: "Expo & React Native Mobile Production Masterclass",
+              slug: "expo-react-native-production-masterclass",
+              type: "external_video" as const,
+              category: "Frontend",
+              skills: ["React Native", "Expo"],
+              difficulty: "intermediate" as const,
+              estimatedMinutes: 30,
+              content: {
+                provider: "YouTube / Expo",
+                externalUrl: "https://www.youtube.com/watch?v=mJ3bGvy0WAY",
+              },
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: "Kubernetes Container Orchestration & Cloud Infrastructure",
+      slug: "kubernetes-cloud-infrastructure",
+      category: "DevOps" as const,
+      description: "Master enterprise cloud-native container orchestration with Kubernetes: Pod lifecycles, Ingress routing, Helm charts, and automated autoscaling.",
+      targetRoles: ["DevOps & Cloud Engineer", "Backend Engineer", "Full-Stack Engineer"],
+      targetSkills: ["Kubernetes", "Docker", "Helm", "Cloud Infrastructure", "AWS", "Terraform"],
+      difficulty: "advanced" as const,
+      estimatedMinutes: 200,
+      iconName: "Box",
+      accentColor: "#326CE5",
+      finalAssessmentTopicId: "docker",
+      isFeatured: true,
+      modules: [
+        {
+          id: "mod_k8s_1",
+          title: "Module 1: Pod Scheduling, Deployments & Service Discovery",
+          description: "Control plane mechanics, etcd consensus, Kubelet coordination, and zero-downtime rolling updates.",
+          order: 1,
+          resources: [
+            {
+              title: "Kubernetes Control Plane Architecture: etcd, Kubelet & Pod Lifecycle",
+              slug: "kubernetes-control-plane-architecture",
+              type: "lesson" as const,
+              category: "DevOps",
+              skills: ["Kubernetes", "DevOps", "Cloud Infrastructure"],
+              difficulty: "advanced" as const,
+              estimatedMinutes: 25,
+              content: {
+                provider: "SKILLEZO Cloud Team",
+                markdown: `# Kubernetes Control Plane Architecture: etcd, Kubelet & Pod Lifecycle\n\nKubernetes abstracts computing nodes into a unified elastic fabric.\n\n### Primary Control Plane Components\n- **kube-apiserver**: Stateless REST API exposing cluster state.\n- **etcd**: Consistent, distributed, highly-available key-value store for cluster truth.\n- **kube-scheduler**: Assigns unscheduled Pods to suitable worker nodes based on resource requests and affinity rules.\n- **kube-controller-manager**: Reconciles current state with desired state (e.g. NodeController, ReplicaSetController).\n\n\`\`\`yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api-service\n  labels:\n    app: skillezo-api\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: skillezo-api\n  template:\n    metadata:\n      labels:\n        app: skillezo-api\n    spec:\n      containers:\n      - name: api\n        image: skillezo/api:v2.1\n        ports:\n        - containerPort: 5000\n        livenessProbe:\n          httpGet:\n            path: /api/health\n            port: 5000\n          initialDelaySeconds: 15\n          periodSeconds: 10\n\`\`\``,
+              },
+            },
+            {
+              title: "Official Kubernetes Documentation: Concepts & Architecture",
+              slug: "official-kubernetes-concepts-docs",
+              type: "external_doc" as const,
+              category: "DevOps",
+              skills: ["Kubernetes"],
+              difficulty: "intermediate" as const,
+              estimatedMinutes: 20,
+              content: {
+                provider: "Kubernetes Docs",
+                externalUrl: "https://kubernetes.io/docs/concepts/overview/",
               },
             },
           ],

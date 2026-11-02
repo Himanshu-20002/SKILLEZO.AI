@@ -69,6 +69,10 @@ export function CodeSandboxView() {
   // Performance Optimization: Holds the editor instance directly so typing does NOT re-render React!
   const editorRef = useRef<any>(null);
   const codeRef = useRef<string>(CODE_PROBLEM_PRESETS[0].starterCode.javascript);
+  const selectedPresetRef = useRef<CodeProblemPreset>(selectedPreset);
+  selectedPresetRef.current = selectedPreset;
+  const languageRef = useRef<SupportedLanguage>(language);
+  languageRef.current = language;
 
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
@@ -77,6 +81,7 @@ export function CodeSandboxView() {
 
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [copiedLogs, setCopiedLogs] = useState<boolean>(false);
+  const [showTimestamps, setShowTimestamps] = useState<boolean>(false);
   const [fontSize, setFontSize] = useState<number>(13);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const terminalEndRef = useRef<HTMLDivElement>(null);
@@ -108,7 +113,7 @@ export function CodeSandboxView() {
       timeout = setTimeout(() => {
         if (typeof window !== 'undefined') {
           localStorage.setItem(
-            getStorageKey(selectedPreset.id, language),
+            getStorageKey(selectedPresetRef.current.id, languageRef.current),
             codeRef.current
           );
         }
@@ -181,7 +186,9 @@ export function CodeSandboxView() {
   const handleCopyLogs = async () => {
     if (!executionResult) return;
     try {
-      const text = executionResult.logs.map((l) => `[${l.type.toUpperCase()}] ${l.content}`).join('\n');
+      const text = showTimestamps
+        ? executionResult.logs.map((l) => `[${l.timestamp}] ${l.content}`).join('\n')
+        : executionResult.logs.map((l) => l.content).join('\n');
       await navigator.clipboard.writeText(text);
       setCopiedLogs(true);
       toast.success('Console output copied');
@@ -529,6 +536,19 @@ export function CodeSandboxView() {
                   </button>
                 </div>
 
+                {/* Toggle Timestamps */}
+                <button
+                  onClick={() => setShowTimestamps(!showTimestamps)}
+                  title={showTimestamps ? "Hide line timestamps" : "Show line timestamps"}
+                  className={`p-1.5 rounded-lg text-xs transition-colors ${
+                    showTimestamps
+                      ? 'bg-[#3D5AFE]/20 text-[#3D5AFE] dark:text-[#00D9C0]'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                </button>
+
                 {/* Copy logs */}
                 <button
                   onClick={handleCopyLogs}
@@ -629,9 +649,16 @@ export function CodeSandboxView() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-[11px] font-mono">
-                      <Clock className="w-3 h-3" />
-                      <span>{executionResult.executionTimeMs}ms</span>
+                    <div className="flex items-center gap-2.5 text-[11px] font-mono text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-slate-500" />
+                        <span>{executionResult.executionTimeMs}ms</span>
+                      </span>
+                      {executionResult.logs[0]?.timestamp && (
+                        <span className="text-slate-500 text-[10px]">
+                          • {executionResult.logs[0].timestamp}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -653,33 +680,76 @@ export function CodeSandboxView() {
                     Program exited with no console output matching filter. Use console.log() or print() to display values.
                   </div>
                 ) : (
-                  <div className="space-y-1.5 font-mono text-[11px]">
+                  <div className="space-y-1 font-mono text-[12px] leading-relaxed">
                     {filteredLogs.map((log: ConsoleLogEntry, idx: number) => {
-                      const logStyles: Record<string, string> = {
-                        log: 'text-slate-200',
-                        info: 'text-sky-300',
-                        warn: 'text-amber-300',
-                        error: 'text-rose-400 font-bold',
-                      };
+                      const trimmed = log.content.trim();
+                      if (!trimmed) return null;
+
+                      // Section Header divider styling
+                      const isHeader = trimmed.startsWith('---') || trimmed.startsWith('===');
+                      // Result line styling
+                      const isResult = trimmed.startsWith('Result:');
+                      // Test case tag styling
+                      const isTest = /^Test\s*\d+:/i.test(trimmed);
 
                       return (
                         <div
                           key={idx}
-                          className="flex items-start gap-2.5 py-1 px-2 rounded hover:bg-slate-800/40 transition-colors"
+                          className={`flex items-start gap-2 py-0.5 px-2 rounded hover:bg-slate-800/40 transition-colors ${
+                            log.type === 'error'
+                              ? 'bg-rose-950/20 text-rose-300 border-l-2 border-rose-500 pl-2'
+                              : log.type === 'warn'
+                              ? 'bg-amber-950/20 text-amber-300 border-l-2 border-amber-500 pl-2'
+                              : ''
+                          }`}
                         >
-                          <span className="text-slate-600 select-none text-[10px] w-6 text-right">
-                            {idx + 1}
+                          <span className="text-slate-600 select-none font-mono text-[11px] shrink-0 mt-0.5">
+                            ›
                           </span>
-                          <span className="text-slate-500 select-none text-[10px]">
-                            [{log.timestamp}]
-                          </span>
-                          <span
-                            className={`flex-1 whitespace-pre-wrap break-all ${
-                              logStyles[log.type] || 'text-slate-300'
-                            }`}
-                          >
-                            {log.content}
-                          </span>
+
+                          {showTimestamps && (
+                            <span className="text-slate-500 select-none text-[10px] shrink-0 mt-0.5">
+                              [{log.timestamp}]
+                            </span>
+                          )}
+
+                          <div className="flex-1 whitespace-pre-wrap break-all">
+                            {isHeader ? (
+                              <span className="text-slate-400 font-semibold tracking-wide block pb-0.5">
+                                {log.content}
+                              </span>
+                            ) : isResult ? (
+                              <span>
+                                <span className="text-emerald-400 font-semibold">Result:</span>{' '}
+                                <span className="text-emerald-300 font-semibold">
+                                  {trimmed.replace(/^Result:\s*/, '')}
+                                </span>
+                              </span>
+                            ) : isTest ? (
+                              <span>
+                                <span className="text-sky-300 font-semibold">
+                                  {trimmed.match(/^(Test\s*\d+:)/i)?.[1] || 'Test:'}
+                                </span>{' '}
+                                <span className="text-slate-200">
+                                  {trimmed.replace(/^(Test\s*\d+:)\s*/i, '')}
+                                </span>
+                              </span>
+                            ) : (
+                              <span
+                                className={
+                                  log.type === 'info'
+                                    ? 'text-sky-300'
+                                    : log.type === 'warn'
+                                    ? 'text-amber-300'
+                                    : log.type === 'error'
+                                    ? 'text-rose-400 font-bold'
+                                    : 'text-slate-200'
+                                }
+                              >
+                                {log.content}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
