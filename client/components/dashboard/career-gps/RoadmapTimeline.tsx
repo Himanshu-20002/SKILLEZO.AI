@@ -476,7 +476,7 @@ export const RoadmapTimeline: React.FC<RoadmapTimelineProps> = ({
       {/* ── Top Header Bar ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-5">
         <div className="flex items-center gap-3.5">
-          <div className="p-2.5 rounded-2xl bg-[#3D5AFE]/10 dark:bg-indigo-950/60 text-[#3D5AFE] dark:text-indigo-400 border border-[#3D5AFE]/20 dark:border-indigo-800/60 shadow-xs">
+          <div className="p-2.5 rounded-2xl bg-[#3D5AFE]/10 dark:bg-indigo-950/60 text-[#3D5AFE] dark:text-indigo-400 border border-[#3D5AFE]/20 dark:border-indigo-800/60 shadow-xs shrink-0">
             <Route className="w-5 h-5" />
           </div>
           <div>
@@ -486,11 +486,13 @@ export const RoadmapTimeline: React.FC<RoadmapTimelineProps> = ({
               </h2>
               <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-[#3D5AFE] dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
                 <Sparkles className="w-3 h-3 text-[#3D5AFE]" />
-                Live Constellation
+                <span className="hidden md:inline">Live Constellation</span>
+                <span className="md:hidden">Interactive Path</span>
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Drag checkpoints with your mouse • Select any stage to inspect strategic milestones
+              <span className="hidden md:inline">Drag checkpoints with your mouse • Select any stage to inspect strategic milestones</span>
+              <span className="md:hidden">Tap any checkpoint along the path to inspect strategic milestones</span>
             </p>
           </div>
         </div>
@@ -520,25 +522,137 @@ export const RoadmapTimeline: React.FC<RoadmapTimelineProps> = ({
           <button
             onClick={handleResetPositions}
             title="Reset Constellation Layout"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-700 transition-all cursor-pointer"
+            className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-700 transition-all cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Reset Wave</span>
+            <span>Reset Wave</span>
           </button>
         </div>
       </div>
 
-      {/* ── Mobile Horizontal Swipe Notice ─────────────────────────────────── */}
-      <div className="flex sm:hidden items-center justify-between px-1 text-[11px] text-slate-500 font-medium">
-        <span>👉 Swipe horizontally to view all checkpoints</span>
-        <span className="text-slate-700 font-bold">{currentStages.length} Stages</span>
+      {/* ── Mobile Vertical Interactive Roadmap (Screens < 768px) ───────────── */}
+      <div className="md:hidden space-y-3">
+        <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-[#3D5AFE] animate-pulse" />
+            Tap any checkpoint to inspect details
+          </span>
+          <span className="font-bold text-slate-700 dark:text-slate-300">{currentStages.length} Stages</span>
+        </div>
+
+        <div className="rounded-2xl bg-gradient-to-b from-[#0e1638] via-[#121c44] to-[#0a0f26] border border-indigo-900/50 p-3.5 shadow-inner space-y-2 relative overflow-hidden">
+          {/* Subtle Celestial Ambient glow */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-[#3D5AFE]/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#00D9C0]/10 rounded-full blur-2xl pointer-events-none" />
+
+          {currentStages.map((stage, idx) => {
+            const isSelected = selectedStageId === stage.id;
+            const isCompleted = stage.status === 'Completed';
+            const isInProgress = stage.status === 'In Progress';
+            const isLast = idx === currentStages.length - 1;
+
+            return (
+              <div key={`mobile-stage-${stage.id}`} className="relative">
+                {/* Glowing vertical connector track between nodes */}
+                {!isLast && (
+                  <div
+                    className={`absolute left-[19px] top-10 bottom-0 w-0.5 -mb-2 z-0 ${
+                      isCompleted
+                        ? 'bg-gradient-to-b from-emerald-400 to-emerald-400/80 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+                        : isInProgress
+                        ? 'bg-gradient-to-b from-[#00D9C0] to-indigo-500/40 shadow-[0_0_8px_rgba(0,217,192,0.4)] animate-pulse'
+                        : 'bg-indigo-900/40'
+                    }`}
+                  />
+                )}
+
+                {/* Stage Item Card */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectStage(stage.id)}
+                  className={`relative w-full text-left p-3 rounded-xl transition-all duration-200 z-10 flex items-start gap-3 cursor-pointer ${
+                    isSelected
+                      ? 'bg-white/10 backdrop-blur-md border border-[#00D9C0]/60 ring-2 ring-[#3D5AFE]/50 shadow-lg shadow-indigo-950/60'
+                      : 'bg-slate-900/50 hover:bg-slate-900/80 border border-indigo-950/60 active:scale-[0.99]'
+                  }`}
+                >
+                  {/* Node Circle */}
+                  <div className="relative shrink-0">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs transition-all ${
+                        isCompleted
+                          ? 'bg-[#0f172a] text-emerald-300 border-2 border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]'
+                          : isInProgress
+                          ? 'bg-gradient-to-tr from-[#3D5AFE] via-indigo-600 to-[#00D9C0] text-white shadow-[0_0_18px_rgba(61,90,254,0.7)] ring-2 ring-[#00D9C0]/60'
+                          : 'bg-[#141b3d] text-slate-300 border border-indigo-500/30'
+                      }`}
+                    >
+                      {stage.stageNumber}
+                    </div>
+
+                    {/* Status Pill Badge on node */}
+                    {isCompleted && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 text-slate-950 flex items-center justify-center shadow">
+                        <CheckCircle2 className="w-3 h-3 stroke-[3]" />
+                      </span>
+                    )}
+                    {isInProgress && (
+                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#00D9C0] border-2 border-[#0b0f24] shadow animate-ping" />
+                    )}
+                  </div>
+
+                  {/* Stage Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Stage {stage.stageNumber}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          isCompleted
+                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                            : isInProgress
+                            ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+                            : stage.status === 'Pending'
+                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                            : 'bg-slate-800 text-slate-400 border-slate-700'
+                        }`}
+                      >
+                        {stage.status}
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs sm:text-sm font-bold text-white leading-snug">
+                      {stage.title}
+                    </h4>
+
+                    <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-indigo-950/40 text-[11px]">
+                      <span className="text-slate-400 font-medium">
+                        Progress: <span className="text-white font-bold">{stage.completionPercentage}%</span>
+                      </span>
+                      {isSelected ? (
+                        <span className="text-[#00D9C0] font-bold text-[10px] flex items-center gap-1">
+                          Selected <ArrowRight className="w-3 h-3" />
+                        </span>
+                      ) : (
+                        <span className="text-indigo-300/80 font-medium text-[10px]">
+                          Tap to inspect
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* ── Responsive Scrollable Canvas Wrapper ────────────────────────────── */}
-      <div className="relative w-full overflow-x-auto overflow-y-hidden pb-2 -mx-1 px-1 sm:mx-0 sm:px-0 scrollbar-thin">
+      {/* ── Desktop 2D Constellation Canvas (Visible on screens >= 768px) ────── */}
+      <div className="hidden md:block relative w-full overflow-hidden pb-1">
         <div
           ref={containerRef}
-          className={`relative min-w-[760px] w-full h-[360px] sm:h-[400px] rounded-2xl border border-indigo-900/40 overflow-hidden select-none touch-none transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),inset_0_-20px_40px_rgba(10,14,35,0.4)] ${isDragging ? 'cursor-grabbing' : 'cursor-default'
+          className={`relative w-full h-[400px] rounded-2xl border border-indigo-900/40 overflow-hidden select-none touch-none transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),inset_0_-20px_40px_rgba(10,14,35,0.4)] ${isDragging ? 'cursor-grabbing' : 'cursor-default'
             }`}
           style={{
             // Aesthetic deep celestial cobalt / midnight indigo canvas
@@ -791,7 +905,7 @@ export const RoadmapTimeline: React.FC<RoadmapTimelineProps> = ({
                 return (
                   <button
                     key={st.id}
-                    onClick={() => setSelectedStageId(st.id)}
+                    onClick={() => handleSelectStage(st.id)}
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${isCur
                       ? 'bg-[#3D5AFE] text-white shadow-xs'
                       : isDone
