@@ -93,9 +93,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = React.memo(({
         Technical Skills
       </h2>
 
-      <div className={`${isCompact ? 'space-y-1 text-xs' : 'space-y-1.5'} ${lineHeightClass}`}>
+      <div className={`${isCompact ? 'space-y-0.5 text-xs' : 'space-y-1'} ${lineHeightClass}`}>
         {formattedGroups.map((group) => (
-          <div key={group.label} className="grid grid-cols-[130px_1fr] items-baseline gap-x-3 py-0.5">
+          <div key={group.label} className="grid grid-cols-[130px_1fr] items-baseline gap-x-3 py-0">
             <span className="font-semibold text-slate-900 dark:text-slate-100 text-left shrink-0">
               {group.label}:
             </span>
@@ -104,10 +104,10 @@ export const SkillsSection: React.FC<SkillsSectionProps> = React.memo(({
                 value={group.formattedLine}
                 onChange={(newLine) => handleSkillsChange(group.label, group.categoryKey, newLine)}
                 placeholder="Skill 1 · Skill 2 · Skill 3..."
-                className="text-slate-700 dark:text-slate-300 w-full inline-block"
+                className="text-slate-700 dark:text-slate-300 w-full inline-block leading-normal"
               />
             ) : (
-              <span className="text-slate-700 dark:text-slate-300 truncate sm:overflow-visible">
+              <span className="text-slate-700 dark:text-slate-300 truncate sm:overflow-visible leading-normal">
                 {group.formattedLine}
               </span>
             )}

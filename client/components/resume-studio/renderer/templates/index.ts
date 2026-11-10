@@ -23,10 +23,10 @@ export const TEMPLATE_REGISTRY: Record<ResumeTemplateId, TemplateDefinition> = {
     name: 'Classic Executive',
     description: 'Traditional academic & executive hierarchy with clean dividing rules and formal structure.',
     badge: 'Formal & ATS Standard',
-    headerStyle: 'border-b-2 border-slate-900 dark:border-slate-100 pb-4 mb-5',
-    sectionHeaderStyle: 'text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-slate-700 pb-1 mb-2.5 font-serif',
-    sectionContainerStyle: 'space-y-3.5',
-    bulletStyle: 'list-disc list-outside pl-4 space-y-1',
+    headerStyle: 'border-b border-slate-900 dark:border-slate-100 pb-2.5 mb-3.5',
+    sectionHeaderStyle: 'text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-slate-700 pb-0.5 mb-2 font-serif',
+    sectionContainerStyle: 'space-y-2.5',
+    bulletStyle: 'list-disc list-outside pl-4 space-y-0.5',
     dividerStyle: 'border-slate-300 dark:border-slate-700',
   },
   modern: {
@@ -34,10 +34,10 @@ export const TEMPLATE_REGISTRY: Record<ResumeTemplateId, TemplateDefinition> = {
     name: 'Modern Professional',
     description: 'Clean sans-serif design with subtle accent borders and crisp contemporary typography.',
     badge: 'Tech & Modern ATS',
-    headerStyle: 'border-b border-indigo-500/30 dark:border-indigo-500/20 pb-4 mb-5',
-    sectionHeaderStyle: 'text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 border-l-3 border-indigo-600 pl-2 pb-0.5 mb-2.5 font-sans',
-    sectionContainerStyle: 'space-y-3',
-    bulletStyle: 'list-disc list-outside pl-4 space-y-1',
+    headerStyle: 'border-b border-indigo-500/30 dark:border-indigo-500/20 pb-2.5 mb-3.5',
+    sectionHeaderStyle: 'text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 border-l-3 border-indigo-600 pl-2 pb-0.5 mb-2 font-sans',
+    sectionContainerStyle: 'space-y-2.5',
+    bulletStyle: 'list-disc list-outside pl-4 space-y-0.5',
     dividerStyle: 'border-indigo-100 dark:border-indigo-900/40',
   },
   compact: {
@@ -45,7 +45,7 @@ export const TEMPLATE_REGISTRY: Record<ResumeTemplateId, TemplateDefinition> = {
     name: 'Compact High-Density',
     description: 'Space-optimized layout with inline details designed to fit extensive experience cleanly.',
     badge: 'Space-Saver / 1-Page',
-    headerStyle: 'border-b border-slate-200 dark:border-slate-800 pb-2.5 mb-3',
+    headerStyle: 'border-b border-slate-200 dark:border-slate-800 pb-2 mb-2.5',
     sectionHeaderStyle: 'text-[11px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-0.5 mb-1.5 font-mono',
     sectionContainerStyle: 'space-y-2',
     bulletStyle: 'list-disc list-outside pl-3.5 space-y-0.5',
@@ -87,18 +87,18 @@ export function resolveConfigClasses(config?: ResumeBuilderConfig | null) {
   // 4. Section Spacing
   const sectionSpacingClass =
     config?.sectionSpacing === 'compact'
-      ? 'mb-3'
+      ? 'mb-2.5'
       : config?.sectionSpacing === 'comfortable'
-      ? 'mb-6'
-      : 'mb-4.5';
+      ? 'mb-4.5'
+      : 'mb-3.5';
 
   // 5. Page Margins
   const pageMarginClass =
     config?.pageMargin === 'compact'
-      ? 'p-5 sm:p-7'
+      ? 'p-4 sm:p-5'
       : config?.pageMargin === 'wide'
-      ? 'p-8 sm:p-12'
-      : 'p-6 sm:p-9';
+      ? 'p-7 sm:p-9'
+      : 'p-5 sm:p-7';
 
   // 6. Accent Color
   const accentBorderClass =

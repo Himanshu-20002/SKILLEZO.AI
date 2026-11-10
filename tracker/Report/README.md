@@ -26,8 +26,8 @@ tracker/Report/
 ## 🚀 Quick Links
 
 ### 1. Latest Daily Reports
-- **Latest End of Day Report:** [`daily/october-2026/END_OF_DAY_REPORT_2026_10_31.md`](daily/october-2026/END_OF_DAY_REPORT_2026_10_31.md)
-- **Latest Mid Day Report:** [`daily/october-2026/MID_DAY_REPORT_2026_10_31.md`](daily/october-2026/MID_DAY_REPORT_2026_10_31.md)
+- **Latest End of Day Report:** [`daily/november-2026/END_OF_DAY_REPORT_2026_11_06.md`](daily/november-2026/END_OF_DAY_REPORT_2026_11_06.md)
+- **Previous End of Day Report:** [`daily/november-2026/END_OF_DAY_REPORT_2026_11_02.md`](daily/november-2026/END_OF_DAY_REPORT_2026_11_02.md)
 
 ### 2. Specialized Reports
 - **Technical SEO Implementation Plan:** [`seo/SEO_TECHNICAL_IMPLEMENTATION_PLAN.md`](seo/SEO_TECHNICAL_IMPLEMENTATION_PLAN.md)

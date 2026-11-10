@@ -102,6 +102,12 @@ export const sidebarSections: NavSection[] = [
         badge: 'VERIFIED',
       },
       {
+        label: 'AI Mock Interview',
+        href: '/dashboard/interview-coach',
+        icon: Sparkles,
+        badge: 'AI',
+      },
+      {
         label: 'AI Career Coach',
         href: '/dashboard/ai-career-coach',
         icon: Bot,
