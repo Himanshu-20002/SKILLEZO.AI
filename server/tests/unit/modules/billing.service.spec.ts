@@ -95,7 +95,23 @@ describe("BillingService (Phase 21 Part 4 - Razorpay & Pro Activation)", () => {
 
       expect(result.isMock).toBe(true);
       expect(result.orderId).toContain("order_mock_");
-      expect(result.amount).toBe(39900); // ₹399
+      expect(result.amount).toBe(49900); // ₹499
+      expect(result.currency).toBe("INR");
+    });
+
+    it("should create 7-Day Sprint Pass checkout order", async () => {
+      (planService.getOrCreateAccount as any).mockResolvedValue({
+        subscription: {
+          tier: PlanTier.FREE,
+          status: SubscriptionStatus.ACTIVE,
+        },
+        tokenAccount: { remainingTokens: 2000 },
+      });
+
+      const result = await billingService.createRazorpayOrder("user-1", "user@test.com", "Test User", { billingCycle: "SPRINT_PASS" });
+
+      expect(result.isMock).toBe(true);
+      expect(result.amount).toBe(19900); // ₹199
       expect(result.currency).toBe("INR");
     });
   });
@@ -132,9 +148,9 @@ describe("BillingService (Phase 21 Part 4 - Razorpay & Pro Activation)", () => {
       (TokenAccountModel.findOneAndUpdate as any).mockResolvedValue({
         userId: "user-1",
         tier: PlanTier.PRO,
-        totalAllowance: 100000,
+        totalAllowance: 50000,
         consumedTokens: 0,
-        remainingTokens: 100000,
+        remainingTokens: 50000,
       });
 
       (TokenUsageLogModel.create as any).mockResolvedValue({ _id: "log-1" });
@@ -147,8 +163,8 @@ describe("BillingService (Phase 21 Part 4 - Razorpay & Pro Activation)", () => {
 
       expect(result.success).toBe(true);
       expect(result.tier).toBe(PlanTier.PRO);
-      expect(result.totalAllowance).toBe(100000);
-      expect(result.remainingTokens).toBe(100000);
+      expect(result.totalAllowance).toBe(50000);
+      expect(result.remainingTokens).toBe(50000);
 
       // Verify DB updates
       expect(SubscriptionModel.findOneAndUpdate).toHaveBeenCalledWith(
@@ -165,9 +181,9 @@ describe("BillingService (Phase 21 Part 4 - Razorpay & Pro Activation)", () => {
         { userId: "user-1" },
         expect.objectContaining({
           tier: PlanTier.PRO,
-          totalAllowance: 100000,
+          totalAllowance: 50000,
           consumedTokens: 0,
-          remainingTokens: 100000,
+          remainingTokens: 50000,
         }),
         expect.anything()
       );
@@ -176,7 +192,7 @@ describe("BillingService (Phase 21 Part 4 - Razorpay & Pro Activation)", () => {
         expect.objectContaining({
           userId: "user-1",
           feature: TokenFeature.PLAN_UPGRADE,
-          balanceAfter: 100000,
+          balanceAfter: 50000,
         })
       );
     });

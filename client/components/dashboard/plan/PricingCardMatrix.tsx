@@ -8,7 +8,7 @@ import {
   Zap,
   Building2,
   ArrowRight,
-  ShieldCheck,
+  Flame,
 } from 'lucide-react';
 
 interface PricingCardMatrixProps {
@@ -36,34 +36,51 @@ export const PricingCardMatrix: React.FC<PricingCardMatrixProps> = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch pt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch pt-4">
         {plans.map((plan) => {
           const isCurrent = currentTier === plan.tier;
           const isPro = plan.tier === 'PRO';
+          const isSprintPass = plan.tier === 'SPRINT_PASS';
 
           return (
             <div
               key={plan.tier}
-              className={`relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 ${
+              className={`relative rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 ${
                 isPro
                   ? 'bg-gradient-to-b from-white via-indigo-50/20 to-white dark:from-[#111A46] dark:via-[#0E1538] dark:to-[#0A0F2B] border-2 border-[#3D5AFE] shadow-2xl shadow-[#3D5AFE]/15 scale-[1.02] z-10'
+                  : isSprintPass
+                  ? 'bg-gradient-to-b from-white via-amber-50/20 to-white dark:from-[#1A182E] dark:via-[#141226] dark:to-[#0D0B1C] border-2 border-amber-500/50 hover:border-amber-500/80 shadow-lg shadow-amber-500/10'
                   : 'bg-white/80 dark:bg-[#0E1538]/70 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
               }`}
             >
-              {/* Most Popular Ribbon */}
-              {plan.highlight && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-gradient-to-r from-[#3D5AFE] to-indigo-600 text-white font-extrabold text-[10px] uppercase tracking-wider shadow-md">
-                  {plan.badge}
+              {/* Ribbon Badge */}
+              {plan.highlight ? (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-gradient-to-r from-[#3D5AFE] to-indigo-600 text-white font-extrabold text-[10px] uppercase tracking-wider shadow-md whitespace-nowrap">
+                  {plan.badge || 'Most Popular'}
                 </div>
-              )}
+              ) : isSprintPass ? (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-[10px] uppercase tracking-wider shadow-md whitespace-nowrap">
+                  {plan.badge || 'Best Seller'}
+                </div>
+              ) : null}
 
               {/* Card Header */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-2xl bg-[#3D5AFE]/10 text-[#3D5AFE] flex items-center justify-center font-bold">
+                  <div
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold ${
+                      isSprintPass
+                        ? 'bg-amber-500/10 text-amber-500'
+                        : isPro
+                        ? 'bg-[#3D5AFE]/10 text-[#3D5AFE]'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
                     {plan.tier === 'FREE' ? (
                       <Zap className="w-5 h-5 fill-current" />
-                    ) : plan.tier === 'PRO' ? (
+                    ) : isSprintPass ? (
+                      <Flame className="w-5 h-5 fill-current" />
+                    ) : isPro ? (
                       <Sparkles className="w-5 h-5 fill-current" />
                     ) : (
                       <Building2 className="w-5 h-5" />
@@ -77,7 +94,7 @@ export const PricingCardMatrix: React.FC<PricingCardMatrixProps> = ({
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">{plan.name}</h3>
+                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">{plan.name}</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 min-h-[34px]">
                     {plan.tagline}
                   </p>
@@ -85,7 +102,16 @@ export const PricingCardMatrix: React.FC<PricingCardMatrixProps> = ({
 
                 {/* Price Display */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  {plan.priceMonthly !== null ? (
+                  {isSprintPass ? (
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-black text-slate-900 dark:text-white">
+                        {plan.currency === 'USD' ? '$' : '₹'}{plan.priceMonthly?.toLocaleString('en-IN') || 199}
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                        / 7 days (one-time)
+                      </span>
+                    </div>
+                  ) : plan.priceMonthly !== null ? (
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-black text-slate-900 dark:text-white">
                         {plan.currency === 'USD' ? '$' : '₹'}{plan.priceMonthly.toLocaleString('en-IN')}
@@ -104,9 +130,9 @@ export const PricingCardMatrix: React.FC<PricingCardMatrixProps> = ({
                       </span>
                     </div>
                   )}
-                  <span className="text-[11px] font-bold text-[#3D5AFE] mt-1 block">
+                  <span className="text-[11px] font-bold text-[#3D5AFE] dark:text-cyan-400 mt-1 block">
                     {plan.tokenAllowance.toLocaleString()} AI Tokens
-                    {plan.tier === 'PRO' ? ' / month' : ''}
+                    {isPro ? ' / month' : isSprintPass ? ' for 7 days' : ''}
                   </span>
                 </div>
 
@@ -136,6 +162,8 @@ export const PricingCardMatrix: React.FC<PricingCardMatrixProps> = ({
                     className={`w-full py-3 px-4 rounded-2xl font-bold text-xs shadow-md transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] ${
                       isPro
                         ? 'bg-[#3D5AFE] hover:bg-[#324ad4] text-white shadow-[#3D5AFE]/30'
+                        : isSprintPass
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-500/25'
                         : 'bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900'
                     }`}
                   >

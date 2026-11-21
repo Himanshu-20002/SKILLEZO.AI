@@ -35,7 +35,7 @@ export class BillingController {
   }
 
   /**
-   * Verifies the Razorpay payment signature and upgrades account to Pro with 100,000 tokens.
+   * Verifies the Razorpay payment signature and upgrades account to Pro/Sprint Pass.
    * Route: POST /api/billing/razorpay/verify
    */
   async verifyPayment(req: Request, res: Response) {

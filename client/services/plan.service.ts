@@ -20,7 +20,7 @@ export interface PlanDetails {
 }
 
 export interface PricingPlan {
-  tier: "FREE" | "PRO" | "ENTERPRISE";
+  tier: "FREE" | "PRO" | "ENTERPRISE" | "SPRINT_PASS" | string;
   name: string;
   badge: string;
   tokenAllowance: number;

@@ -27,7 +27,7 @@ async function runBackfill() {
 
       try {
         const { tokenAccount } = await planService.getOrCreateAccount(userId);
-        if (tokenAccount.consumedTokens === 0 && tokenAccount.remainingTokens === 5000) {
+        if (tokenAccount.consumedTokens === 0 && tokenAccount.remainingTokens === 1000) {
           provisionedCount++;
         } else {
           existingCount++;
@@ -39,7 +39,7 @@ async function runBackfill() {
 
     console.log("--------------------------------------------------");
     console.log(`✅ Backfill complete!`);
-    console.log(`- New provisioned accounts (5,000 Free tokens): ${provisionedCount}`);
+    console.log(`- New provisioned accounts (1,000 Free tokens): ${provisionedCount}`);
     console.log(`- Existing accounts maintained: ${existingCount}`);
     console.log("==================================================");
   } catch (error) {

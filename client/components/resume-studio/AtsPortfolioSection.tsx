@@ -10,8 +10,9 @@ import {
   DeleteVariantModal,
   PortfolioSkeleton,
 } from '@/components/portfolio';
-import { JobTailoringWorkspace } from '@/components/job-tailoring';
-import { Layers, Sparkles, UploadCloud } from 'lucide-react';
+import { JobTailoringWorkspace, TailoringPaywallModal } from '@/components/job-tailoring';
+import { Layers, Sparkles, UploadCloud, Lock } from 'lucide-react';
+import { planService } from '@/services/plan.service';
 
 interface AtsPortfolioSectionProps {
   selectedResumeId?: string | null;
@@ -48,6 +49,27 @@ export const AtsPortfolioSection: React.FC<AtsPortfolioSectionProps> = ({
   } = useResumePortfolio();
 
   const [isJobTailoringOpen, setIsJobTailoringOpen] = React.useState(false);
+  const [isPaywallOpen, setIsPaywallOpen] = React.useState(false);
+  const [isPro, setIsPro] = React.useState(false);
+
+  React.useEffect(() => {
+    planService
+      .getPlanStatus()
+      .then((plan) => {
+        setIsPro(plan?.tier === 'PRO' || plan?.tier === 'ENTERPRISE');
+      })
+      .catch(() => {
+        setIsPro(false);
+      });
+  }, []);
+
+  const handleOpenTailoring = () => {
+    if (!isPro) {
+      setIsPaywallOpen(true);
+    } else {
+      setIsJobTailoringOpen(true);
+    }
+  };
 
   React.useEffect(() => {
     if (portfolioVersion && portfolioVersion > 0) {
@@ -89,11 +111,18 @@ export const AtsPortfolioSection: React.FC<AtsPortfolioSectionProps> = ({
         <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
           {master && (
             <button
-              onClick={() => setIsJobTailoringOpen(true)}
+              onClick={handleOpenTailoring}
+              data-testid="btn-tailor-resume-header"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-[0.98] text-white shadow-xs transition-all cursor-pointer shrink-0"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Tailor Resume for This Job</span>
+              {!isPro && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-200 text-[9px] font-bold">
+                  <Lock className="w-2.5 h-2.5" />
+                  PRO
+                </span>
+              )}
             </button>
           )}
         </div>
@@ -139,14 +168,21 @@ export const AtsPortfolioSection: React.FC<AtsPortfolioSectionProps> = ({
         {/* Slot if 0 variants: Beautiful dashed invitation card in the same row */}
         {master && variants.length === 0 && (
           <button
-            onClick={() => setIsJobTailoringOpen(true)}
+            onClick={handleOpenTailoring}
+            data-testid="btn-create-tailored-resume-slot"
             className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/10 text-center transition-all cursor-pointer group min-h-[220px]"
           >
             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
               <Sparkles className="w-5 h-5" />
             </div>
-            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              Create Tailored Resume
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <span>Create Tailored Resume</span>
+              {!isPro && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[9px] font-bold">
+                  <Lock className="w-2.5 h-2.5" />
+                  PRO
+                </span>
+              )}
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-500 max-w-[210px] mt-1 leading-relaxed">
               Create a customized resume targeted for a specific job or company without changing your primary master resume.
@@ -195,6 +231,12 @@ export const AtsPortfolioSection: React.FC<AtsPortfolioSectionProps> = ({
       <JobTailoringWorkspace
         isOpen={isJobTailoringOpen}
         onClose={() => setIsJobTailoringOpen(false)}
+      />
+
+      {/* 5. Monetization Paywall Modal for Free Candidates */}
+      <TailoringPaywallModal
+        isOpen={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
       />
     </div>
   );

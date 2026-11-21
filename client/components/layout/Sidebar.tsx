@@ -21,6 +21,7 @@ import {
   Zap,
   Users,
   ArrowLeftRight,
+  CreditCard,
   LucideIcon,
 } from 'lucide-react';
 import { useSession } from '@/lib/auth-client';

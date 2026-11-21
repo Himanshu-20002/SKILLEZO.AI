@@ -18,6 +18,8 @@ import { IJobMatchResult } from "@/database/models/JobMatchResult.model";
 import { CareerJobMatcher } from "./career-job-matcher";
 import { AppError } from "@/core/utils/AppError";
 import { HTTP_STATUS, ERROR_CODES } from "@/core/constants";
+import { getMonetizationConfig } from "@/database/models/MonetizationConfig.model";
+import { SubscriptionModel, PlanTier, SubscriptionStatus } from "@/database/models/Subscription.model";
 
 export class JobMatchService {
   private profileRepo: ProfileRepository;
@@ -50,6 +52,37 @@ export class JobMatchService {
         HTTP_STATUS.BAD_REQUEST,
         ERROR_CODES.BAD_REQUEST
       );
+    }
+
+    // Quota check: free users get 1 basic ATS match check per month
+    const existingMatch = await this.matchRepo.findByUserAndJobProfile(userId, jobProfileId);
+    if (!existingMatch) {
+      const monetizationConfig = await getMonetizationConfig();
+      const subscription = await SubscriptionModel.findOne({ userId });
+      const isPro =
+        subscription &&
+        (subscription.tier === PlanTier.PRO || subscription.tier === PlanTier.ENTERPRISE) &&
+        subscription.status === SubscriptionStatus.ACTIVE;
+
+      if (!isPro) {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const monthlyScansCount = await this.matchRepo.count({
+          userId,
+          createdAt: { $gte: startOfMonth },
+        });
+
+        const freeLimit = monetizationConfig.resumeQuotas?.freeMonthlyAtsScans ?? 1;
+        if (monthlyScansCount >= freeLimit) {
+          throw new AppError(
+            `You have reached your free monthly ATS match check limit (${monthlyScansCount}/${freeLimit} scans used). Upgrade to SKILLEZO Pro or activate a 7-Day Sprint Pass (₹199) for unlimited ATS job match checks.`,
+            HTTP_STATUS.FORBIDDEN,
+            ERROR_CODES.PLAN_UPGRADE_REQUIRED
+          );
+        }
+      }
     }
 
     // 1. Read-Only Candidate Career Profile

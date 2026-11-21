@@ -60,4 +60,30 @@ export class InterviewSessionRepository extends BaseRepository<IInterviewSession
       status: InterviewSessionStatus.COMPLETED,
     });
   }
+
+  /**
+   * Count sessions created by a user within a specific date range (for quota verification).
+   */
+  async countSessionsSince(userId: string, since: Date): Promise<number> {
+    return await this.count({
+      userId,
+      createdAt: { $gte: since },
+    });
+  }
+
+  /**
+   * Atomically start or update progress of an interview session
+   */
+  async updateProgress(
+    sessionId: string | Types.ObjectId,
+    updates: {
+      currentQuestionIndex?: number;
+      status?: InterviewSessionStatus;
+      startedAt?: Date;
+      completedAt?: Date;
+      totalQuestions?: number;
+    }
+  ): Promise<IInterviewSession | null> {
+    return await this.updateById(sessionId, updates);
+  }
 }

@@ -14,6 +14,7 @@ export interface IInterviewEvaluation extends Document {
   evidence: string[];
   strengths: string[];
   improvementAreas: string[];
+  modelAnswerSuggestion?: string;
   evaluatedAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -79,6 +80,10 @@ const interviewEvaluationSchema = new Schema<IInterviewEvaluation>(
     improvementAreas: {
       type: [String],
       default: [],
+    },
+    modelAnswerSuggestion: {
+      type: String,
+      default: "",
     },
     evaluatedAt: {
       type: Date,

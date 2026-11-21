@@ -78,7 +78,7 @@ export const QuestionPlanModal: React.FC<QuestionPlanModalProps> = ({
             </span>
           </div>
           <span className="text-[11px] font-bold text-[#3D5AFE] dark:text-cyan-300 shrink-0">
-            Phase 2 Engine Active
+            Adaptive Engine Active
           </span>
         </div>
 

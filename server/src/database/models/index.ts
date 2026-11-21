@@ -25,3 +25,4 @@ export * from "./InterviewQuestion.model";
 export * from "./InterviewAnswer.model";
 export * from "./InterviewEvaluation.model";
 export * from "./InterviewReport.model";
+export * from "./MonetizationConfig.model";

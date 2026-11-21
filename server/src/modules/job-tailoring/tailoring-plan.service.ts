@@ -21,6 +21,8 @@ import { TailoringPlanEngine } from "./tailoring-plan.engine";
 import { AppError } from "@/core/utils/AppError";
 import { HTTP_STATUS } from "@/core/constants/http-status";
 import { ERROR_CODES } from "@/core/constants/error-codes";
+import { getMonetizationConfig } from "@/database/models/MonetizationConfig.model";
+import { SubscriptionModel, PlanTier, SubscriptionStatus } from "@/database/models/Subscription.model";
 
 export class TailoringPlanService {
   private readonly profileRepo: ProfileRepository;
@@ -47,6 +49,24 @@ export class TailoringPlanService {
     intensity: TailoringIntensity = "BALANCED",
     force = false
   ): Promise<{ plan: ITailoringPlan; isStale: boolean }> {
+    // 0. Quota & Paywall Check: Multi-job AI resume tailoring requires Pro or Sprint Pass
+    const monetizationConfig = await getMonetizationConfig();
+    if (monetizationConfig.resumeQuotas?.lockMultiJobTailoringForFree) {
+      const subscription = await SubscriptionModel.findOne({ userId });
+      const isPro =
+        subscription &&
+        (subscription.tier === PlanTier.PRO || subscription.tier === PlanTier.ENTERPRISE) &&
+        subscription.status === SubscriptionStatus.ACTIVE;
+
+      if (!isPro) {
+        throw new AppError(
+          "Multi-job resume tailoring is a premium feature. Upgrade to SKILLEZO Pro or activate the ₹199 7-Day Sprint Pass for unlimited tailored resumes.",
+          HTTP_STATUS.FORBIDDEN,
+          ERROR_CODES.PLAN_UPGRADE_REQUIRED
+        );
+      }
+    }
+
     // 1. Verify JobProfile exists and belongs to user
     const jobProfile = await this.jobProfileRepo.findById(jobProfileId);
     if (!jobProfile || jobProfile.userId !== userId) {

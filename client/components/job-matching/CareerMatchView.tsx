@@ -15,7 +15,10 @@ import {
   XCircle,
   Loader2,
   RefreshCw,
+  Lock,
 } from "lucide-react";
+import { planService } from "@/services/plan.service";
+import { TailoringPaywallModal } from "@/components/job-tailoring";
 
 interface CareerMatchViewProps {
   jobProfileId: string;
@@ -46,6 +49,28 @@ export const CareerMatchView: React.FC<CareerMatchViewProps> = ({
     loadMatch,
     runMatch,
   } = useJobMatch(jobProfileId);
+
+  const [isPro, setIsPro] = React.useState<boolean>(false);
+  const [isPaywallOpen, setIsPaywallOpen] = React.useState<boolean>(false);
+
+  useEffect(() => {
+    planService
+      .getPlanStatus()
+      .then((plan) => {
+        setIsPro(plan?.tier === "PRO" || plan?.tier === "ENTERPRISE");
+      })
+      .catch(() => {
+        setIsPro(false);
+      });
+  }, []);
+
+  const handleProceedToTailoring = () => {
+    if (!isPro) {
+      setIsPaywallOpen(true);
+    } else {
+      onProceedToTailoring?.();
+    }
+  };
 
   useEffect(() => {
     loadMatch(jobProfileId);
@@ -220,14 +245,27 @@ export const CareerMatchView: React.FC<CareerMatchViewProps> = ({
 
           <button
             type="button"
-            onClick={onProceedToTailoring}
+            onClick={handleProceedToTailoring}
+            data-testid="btn-proceed-to-tailoring"
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Generate Tailoring Plan →</span>
+            {!isPro && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-200 text-[9px] font-bold">
+                <Lock className="w-2.5 h-2.5" />
+                PRO
+              </span>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Paywall Modal for Free Candidates */}
+      <TailoringPaywallModal
+        isOpen={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+      />
     </div>
   );
 };

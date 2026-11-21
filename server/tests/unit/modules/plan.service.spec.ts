@@ -70,9 +70,9 @@ describe("PlanService (Phase 1)", () => {
       (TokenAccountModel.create as any).mockResolvedValue({
         userId: "user-1",
         tier: PlanTier.FREE,
-        totalAllowance: 5000,
+        totalAllowance: 1000,
         consumedTokens: 0,
-        remainingTokens: 5000,
+        remainingTokens: 1000,
         bonusTokens: 0,
       });
 
@@ -89,19 +89,19 @@ describe("PlanService (Phase 1)", () => {
         expect.objectContaining({
           userId: "user-1",
           tier: PlanTier.FREE,
-          totalAllowance: 5000,
-          remainingTokens: 5000,
+          totalAllowance: 1000,
+          remainingTokens: 1000,
         })
       );
       expect(TokenUsageLogModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: "user-1",
           feature: TokenFeature.WELCOME_BONUS,
-          balanceAfter: 5000,
+          balanceAfter: 1000,
         })
       );
       expect(result.subscription.tier).toBe(PlanTier.FREE);
-      expect(result.tokenAccount.remainingTokens).toBe(5000);
+      expect(result.tokenAccount.remainingTokens).toBe(1000);
     });
 
     it("should return existing subscription and token account without re-creating", async () => {
@@ -137,12 +137,12 @@ describe("PlanService (Phase 1)", () => {
       (SubscriptionModel.findOne as any).mockResolvedValue({ tier: PlanTier.FREE });
       (TokenAccountModel.findOne as any).mockResolvedValue({ remainingTokens: 100 });
 
-      const result = await planService.checkTokenQuota("user-1", TokenFeature.MOCK_INTERVIEW); // Cost: 1500
+      const result = await planService.checkTokenQuota("user-1", TokenFeature.MOCK_INTERVIEW); // Cost: 1000
 
       expect(result.allowed).toBe(false);
       expect(result.balance).toBe(100);
-      expect(result.required).toBe(1500);
-      expect(result.missing).toBe(1400);
+      expect(result.required).toBe(1000);
+      expect(result.missing).toBe(900);
       expect(result.upgradeUrl).toBe("/dashboard/plan");
     });
   });
@@ -220,9 +220,9 @@ describe("PlanService (Phase 1)", () => {
     it("should return pricing tiers and feature costs matrix", () => {
       const pricing = planService.getPricingPlans();
 
-      expect(pricing.plans).toHaveLength(3);
+      expect(pricing.plans).toHaveLength(4);
       expect(pricing.featureCosts[TokenFeature.RESUME_ATS]).toBe(300);
-      expect(pricing.featureCosts[TokenFeature.MOCK_INTERVIEW]).toBe(1500);
+      expect(pricing.featureCosts[TokenFeature.MOCK_INTERVIEW]).toBe(1000);
     });
   });
 });

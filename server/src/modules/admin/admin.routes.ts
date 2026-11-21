@@ -32,5 +32,11 @@ router.get("/resumes", asyncHandler(AdminController.getResumes));
 import { adminRolesRouter } from "@/modules/platform-roles/platform-roles.routes";
 router.use("/roles", adminRolesRouter);
 
+// 6. Dynamic Monetization & Quota Control Engine
+import { AdminMonetizationController } from "./controllers/admin.monetization.controller";
+router.get("/monetization-config", asyncHandler(AdminMonetizationController.getConfig));
+router.put("/monetization-config", asyncHandler(AdminMonetizationController.updateConfig));
+router.post("/monetization-config/reset", asyncHandler(AdminMonetizationController.resetConfig));
+
 export const adminRouter = router;
 export default router;

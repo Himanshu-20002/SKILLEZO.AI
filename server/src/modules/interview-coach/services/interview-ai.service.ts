@@ -21,8 +21,15 @@ export const GeneratedQuestionPlanSchema = z.object({
   questions: z.array(GeneratedQuestionItemSchema).min(1),
 });
 
+export const GeneratedFollowUpSchema = z.object({
+  followUpQuestionText: z.string().min(10),
+  category: z.string().min(2),
+  expectedConcepts: z.array(z.string()).min(1),
+});
+
 export type GeneratedQuestionItem = z.infer<typeof GeneratedQuestionItemSchema>;
 export type GeneratedQuestionPlan = z.infer<typeof GeneratedQuestionPlanSchema>;
+export type GeneratedFollowUp = z.infer<typeof GeneratedFollowUpSchema>;
 
 export interface GenerateInterviewQuestionsInput {
   role: string;
@@ -33,6 +40,17 @@ export interface GenerateInterviewQuestionsInput {
   durationMinutes: number;
   resumeSkills?: string[];
   competencyAreas?: string[];
+}
+
+export interface GenerateFollowUpInput {
+  role: string;
+  experienceLevel: string;
+  interviewType: InterviewType;
+  difficulty: InterviewDifficulty;
+  questionText: string;
+  category: string;
+  candidateAnswerText: string;
+  expectedConcepts?: string[];
 }
 
 export class InterviewAIService {
@@ -62,131 +80,188 @@ export class InterviewAIService {
         }
       } catch (err) {
         console.warn(
-          `[InterviewAIService] Gemini call failed or quota limited. Falling back to deterministic pack.`,
+          "[InterviewAIService] Gemini question generation failed, falling back to deterministic bank:",
           err
         );
       }
     }
 
-    // Graceful offline/quota fallback
     return this.generateFallbackQuestions(input);
   }
 
+  /**
+   * Generates an adaptive probe follow-up question when candidate answer needs deeper elaboration
+   */
+  async generateFollowUpQuestion(
+    input: GenerateFollowUpInput
+  ): Promise<GeneratedFollowUp> {
+    if (this.geminiProvider.isAvailable()) {
+      try {
+        const prompt = `You are an expert technical interviewer interviewing a candidate for a ${input.experienceLevel} ${input.role} position.
+The interview format is ${input.interviewType} (Difficulty: ${input.difficulty}).
+
+Original Question:
+"${input.questionText}"
+
+Expected Concepts:
+${(input.expectedConcepts || []).join(", ") || input.category}
+
+Candidate's Answer:
+"${input.candidateAnswerText}"
+
+Task:
+Generate a concise, insightful follow-up question (1 to 2 sentences) that asks the candidate to dive deeper into practical technical implementation, architectural trade-offs, edge cases, or specific metrics.
+
+Respond STRICTLY with valid JSON conforming to this schema:
+{
+  "followUpQuestionText": "string (15-200 chars)",
+  "category": "${input.category}",
+  "expectedConcepts": ["concept1", "concept2"]
+}`;
+
+        const rawResponse = await this.geminiProvider.generateText(prompt, {
+          temperature: 0.4,
+          maxOutputTokens: 500,
+        });
+
+        const parsed = this.safeParseJson(rawResponse || "");
+        const validated = GeneratedFollowUpSchema.safeParse(parsed);
+        if (validated.success) {
+          return validated.data;
+        }
+      } catch (err) {
+        console.warn("[InterviewAIService] Gemini follow-up generation failed, using fallback:", err);
+      }
+    }
+
+    // Deterministic fallback follow-up
+    return {
+      followUpQuestionText: `Can you walk through how you would handle performance bottlenecks, edge cases, or error recovery in your proposed approach to ${input.category}?`,
+      category: input.category,
+      expectedConcepts: ["Edge Case Handling", "Performance Optimization", "Failure Recovery"],
+    };
+  }
+
+  /**
+   * Direct Gemini LLM caller with strict JSON prompt structure
+   */
   private async callGeminiQuestionGenerator(
     input: GenerateInterviewQuestionsInput
   ): Promise<GeneratedQuestionPlan | null> {
-    const competenciesHint =
+    const prompt = this.buildPrompt(input);
+    const rawResponse = await this.geminiProvider.generateText(prompt, {
+      temperature: 0.3,
+      maxOutputTokens: 2500,
+    });
+
+    const parsed = this.safeParseJson(rawResponse || "");
+    if (!parsed) return null;
+
+    const validated = GeneratedQuestionPlanSchema.safeParse(parsed);
+    if (!validated.success) {
+      console.warn(
+        "[InterviewAIService] Zod validation failed for Gemini question plan:",
+        validated.error.format()
+      );
+      return null;
+    }
+
+    return validated.data;
+  }
+
+  /**
+   * Safe JSON parse supporting markdown code fences
+   */
+  private safeParseJson(raw: string): any {
+    try {
+      let cleaned = raw.trim();
+      if (cleaned.startsWith("```")) {
+        cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+      }
+      return JSON.parse(cleaned);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Builds prompt v1.0.0
+   */
+  private buildPrompt(input: GenerateInterviewQuestionsInput): string {
+    const competenciesList =
       input.competencyAreas && input.competencyAreas.length > 0
-        ? `Focus primarily on these key competencies:\n${input.competencyAreas
-            .map((c) => `- ${c}`)
-            .join("\n")}`
-        : "";
+        ? input.competencyAreas.join(", ")
+        : "Core fundamentals, Problem-solving, Best practices, Scalability";
 
     const resumeContext =
       input.resumeSkills && input.resumeSkills.length > 0
-        ? `Candidate's declared resume skills to calibrate against:\n${input.resumeSkills
-            .slice(0, 15)
-            .join(", ")}`
+        ? `Candidate's declared resume skills: ${input.resumeSkills.slice(0, 10).join(", ")}.`
         : "";
 
-    const prompt = `
-Generate a structured, professional mock interview question plan for the following candidate profile:
-- Role: ${input.role}
-- Seniority Tier: ${input.experienceLevel}
-- Interview Type: ${input.interviewType} (e.g. technical, hr, behavioral, managerial)
-- Difficulty Level: ${input.difficulty}
-- Total Questions: ${input.totalQuestions}
-- Allocated Duration: ${input.durationMinutes} minutes
+    return `You are a world-class technical hiring manager and interview coach at SKILLEZO.
+Generate exactly ${input.totalQuestions} calibrated mock interview questions for the following candidate profile:
 
-${competenciesHint}
+- Target Role: ${input.role}
+- Experience Tier: ${input.experienceLevel}
+- Interview Format: ${input.interviewType} (e.g. technical, behavioral, hr, managerial)
+- Difficulty Level: ${input.difficulty}
+- Target Session Duration: ${input.durationMinutes} minutes
+- Target Competencies: ${competenciesList}
 ${resumeContext}
 
 Requirements:
-1. Generate EXACTLY ${input.totalQuestions} distinct questions.
-2. Calibrate depth strictly for a ${input.experienceLevel} level candidate.
-3. For ${input.interviewType} format:
-   - If technical: Focus on architectural reasoning, core engineering fundamentals, real-world edge cases, and runtime trade-offs.
-   - If behavioral: Frame questions using the STAR methodology (Situation, Task, Action, Result).
-   - If HR: Focus on collaboration, culture, professional goals, and conflict resolution.
-   - If managerial: Focus on team leadership, resource allocation, technical debt trade-offs, and delivery execution.
-4. Each question must list 2 to 5 "expectedConcepts" (key concepts, patterns, or terminology a strong answer should demonstrate).
-
-Respond strictly in valid JSON matching this schema:
+1. Generate realistic, challenging, and relevant questions for a ${input.experienceLevel} ${input.role}.
+2. Ensure progressive difficulty throughout the interview (earlier questions establish baseline, later test depth).
+3. For each question, supply 2 to 5 specific expected concepts/keywords an expert candidate should mention.
+4. Output STRICTLY JSON matching this schema:
 {
   "role": "${input.role}",
   "seniority": "${input.experienceLevel}",
   "questions": [
     {
       "sequence": 1,
-      "questionText": "...",
-      "category": "...",
+      "questionText": "Question text here...",
+      "category": "Topic Name",
       "difficulty": "${input.difficulty}",
       "questionType": "${input.interviewType}",
       "expectedConcepts": ["concept1", "concept2", "concept3"]
     }
   ]
-}
-`.trim();
-
-    const systemInstruction =
-      "You are an expert enterprise technical interviewer and talent evaluator at SKILLEZO.AI. Generate strict JSON question plans with high technical signal and zero markdown fluff.";
-
-    const rawResponse = await this.geminiProvider.generateStructured<any>(
-      prompt,
-      "InterviewQuestionPlan",
-      {
-        temperature: 0.3,
-        systemInstruction,
-        maxOutputTokens: 2048,
-      }
-    );
-
-    if (!rawResponse) return null;
-
-    const parsed = GeneratedQuestionPlanSchema.safeParse(rawResponse);
-    if (!parsed.success) {
-      console.warn(
-        "[InterviewAIService] Schema validation error on Gemini response:",
-        parsed.error.format()
-      );
-      return null;
-    }
-
-    return parsed.data;
+}`;
   }
 
   /**
-   * Deterministic, high-signal fallback question generator for offline/quota resiliency
+   * Deterministic fallback generator guaranteeing zero-downtime
    */
-  public generateFallbackQuestions(
+  generateFallbackQuestions(
     input: GenerateInterviewQuestionsInput
   ): GeneratedQuestionItem[] {
-    const matchingBlueprint = INITIAL_ROLE_CATALOG.find(
-      (b) => b.role.toLowerCase() === input.role.toLowerCase()
+    const catalogItem = INITIAL_ROLE_CATALOG.find(
+      (c) => c.role.toLowerCase() === input.role.toLowerCase()
     );
 
     const competencies =
-      matchingBlueprint?.competencyAreas ||
-      input.competencyAreas || [
-        "Core Architecture & Foundations",
-        "Performance Tuning & Optimization",
-        "Error Handling & Resiliency",
-        "Data Integrity & Concurrency",
-        "Testing & CI/CD Deployment",
-      ];
+      input.competencyAreas && input.competencyAreas.length > 0
+        ? input.competencyAreas
+        : catalogItem?.competencyAreas || [
+            "Architecture & System Design",
+            "Performance Optimization",
+            "Error Handling & Resiliency",
+            "Security & Best Practices",
+            "Testing & Observability",
+          ];
 
     const questions: GeneratedQuestionItem[] = [];
-    const count = Math.max(1, input.totalQuestions);
 
-    for (let i = 0; i < count; i++) {
-      const competency = competencies[i % competencies.length];
+    for (let i = 0; i < input.totalQuestions; i++) {
       const sequence = i + 1;
+      const competency = competencies[i % competencies.length];
 
       let questionText = "";
       let expectedConcepts: string[] = [];
 
       if (input.interviewType === InterviewType.BEHAVIORAL) {
-        questionText = `Describe a complex challenge involving ${competency} that you encountered in a previous project. What was the situation, what specific actions did you take, and what measurable result did you achieve?`;
+        questionText = `Describe a complex challenge you faced when implementing ${competency}. What was your strategy and measurable outcome?`;
         expectedConcepts = [
           "Situation Context",
           "Ownership & Action",
@@ -235,4 +310,3 @@ Respond strictly in valid JSON matching this schema:
 }
 
 export const interviewAIService = new InterviewAIService();
-

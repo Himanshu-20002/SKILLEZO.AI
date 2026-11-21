@@ -163,8 +163,8 @@ export const InterviewSetupWizard: React.FC<InterviewSetupWizardProps> = ({
       });
 
       if (res?.data?.session && res?.data?.questions) {
-        toast.success('Interview Plan Calibrated!', {
-          description: `Generated ${res.data.questions.length} questions for ${selectedRole}.`,
+        toast.success('Interview Session Ready!', {
+          description: `Calibrated questions for ${selectedRole}. Launching interview room...`,
         });
         onSuccess(res.data.session, res.data.questions);
         onClose();
@@ -409,11 +409,11 @@ export const InterviewSetupWizard: React.FC<InterviewSetupWizardProps> = ({
               <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 text-white border border-indigo-900/60 shadow-lg space-y-2">
                 <div className="flex items-center gap-2 text-cyan-300 text-xs font-bold">
                   <BrainCircuit className="w-4 h-4 animate-pulse" />
-                  <span>Interview Blueprint Ready to Calibrate</span>
+                  <span>Mock Interview Ready to Launch</span>
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
                   Targeting <strong className="text-white">{selectedRole}</strong> ({selectedTier.toUpperCase()}) for a{' '}
-                  <strong className="text-white">{selectedType}</strong> assessment. Generating {currentDurationConfig.questions} questions via Gemini AI.
+                  <strong className="text-white">{selectedType}</strong> assessment with {currentDurationConfig.questions} questions via Gemini AI.
                 </p>
               </div>
             </div>
@@ -460,7 +460,7 @@ export const InterviewSetupWizard: React.FC<InterviewSetupWizardProps> = ({
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5 text-cyan-200" />
-                  <span>Generate Interview Plan</span>
+                  <span>Launch Mock Interview</span>
                 </>
               )}
             </button>

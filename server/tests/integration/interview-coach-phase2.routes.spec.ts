@@ -19,6 +19,61 @@ vi.mock("@/core/auth/auth", () => ({
   authHandler: vi.fn(),
 }));
 
+vi.mock("@/database/models/Subscription.model", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    SubscriptionModel: {
+      findOne: vi.fn().mockResolvedValue(null),
+    },
+  };
+});
+
+vi.mock("@/database/models/MonetizationConfig.model", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    getMonetizationConfig: vi.fn().mockResolvedValue({
+      interviewQuotas: {
+        freeMonthlySessions: 2,
+        freeMaxQuestionsPerSession: 5,
+        freeMaxAnswerSeconds: 120,
+        lockModelAnswersForFree: true,
+        enableVoiceForFree: true,
+        enableVideoForFree: true,
+      },
+      pricing: {
+        sprintPass7Day: { priceInr: 299, active: true },
+        proMonthly: { priceInr: 999, active: true },
+        proYearly: { priceInr: 4999, active: true },
+      },
+      resumeQuotas: {
+        freeMaxResumes: 1,
+        freeMonthlyAtsScans: 1,
+        lockDocxExportForFree: true,
+        lockCoverLetterAiForFree: true,
+        lockMultiJobTailoringForFree: true,
+      },
+      globalSettings: {
+        promoBannerActive: false,
+        promoBannerText: "",
+      },
+    }),
+    MonetizationConfigModel: {
+      getEffectiveConfig: vi.fn().mockResolvedValue({
+        interviewQuotas: {
+          freeMonthlySessions: 2,
+          freeMaxQuestionsPerSession: 5,
+          freeMaxAnswerSeconds: 120,
+          lockModelAnswersForFree: true,
+          enableVoiceForFree: true,
+          enableVideoForFree: true,
+        },
+      }),
+    },
+  };
+});
+
 import { auth } from "@/core/auth/auth";
 
 describe("Interview Coach Phase 2 API Routes Integration", () => {
@@ -78,6 +133,9 @@ describe("Interview Coach Phase 2 API Routes Integration", () => {
     it("should create a session and generate questions returning 201 Created", async () => {
       const sessionId = new mongoose.Types.ObjectId();
 
+      vi.spyOn(InterviewSessionModel, "countDocuments").mockReturnValue({
+        exec: vi.fn().mockResolvedValue(0),
+      } as any);
       vi.spyOn(InterviewTemplateModel, "countDocuments").mockReturnValue({
         exec: vi.fn().mockResolvedValue(10),
       } as any);

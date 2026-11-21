@@ -27,7 +27,7 @@ export class BillingService {
     if (subscription.tier === PlanTier.PRO && subscription.status === SubscriptionStatus.ACTIVE) {
       if (subscription.currentPeriodEnd && subscription.currentPeriodEnd > new Date()) {
         throw new AppError(
-          "You are already active on SKILLEZO Pro with 100,000 monthly tokens.",
+          "You are already active on SKILLEZO Pro with monthly token refills.",
           HTTP_STATUS.CONFLICT,
           ERROR_CODES.CONFLICT,
           { tier: subscription.tier, currentPeriodEnd: subscription.currentPeriodEnd }
@@ -36,7 +36,12 @@ export class BillingService {
     }
 
     const billingCycle = input.billingCycle || "MONTHLY";
-    const planKey = billingCycle === "YEARLY" ? "PRO_YEARLY" : "PRO_MONTHLY";
+    const planKey: keyof typeof BILLING_PLANS =
+      billingCycle === "SPRINT_PASS"
+        ? "SPRINT_PASS"
+        : billingCycle === "YEARLY"
+        ? "PRO_YEARLY"
+        : "PRO_MONTHLY";
     const planConfig: PlanPricingConfig = BILLING_PLANS[planKey];
 
     const isMockEnabled = env.MOCK_BILLING_ENABLED || !razorpayService.isConfigured;
@@ -86,7 +91,7 @@ export class BillingService {
   }
 
   /**
-   * Cryptographically verifies the Razorpay payment and activates Pro tier & 100,000 tokens.
+   * Cryptographically verifies the Razorpay payment and activates Pro tier & token allowance.
    */
   async verifyPayment(userId: string, input: VerifyRazorpayPaymentInput) {
     const isMockOrder = input.orderId.startsWith("order_mock_");
@@ -124,15 +129,17 @@ export class BillingService {
    */
   async upgradeAccountToPro(
     userId: string,
-    details: { orderId: string; paymentId: string; billingCycle: "MONTHLY" | "YEARLY" }
+    details: { orderId: string; paymentId: string; billingCycle: "MONTHLY" | "YEARLY" | "SPRINT_PASS" }
   ) {
     const { tokenAccount } = await planService.getOrCreateAccount(userId);
     const balanceBefore = tokenAccount.remainingTokens;
 
-    const daysValid = details.billingCycle === "YEARLY" ? 365 : 30;
+    const isSprintPass = details.billingCycle === "SPRINT_PASS";
+    const daysValid = isSprintPass ? 7 : details.billingCycle === "YEARLY" ? 365 : 30;
     const currentPeriodEnd = new Date(Date.now() + daysValid * 24 * 60 * 60 * 1000);
 
-    const planKey = details.billingCycle === "YEARLY" ? "PRO_YEARLY" : "PRO_MONTHLY";
+    const planKey: keyof typeof BILLING_PLANS =
+      isSprintPass ? "SPRINT_PASS" : details.billingCycle === "YEARLY" ? "PRO_YEARLY" : "PRO_MONTHLY";
     const allowance = BILLING_PLANS[planKey].tokenAllowance;
 
     // 1. Update Subscription
@@ -141,13 +148,14 @@ export class BillingService {
       {
         tier: PlanTier.PRO,
         status: SubscriptionStatus.ACTIVE,
-        billingCycle: details.billingCycle,
+        billingCycle: details.billingCycle === "SPRINT_PASS" ? "MONTHLY" : details.billingCycle,
         currentPeriodEnd,
-        cancelAtPeriodEnd: false,
+        cancelAtPeriodEnd: isSprintPass ? true : false,
         $set: {
           "metadata.lastPaymentId": details.paymentId,
           "metadata.lastOrderId": details.orderId,
           "metadata.lastUpgradedAt": new Date(),
+          "metadata.isSprintPass": isSprintPass,
         },
       },
       { new: true, upsert: true }
@@ -175,7 +183,9 @@ export class BillingService {
       tokensDeducted: 0,
       balanceBefore,
       balanceAfter,
-      description: `Upgraded to SKILLEZO Pro (${allowance.toLocaleString()} monthly AI tokens granted)`,
+      description: isSprintPass
+        ? `Activated 7-Day Sprint Pass (${allowance.toLocaleString()} AI tokens granted, active for 7 days)`
+        : `Upgraded to SKILLEZO Pro (${allowance.toLocaleString()} monthly AI tokens granted)`,
       metadata: {
         paymentId: details.paymentId,
         orderId: details.orderId,
@@ -190,7 +200,9 @@ export class BillingService {
       remainingTokens: balanceAfter,
       totalAllowance: allowance,
       currentPeriodEnd: updatedSubscription.currentPeriodEnd,
-      message: `Successfully upgraded to SKILLEZO Pro! ${allowance.toLocaleString()} AI tokens are now active in your account.`,
+      message: isSprintPass
+        ? `Successfully activated 7-Day Sprint Pass! Unlimited tailoring & mock interviews unlocked for the next 7 days.`
+        : `Successfully upgraded to SKILLEZO Pro! ${allowance.toLocaleString()} AI tokens are now active in your account.`,
     };
   }
 

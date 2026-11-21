@@ -63,7 +63,7 @@ export const UpgradePlanModal: React.FC = () => {
           setIsUpgrading(false);
           setIsOpen(false);
           toast.success('Upgraded to SKILLEZO Pro!', {
-            description: result.message || '100,000 AI tokens have been credited to your account.',
+            description: result.message || '50,000 AI tokens have been credited to your account.',
           });
         },
         onError: (err) => {
@@ -160,7 +160,7 @@ export const UpgradePlanModal: React.FC = () => {
               <div className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                 <span>
-                  <strong className="text-slate-900 dark:text-white font-semibold">100,000 Monthly Tokens</strong>{' '}
+                  <strong className="text-slate-900 dark:text-white font-semibold">50,000 Monthly Tokens</strong>{' '}
                   (refills automatically every 30 days)
                 </span>
               </div>
@@ -202,7 +202,7 @@ export const UpgradePlanModal: React.FC = () => {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Upgrade to Pro (₹399/mo)</span>
+                    <span>Upgrade to Pro (₹499/mo)</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}

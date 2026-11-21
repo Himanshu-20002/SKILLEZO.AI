@@ -91,7 +91,7 @@ const oauthRoleSyncPlugin: BetterAuthPlugin = {
             }
           }
 
-          // Auto-provision Free Plan + 5,000 Free tokens if not already provisioned
+          // Auto-provision Free Plan + 1,000 Free tokens if not already provisioned
           if (user?.id) {
             try {
               const { planService } = await import("@/modules/plan");
@@ -261,7 +261,7 @@ export function getAuth() {
                 if (userId) {
                   const { planService } = await import("@/modules/plan");
                   await planService.getOrCreateAccount(userId.toString());
-                  console.log(`[Plan Service] Successfully provisioned Free Plan + 5,000 tokens for user: ${userId}`);
+                  console.log(`[Plan Service] Successfully provisioned Free Plan + 1,000 tokens for user: ${userId}`);
                 }
               } catch (err) {
                 console.error("[Plan Auto-Provision User Create Hook Error]:", err);

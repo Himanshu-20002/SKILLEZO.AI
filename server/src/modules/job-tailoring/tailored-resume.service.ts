@@ -8,12 +8,15 @@
 
 import { AppError } from "@/core/utils/AppError";
 import { HTTP_STATUS } from "@/core/constants/http-status";
+import { ERROR_CODES } from "@/core/constants/error-codes";
 import { ResumeStatus } from "@/core/constants/enums";
 import { ResumeModel } from "@/database/models/Resume.model";
 import { ProfileModel } from "@/database/models/Profile.model";
 import { JobProfileModel } from "@/database/models/JobProfile.model";
 import { JobMatchResultModel } from "@/database/models/JobMatchResult.model";
 import { TailoringPlanModel } from "@/database/models/TailoringPlan.model";
+import { getMonetizationConfig } from "@/database/models/MonetizationConfig.model";
+import { SubscriptionModel, PlanTier, SubscriptionStatus } from "@/database/models/Subscription.model";
 import { DEFAULT_BUILDER_CONFIG } from "@/modules/resume-intelligence/builder/builder.types";
 import { TailoringFactualValidator } from "./tailoring-factual.validator";
 import { TailoredResumeGenerator } from "./tailored-resume.generator";
@@ -49,6 +52,24 @@ export class TailoredResumeService {
     this.activeGenerations.add(lockKey);
 
     try {
+      // 0. Quota & Paywall Check: Multi-job AI resume tailoring requires Pro or Sprint Pass
+      const monetizationConfig = await getMonetizationConfig();
+      if (monetizationConfig.resumeQuotas?.lockMultiJobTailoringForFree) {
+        const subscription = await SubscriptionModel.findOne({ userId });
+        const isPro =
+          subscription &&
+          (subscription.tier === PlanTier.PRO || subscription.tier === PlanTier.ENTERPRISE) &&
+          subscription.status === SubscriptionStatus.ACTIVE;
+
+        if (!isPro) {
+          throw new AppError(
+            "Multi-job resume tailoring is a premium feature. Upgrade to SKILLEZO Pro or activate the ₹199 7-Day Sprint Pass for unlimited tailored resumes.",
+            HTTP_STATUS.FORBIDDEN,
+            ERROR_CODES.PLAN_UPGRADE_REQUIRED
+          );
+        }
+      }
+
       // 1. Fetch Target Job Profile & Verify Ownership
       const jobProfile = await JobProfileModel.findOne({ _id: jobProfileId, userId });
       if (!jobProfile) {

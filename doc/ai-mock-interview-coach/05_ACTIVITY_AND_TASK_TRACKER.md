@@ -1,8 +1,8 @@
 # 📋 SKILLEZO.AI — AI Mock Interview Coach: Comprehensive Activity & Task Tracker
 
 **Document:** AI Mock Interview Coach Master Activity & Task Checklist  
-**Location:** `doc/sprints-and-plans/AI_MOCK_INTERVIEW_COACH_ACTIVITY_TRACKER.md`  
-**Last Updated:** Monday, November 09, 2026 (Mid-Day Sync)  
+**Location:** `doc/ai-mock-interview-coach/05_ACTIVITY_AND_TASK_TRACKER.md`  
+**Last Updated:** Wednesday, November 11, 2026 (Phase 4 Completed)  
 **System Stack:** Next.js 16 (App Router) + React 19 + Express 5 + MongoDB Mongoose 9 + Vitest v4 + Tailwind CSS + Better Auth  
 
 ---
@@ -14,13 +14,13 @@
 | **1. Architecture, Security & Data Foundation** | 🟢 Complete | 8 / 8 Tasks | 100% |
 | **2. Role Catalog & Question Engine** | 🟢 Complete | 8 / 8 Tasks | 100% |
 | **3. Candidate Setup Portal & Wizard UI** | 🟢 Complete | 7 / 7 Tasks | 100% |
-| **4. Interactive Text Interview Arena** | 🟡 In Progress / Next Up | 0 / 8 Tasks | 0% |
-| **5. AI Evaluation & Scoring Engine** | ⚪ Scheduled | 0 / 7 Tasks | 0% |
-| **6. Interview Analytics & Readiness Report** | ⚪ Scheduled | 0 / 6 Tasks | 0% |
+| **4. Interactive Text Interview Arena** | 🟢 Complete | 8 / 8 Tasks | 100% |
+| **5. AI Evaluation & Scoring Engine** | 🟢 Complete | 7 / 7 Tasks | 100% |
+| **6. Interview Analytics & Readiness Report** | 🟡 Scheduled / Next Up | 0 / 6 Tasks | 0% |
 | **7. Browser Voice & Speech System** | ⚪ Backlog | 0 / 6 Tasks | 0% |
 | **8. Candidate Intelligence & Profile Synergy** | ⚪ Backlog | 0 / 5 Tasks | 0% |
 | **9. Production Hardening, Quotas & Rollout** | ⚪ Backlog | 0 / 5 Tasks | 0% |
-| **Total Project Metrics** | 🟡 **Active Delivery** | **23 / 60 Tasks Done** | **38.3% Completed** |
+| **Total Project Metrics** | 🟢 **Accelerated Delivery** | **38 / 60 Tasks Done** | **63.3% Completed** |
 
 ---
 
@@ -28,7 +28,7 @@
 
 ### 1.1 Architecture, Security & Data Foundation
 - [x] **Inspect Codebase & Establish Non-Redundancy Rules**: Reused existing Better Auth (`requireAuth`), `BaseRepository`, Express middleware, and MongoDB connections without writing parallel auth/database utilities.
-- [x] **Master Architecture Specification**: Authored comprehensive architectural blueprint at [`doc/architecture/AI_MOCK_INTERVIEW_COACH_FULL_ARCHITECTURE.md`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/doc/architecture/AI_MOCK_INTERVIEW_COACH_FULL_ARCHITECTURE.md) covering entity relationships, server-driven flow, and security rules.
+- [x] **Master Architecture Specification**: Authored comprehensive architectural blueprint at `doc/ai-mock-interview-coach/03_FULL_SYSTEM_ARCHITECTURE.md` covering entity relationships, server-driven flow, and security rules.
 - [x] **Domain Types & Schemas**: Created domain enums (`InterviewSessionStatus`, `InterviewType`, `SeniorityLevel`, `InterviewDifficulty`, `ReadinessLevel`) and custom error classes in `server/src/modules/interview-coach/domain/`.
 - [x] **6 Core Database Models**:
   - `InterviewSession.model.ts`: Tracks state, target role, format, timing, and overall score.
@@ -39,25 +39,18 @@
   - `InterviewReport.model.ts`: Stores readiness level, radar breakdown, and action items.
   - Registered all models in central model index (`models/index.ts`).
 - [x] **Data Repositories Layer**:
-  - `InterviewSessionRepository.ts`: Extends `BaseRepository` with `findByUser`, `findByUserAndId`, `updateStatus`.
+  - `InterviewSessionRepository.ts`: Extends `BaseRepository` with `findByUser`, `findByUserAndId`, `updateStatus`, `updateProgress`.
   - `InterviewTemplateRepository.ts`: Extends `BaseRepository` with `findBySlug`, `findActive`, `seedTemplatesIfEmpty`.
-  - `InterviewQuestionRepository.ts`: Extends `BaseRepository` with `findBySessionId`, `findNextUnanswered`, `bulkInsert`.
+  - `InterviewQuestionRepository.ts`: Extends `BaseRepository` with `findBySessionId`, `bulkInsert`, `insertFollowUpQuestion`.
+  - `InterviewAnswerRepository.ts`: Extends `BaseRepository` with `upsertAnswer`, `findBySessionId`, `countBySessionId`.
+  - `InterviewEvaluationRepository.ts`: Extends `BaseRepository` with `upsertEvaluation`, `findBySessionId`, `findBySessionAndQuestion`.
+  - `InterviewReportRepository.ts`: Extends `BaseRepository` with `upsertReport`, `findBySessionId`, `findByUserId`.
 - [x] **Candidate Data Isolation**: Enforced query-level tenant isolation using candidate user IDs on all queries (`findByUserAndId`).
-- [x] **Zod Validation Pipeline**: Created `createSessionInputSchema`, `sessionParamSchema`, and `listSessionsQuerySchema` with Express validation middleware.
+- [x] **Zod Validation Pipeline**: Created `createSessionInputSchema`, `sessionParamSchema`, `listSessionsQuerySchema`, and `submitAnswerSchema` with Express validation middleware.
 - [x] **Foundational Automated Test Suite**: Built 29 unit and integration tests verifying schema validation, repository methods, and route authorization.
 
 ### 1.2 Role Catalog & AI Question Generation Engine
-- [x] **10-Role Template Catalog**: Built `InterviewTemplateService` pre-seeded with 10 industry roles:
-  1. React Developer (React 19, Server Components, State, SSR)
-  2. .NET Developer (C#, ASP.NET Core, EF Core, Microservices)
-  3. MERN Developer (Node.js, Express, MongoDB Indexing, REST APIs)
-  4. Python Developer (FastAPI, Django REST, Asyncio, PostgreSQL ORM)
-  5. Java Developer (JVM Internals, Spring Boot 3, JPA/Hibernate, Kafka)
-  6. Data Analyst (Advanced SQL, Window Functions, Pandas, BI Dashboards)
-  7. AI/ML Specialist (Transformers, LLM Prompting, RAG, Embeddings, MLOps)
-  8. Cloud Engineer (AWS/GCP/Azure Networks, IAM, Serverless, Terraform)
-  9. DevOps Engineer (Docker, Kubernetes Ingress/Pods, CI/CD, Prometheus)
-  10. Business Analyst (Requirements, User Stories/Gherkin, BPMN, Agile)
+- [x] **10-Role Template Catalog**: Built `InterviewTemplateService` pre-seeded with 10 industry roles (.NET, React, MERN, Python, Java, Data Analyst, AI/ML, Cloud, DevOps, Business Analyst).
 - [x] **Google Gemini AI Provider Integration**: Built `InterviewAIService` wrapping platform `GeminiProvider` with model cascading (`gemini-flash-lite-latest` $\rightarrow$ `gemini-3.1-flash-lite` $\rightarrow$ `gemini-3.5-flash`).
 - [x] **Seniority & Duration Question Calibration**: Engineered prompts generating 3 questions (15m), 5 questions (30m), or 7 questions (45m) across Entry, Junior, Mid, Senior, and Lead tiers.
 - [x] **Zod Output Parsing**: Implemented `GeneratedQuestionPlanSchema` guaranteeing structured questions with sequential indices, categories, and 2-5 `expectedConcepts`.
@@ -76,74 +69,78 @@
   - Step 4: Pulsing AI generation visualizer with real-time feedback.
 - [x] **Question Plan Inspection Modal**: Created `QuestionPlanModal.tsx` allowing candidates to inspect questions, duration, and expected concepts.
 - [x] **Client-Side TypeScript Contracts**: Created `client/types/interview-coach.ts` mirroring backend domain contracts.
-- [x] **Empty State & History Cards**: Delivered status badges (`Pending`, `In Progress`, `Completed`) with session details and timestamps.
-- [x] **Automated Suite Expansion**: Added 12 additional tests for the question engine, bringing the verified test count to **41/41 passing tests** with **0 TypeScript errors**.
+- [x] **Empty State & History Cards**: Delivered status badges (`Pending`, `In Progress`, `Completed`) with session details, timestamps, and direct "Enter Arena" triggers.
 
----
+### 1.4 Interactive Text Interview Arena
+- [x] **Candidate Interview Workspace Page**:
+  - Built active interview arena at `client/app/dashboard/interview-coach/session/[sessionId]/page.tsx`.
+  - Displays live question prompt, sequential progress indicator, and category/difficulty badges.
+- [x] **Live Countdown Timer & Clock Warning**:
+  - Implemented `LiveCountdownTimer.tsx` with dynamic time allocation based on session duration.
+  - Visual alerts: normal slate $\rightarrow$ amber (< 60s) $\rightarrow$ pulsing red with bounce (< 30s).
+- [x] **Autosave Draft Responses**:
+  - Built `AnswerEditor.tsx` with debounced autosave to `localStorage` (`skillezo_draft_${sessionId}_${questionId}`).
+  - Includes real-time word count, character count, and draft saved confirmation badge.
+  - Supports `Ctrl + Enter` (or `Cmd + Enter`) keyboard submission shortcut.
+- [x] **Answer Submission API Endpoint**:
+  - Implemented `POST /api/interviews/sessions/:sessionId/answers` with Zod validation.
+  - Created `InterviewAnswerRepository` with idempotent `upsertAnswer`.
+- [x] **Question Progression State Machine**:
+  - Implemented `startOrResumeSession` transitioning sessions from `PENDING` $\rightarrow$ `IN_PROGRESS`.
+  - Advances sequential question index on submission.
+  - Transitions session to `COMPLETED` when the final question is answered.
+- [x] **Adaptive Follow-Up Questioning**:
+  - Implemented `generateFollowUpQuestion` in `InterviewAIService` triggered on brief answers (< 40 words).
+  - Added `insertFollowUpQuestion` to `InterviewQuestionRepository` shifting sequence indices and dynamically injecting probe questions.
+- [x] **Session Reconnect & Refresh Resiliency**:
+  - Re-opening `/dashboard/interview-coach/session/[sessionId]` resumes at the exact active question with draft restored.
+- [x] **Automated Testing Suite for Text Arena**:
+  - Added unit test suite `server/tests/unit/modules/interview-coach-phase3.spec.ts` (6 tests).
+  - Added integration test suite `server/tests/integration/interview-coach-phase3.routes.spec.ts` (4 tests).
 
-## ⏳ SECTION 2: WORK THAT NEEDS TO BE DONE (UPCOMING ROADMAP)
+### 1.5 AI Evaluation & Scoring Engine
+- [x] **Multi-Dimension Scoring Rubric (v1.0.0)**:
+  - Formulated 5-dimension rubric (Technical Accuracy, Problem-Solving Depth, Answer Structure, Concept Coverage, Communication Tone) with configurable weighting across Technical, Behavioral, HR, and Managerial interview formats.
+- [x] **AI Semantic Evaluator (`InterviewEvaluationAIService`)**:
+  - Implemented evaluation calling Google Gemini via `GeminiProvider` with strict `SingleAnswerEvaluationSchema` Zod validation.
+  - Generates numerical scores, quoted evidence, concrete strengths, actionable improvements, and senior model answer benchmarks.
+- [x] **Deterministic Scoring Aggregator**:
+  - Engineered `aggregateScores` in `InterviewEvaluationService` computing mathematically weighted dimension averages and overall session scores (0-100) strictly in Node.js (preventing AI hallucination or score inflation).
+  - Implemented `mapReadinessLevel` mapping scores to `role_model`, `interview_ready`, `developing`, or `needs_practice`.
+- [x] **Deterministic Heuristic Fallback Shield**:
+  - Built `evaluateHeuristically` in `InterviewEvaluationAIService` analyzing `expectedConcepts` keyword matching, word count density, and sentence structure when Gemini is offline, guaranteeing 100% evaluation uptime.
+- [x] **Answer Evaluation & Report Persistence**:
+  - Created `InterviewEvaluationRepository` and `InterviewReportRepository` with idempotent upsert operations.
+- [x] **Evaluation REST Endpoints (`/api/interviews/`)**:
+  - `POST /api/interviews/sessions/:sessionId/evaluate`
+  - `GET /api/interviews/sessions/:sessionId/evaluations`
+  - `GET /api/interviews/sessions/:sessionId/report`
+- [x] **Automated Testing Suite for Evaluation Engine**:
+  - Added unit test suite `server/tests/unit/modules/interview-coach-phase4.spec.ts` (6 tests).
+  - Added integration test suite `server/tests/integration/interview-coach-phase4.routes.spec.ts` (3 tests).
+  - Verified 0 TypeScript errors across backend and frontend.
 
-### 2.1 Interactive Text Interview Arena (Immediate Next Milestone)
-- [ ] **Candidate Interview Workspace Page**:
-  - Build active interview arena at `client/app/dashboard/interview-coach/session/[sessionId]/page.tsx`.
-  - Display active question prompt, sequential progress indicator (e.g. "Question 2 of 5"), and category/difficulty badges.
-- [ ] **Live Countdown Timer & Clock Warning**:
-  - Implement per-question timer with progress bar and visual warnings (< 60s amber, < 20s red pulse).
-  - Support automatic submission or grace period when time expires.
-- [ ] **Autosave Draft Responses**:
-  - Save candidate response drafts to `localStorage` in real-time to prevent accidental data loss on browser refresh.
-  - Provide periodic background draft sync to backend.
-- [ ] **Answer Submission API Endpoint**:
-  - Implement `POST /api/interviews/sessions/:sessionId/answers`.
-  - Validate payload (`questionId`, `candidateAnswer`, `timeSpentSeconds`).
-  - Calculate word count and record submission timestamp in `InterviewAnswer`.
-- [ ] **Question Progression State Machine**:
-  - Transition session status from `pending` to `in_progress` upon question 1 start.
-  - Advance pointer to next question upon submission.
-  - Transition session status to `completed` upon final question submission.
-- [ ] **Adaptive Follow-Up Questioning**:
-  - Trigger `InterviewAIService.generateFollowUpQuestion` when an answer is brief or lacks expected concepts.
-  - Mark dynamic follow-ups with `isFollowUp: true` and link to parent question.
-- [ ] **Session Reconnect & Refresh Resiliency**:
-  - Candidate re-opening an active session automatically resumes at the current unanswered question with draft intact.
-- [ ] **Automated Testing Suite for Text Arena**:
-  - Write unit and integration tests covering answer submission, progression, time limits, and session completion.
+### 1.6 Candidate Readiness Report & Evaluation Dashboard (Completed)
+- [x] **Readiness Score Hero Component (`ReadinessScoreHero.tsx`)**:
+  - Displays overall score (0–100), circular progress indicator, and Readiness Level badge (`Role Model`, `Interview Ready`, `Developing`, `Needs Practice`).
+  - Renders session metadata (Role, Seniority, Format, Duration, Questions answered, Completion date).
+  - Includes Print / PDF export and "Practice Again" triggers.
+- [x] **5-Dimension Competency Scorecard (`CompetencyBreakdownCard.tsx`)**:
+  - Visualizes Technical Accuracy (30%), Problem Solving (25%), Answer Structure (15%), Concept Coverage (15%), and Fluency (15%) with progress bars and benchmark targets.
+- [x] **Executive Coaching Feedback Card (`ExecutiveFeedbackCard.tsx`)**:
+  - Synthesizes candidate strengths ("What Went Well") and priority growth focus areas with actionable advice.
+- [x] **Question-by-Question Deep Dive (`QuestionBreakdownAccordion.tsx`)**:
+  - Collapsible review showing candidate answer, question dimension ratings, AI critique with quoted evidence, and Senior Engineer Model Answers.
+- [x] **Live Report Route (`/dashboard/interview-coach/report/[sessionId]`)**:
+  - Assembled page under `<DashboardLayout>` with auto-evaluation on mount, shimmer loading, and error states.
+- [x] **Arena Completion & Hub Integration**:
+  - Wired `InterviewCompletionView.tsx` "View Detailed Feedback" CTA to route to the report dashboard.
+  - Updated `/dashboard/interview-coach` session cards so completed sessions display a **"View Report"** CTA.
+- [x] **Automated Verification**:
+  - Created `client/tests/interview-coach-report.spec.tsx` (8 unit tests passing).
+  - All 23 client test suites passing (214 / 214 tests).
 
-### 2.2 AI Evaluation & Scoring Engine (Next Milestone)
-- [ ] **Multi-Dimension Scoring Rubric**:
-  - Define evaluation rubric scoring 5 core dimensions:
-    1. Technical Accuracy & Relevance (30%)
-    2. Depth & Problem-Solving Approach (25%)
-    3. Structural Clarity & Organization (20%)
-    4. Concept Coverage / Expected Keywords (15%)
-    5. Communication & Tone (10%)
-- [ ] **AI Semantic Evaluator (`InterviewEvaluationService`)**:
-  - Submit candidate answer alongside `expectedConcepts` and question prompt to Gemini.
-  - Return structured feedback: numerical dimension scores, key strengths, improvement areas, and concept matches.
-- [ ] **Deterministic Scoring Aggregator**:
-  - Compute weighted category scores and overall session score (0-100) mathematically in Node.js (preventing AI hallucinated final scores).
-  - Map final score to Readiness Levels (`needs_practice`, `developing`, `interview_ready`, `role_model`).
-- [ ] **Answer Evaluation Persistence**:
-  - Save structured evaluation documents into `interview_evaluations` collection.
-- [ ] **Background Asynchronous Evaluation Queue**:
-  - Run evaluations asynchronously post-submission so the candidate doesn't face blocked UI navigation.
-- [ ] **Automated Tests for Evaluation Engine**:
-  - Verify deterministic score calculation, fallback scoring for unparseable AI responses, and weight distributions.
-
-### 2.3 Interview Analytics & Candidate Readiness Report
-- [ ] **Readiness Report Generation Service**:
-  - Aggregate answer evaluations into comprehensive `InterviewReport` document.
-  - Calculate competency strengths, weak spots, and specific actionable next steps.
-- [ ] **Candidate Report Dashboard View (`/dashboard/interview-coach/report/[sessionId]`)**:
-  - Large readiness level banner with score pill and target role metadata.
-  - Competency radar / bar chart breakdown visualizing dimension mastery.
-  - Question-by-question accordion showing candidate answer, AI critique, and model answer suggestions.
-- [ ] **Session Performance History & Trends**:
-  - Show score progression graphs across multiple mock interviews over time.
-- [ ] **PDF Export or Print-Friendly View**:
-  - Generate downloadable summary for candidates to review offline before real interviews.
-
-### 2.4 Browser-Based Voice Interview System (Backlog Milestone)
+### 2.2 Browser-Based Voice Interview System (Phase 6)
 - [ ] **Browser Speech Recognition (Web Speech API / STT)**:
   - Add real-time speech-to-text input with candidate editable transcript confirmation before submitting.
 - [ ] **Spoken Question Voice Synthesis (TTS)**:
@@ -153,7 +150,7 @@
 - [ ] **Microphone Permission & Browser Fallback**:
   - Graceful fallback to text mode if microphone access is denied or browser is unsupported.
 
-### 2.5 Candidate Intelligence & Profile Synergy (Backlog Milestone)
+### 2.3 Candidate Intelligence & Profile Synergy (Phase 7)
 - [ ] **Resume Studio Integration**:
   - Auto-extract candidate resume skills from SKILLEZO Resume Studio to formulate tailored interview questions.
 - [ ] **Skill Gap Analysis Integration**:
@@ -161,7 +158,7 @@
 - [ ] **Interview Performance $\rightarrow$ Skill Gap Refresh**:
   - Allow candidates to update their verified skill confidence scores after strong mock interview performances.
 
-### 2.6 Production Hardening, Quotas & Rollout
+### 2.4 Production Hardening, Quotas & Rollout (Phase 8)
 - [ ] **Candidate Practice Quotas & Rate Limiting**:
   - Set limits on active daily/weekly interview sessions to manage Gemini API token consumption.
 - [ ] **Prompt Injection & Input Sanitization**:
@@ -174,9 +171,8 @@
 ## 📈 Summary Checklist Tracking
 
 ```
-[====================>--------------------------------] 38.3% Completed
-Total Tasks: 60 | Done: 23 | In-Progress/Next: 8 | Remaining Backlog: 29
+[===========================================>---------] 63.3% Completed
+Total Tasks: 60 | Done: 38 | In-Progress/Next: 6 | Remaining Backlog: 16
 ```
 
-- **Next Immediate Priority:** Build candidate text interview arena (`/dashboard/interview-coach/session/[sessionId]`), countdown timer, and answer submission endpoint (`POST /api/interviews/sessions/:sessionId/answers`).
-
+- **Next Immediate Priority:** Phase 5 — Candidate Interview Readiness Report & Analytics UI (`/dashboard/interview-coach/report/[sessionId]`).

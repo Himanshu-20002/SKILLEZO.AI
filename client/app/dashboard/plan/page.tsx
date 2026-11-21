@@ -81,14 +81,17 @@ export default function PlanAndUsagePage() {
       return;
     }
 
+    const billingCycle = tier === 'SPRINT_PASS' ? 'SPRINT_PASS' : 'MONTHLY';
+    const planName = tier === 'SPRINT_PASS' ? '7-Day Sprint Pass' : 'SKILLEZO Pro';
+
     try {
-      toast.loading('Initiating secure checkout...', { id: 'checkout-toast' });
+      toast.loading(`Initiating secure checkout for ${planName}...`, { id: 'checkout-toast' });
       await billingService.startCheckout({
-        billingCycle: 'MONTHLY',
+        billingCycle,
         onSuccess: (result) => {
           toast.dismiss('checkout-toast');
-          toast.success('Upgraded to SKILLEZO Pro!', {
-            description: result.message || '100,000 AI tokens have been credited to your account.',
+          toast.success(tier === 'SPRINT_PASS' ? '7-Day Sprint Pass Activated!' : 'Upgraded to SKILLEZO Pro!', {
+            description: result.message || 'Your account has been upgraded.',
           });
           loadData(true);
         },

@@ -90,5 +90,21 @@ export const createSessionInputSchema = z.object({
     .optional(),
 });
 
+export const submitAnswerSchema = z.object({
+  questionId: objectIdParamSchema,
+  answerText: z
+    .string()
+    .trim()
+    .min(1, "Answer cannot be empty")
+    .max(15000, "Answer cannot exceed 15,000 characters"),
+  responseDurationSeconds: z
+    .number()
+    .int("Duration must be an integer")
+    .min(0, "Duration must be non-negative")
+    .max(3600, "Duration cannot exceed 1 hour per question")
+    .optional(),
+});
+
 export type CreateSessionInput = z.infer<typeof createSessionInputSchema>;
 export type ListSessionsQuery = z.infer<typeof listSessionsQuerySchema>;
+export type SubmitAnswerInput = z.infer<typeof submitAnswerSchema>;

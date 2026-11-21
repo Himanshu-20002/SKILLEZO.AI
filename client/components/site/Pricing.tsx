@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Reveal } from "@/components/site/Reveal";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Building2, Zap } from "lucide-react";
+import { Check, Sparkles, Building2, Zap, Flame } from "lucide-react";
 
 interface PricingProps {
   onGetScore: () => void;
@@ -19,13 +19,14 @@ export function Pricing({ onGetScore }: PricingProps) {
       badge: "Free Forever",
       price: "₹0",
       period: "",
-      desc: "Essential AI career launchpad with 5,000 welcome tokens.",
-      tokens: "5,000 Free AI Tokens",
+      subtext: "Free welcome launchpad",
+      desc: "Essential AI career launchpad with 1,000 welcome tokens.",
+      tokens: "1,000 Free AI Tokens",
       features: [
-        "5,000 Free AI Welcome Tokens",
+        "1,000 Free AI Welcome Tokens",
         "Full ATS Resume Diagnostic Score",
         "Career GPS Skill Roadmap",
-        "Interactive AI Mock Interview (1 session)",
+        "Interactive AI Mock Interview (1 trial session)",
         "Job Match Suitability Scoring",
       ],
       cta: "Get Free Score",
@@ -33,18 +34,38 @@ export function Pricing({ onGetScore }: PricingProps) {
       icon: Zap,
     },
     {
+      name: "7-Day Sprint Pass",
+      badge: "Best Seller",
+      price: "₹199",
+      period: "/ 7 days",
+      subtext: "One-time payment • No auto-renewal",
+      desc: "7-day intensive interview and application sprint with full AI access.",
+      tokens: "15,000 AI Tokens",
+      features: [
+        "15,000 AI Tokens for 7 Days",
+        "Unlimited Resume Tailoring for 20+ Jobs",
+        "Unlimited AI Mock Interviews Across 10+ Tech Roles",
+        "All Senior Staff Engineer Model Answers Unlocked",
+        "Instant ATS Keyword Gap & Skill Diagnostic Visualizer",
+      ],
+      cta: "Get Sprint Pass",
+      highlight: false,
+      icon: Flame,
+    },
+    {
       name: "SKILLEZO Pro",
       badge: "Most Popular",
-      price: billingCycle === "monthly" ? "₹399" : "₹3,999",
+      price: billingCycle === "monthly" ? "₹499" : "₹3,999",
       period: billingCycle === "monthly" ? "/ month" : "/ year",
-      subtext: billingCycle === "yearly" ? "Billed annually (₹333/mo) • Save 17%" : "Billed monthly • Cancel anytime",
+      subtext: billingCycle === "yearly" ? "Billed annually (₹333/mo) • Save 33%" : "Billed monthly • Cancel anytime",
       desc: "Unlimited career acceleration, priority AI models & resume tailorings.",
-      tokens: "100,000 Tokens / Month",
+      tokens: "50,000 Tokens / Month",
       features: [
-        "100,000 Monthly AI Tokens (Refreshed every 30 days)",
+        "50,000 Monthly AI Tokens (Refreshed every 30 days)",
         "Unlimited Resume Tailoring & ATS Alignment",
         "Unlimited Voice & Video Mock Interviews with Rubrics",
-        "Deep AI Career Coach with Personalized Career GPS",
+        "All Senior Staff Engineer Model Answers Unlocked",
+        "Hosted Developer Portfolio Profile (skillezo.me/yourname)",
         "Recruiter Spotlight & Verified Skills Badge",
         "Priority Access to Gemini 1.5 Pro & GPT-4o Models",
       ],
@@ -112,14 +133,14 @@ export function Pricing({ onGetScore }: PricingProps) {
               >
                 <span>Annual Billing</span>
                 <span className="px-1.5 py-0.5 rounded-full bg-[#00D9C0]/20 text-[#00D9C0] text-[10px] font-bold">
-                  Save 17%
+                  Save 33%
                 </span>
               </button>
             </div>
           </div>
         </Reveal>
 
-        <div className="mt-16 grid md:grid-cols-3 gap-8 items-stretch">
+        <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
           {plans.map((p, i) => {
             const Icon = p.icon;
             return (

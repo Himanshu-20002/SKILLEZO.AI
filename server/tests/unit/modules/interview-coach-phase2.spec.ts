@@ -21,6 +21,78 @@ import {
   InterviewSessionStatus,
 } from "@/modules/interview-coach/domain/interview.enums";
 
+vi.mock("@/database/models/Subscription.model", () => ({
+  SubscriptionModel: {
+    findOne: vi.fn().mockResolvedValue(null),
+  },
+}));
+
+vi.mock("@/database/models/MonetizationConfig.model", () => ({
+  MonetizationConfigModel: {
+    getEffectiveConfig: vi.fn().mockResolvedValue({
+      interviewQuotas: {
+        freeMonthlySessions: 2,
+        freeMaxQuestionsPerSession: 5,
+        freeMaxAnswerSeconds: 120,
+        lockModelAnswersForFree: true,
+        enableVoiceForFree: true,
+        enableVideoForFree: true,
+      },
+      resumeQuotas: {
+        freeMaxResumes: 1,
+        freeMonthlyAtsScans: 1,
+        lockDocxExportForFree: true,
+        lockCoverLetterAiForFree: true,
+        lockMultiJobTailoringForFree: true,
+      },
+      pricing: {
+        sprintPass7Day: { amountInRupees: 199 },
+        proMonthly: { amountInRupees: 499 },
+        proYearly: { amountInRupees: 3999 },
+      },
+    }),
+  },
+  DEFAULT_MONETIZATION_CONFIG: {
+    interviewQuotas: {
+      freeMonthlySessions: 2,
+      freeMaxQuestionsPerSession: 5,
+      freeMaxAnswerSeconds: 120,
+      lockModelAnswersForFree: true,
+      enableVoiceForFree: true,
+      enableVideoForFree: true,
+    },
+    resumeQuotas: {
+      freeMaxResumes: 1,
+      freeMonthlyAtsScans: 1,
+      lockDocxExportForFree: true,
+      lockCoverLetterAiForFree: true,
+      lockMultiJobTailoringForFree: true,
+    },
+  },
+  getMonetizationConfig: vi.fn().mockResolvedValue({
+    interviewQuotas: {
+      freeMonthlySessions: 2,
+      freeMaxQuestionsPerSession: 5,
+      freeMaxAnswerSeconds: 120,
+      lockModelAnswersForFree: true,
+      enableVoiceForFree: true,
+      enableVideoForFree: true,
+    },
+    resumeQuotas: {
+      freeMaxResumes: 1,
+      freeMonthlyAtsScans: 1,
+      lockDocxExportForFree: true,
+      lockCoverLetterAiForFree: true,
+      lockMultiJobTailoringForFree: true,
+    },
+    pricing: {
+      sprintPass7Day: { amountInRupees: 199 },
+      proMonthly: { amountInRupees: 499 },
+      proYearly: { amountInRupees: 3999 },
+    },
+  }),
+}));
+
 describe("Module: Interview Coach — Phase 2: Configuration & Question Engine", () => {
   describe("1. Role & Template Catalog Service", () => {
     it("should define all 10 core technical and analytical roles", () => {
@@ -168,6 +240,7 @@ describe("Module: Interview Coach — Phase 2: Configuration & Question Engine",
         })),
         findByUserAndId: vi.fn(),
         listByUserId: vi.fn(),
+        countSessionsSince: vi.fn().mockResolvedValue(0),
       };
 
       questionRepo = {
@@ -212,6 +285,7 @@ describe("Module: Interview Coach — Phase 2: Configuration & Question Engine",
       service = new InterviewSessionService(
         sessionRepo,
         questionRepo,
+        new (class MockAnswerRepo {} as any)(),
         aiService,
         templateService
       );

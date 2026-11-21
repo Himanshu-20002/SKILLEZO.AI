@@ -32,7 +32,7 @@ export interface BillingConfig {
 }
 
 export interface CheckoutOptions {
-  billingCycle?: "MONTHLY" | "YEARLY";
+  billingCycle?: "MONTHLY" | "YEARLY" | "SPRINT_PASS";
   onSuccess?: (result: VerifyPaymentResult) => void;
   onError?: (error: Error) => void;
   onDismiss?: () => void;
@@ -50,7 +50,7 @@ export class BillingService {
   /**
    * Creates a Razorpay checkout order on backend.
    */
-  async createOrder(billingCycle: "MONTHLY" | "YEARLY" = "MONTHLY"): Promise<RazorpayOrderData> {
+  async createOrder(billingCycle: "MONTHLY" | "YEARLY" | "SPRINT_PASS" = "MONTHLY"): Promise<RazorpayOrderData> {
     const res = await apiFetch<{ success: boolean; data: RazorpayOrderData }>("/api/billing/razorpay/create-order", {
       method: "POST",
       body: JSON.stringify({ billingCycle }),
@@ -65,7 +65,7 @@ export class BillingService {
     orderId: string,
     paymentId: string,
     signature: string,
-    billingCycle: "MONTHLY" | "YEARLY" = "MONTHLY"
+    billingCycle: "MONTHLY" | "YEARLY" | "SPRINT_PASS" = "MONTHLY"
   ): Promise<VerifyPaymentResult> {
     const res = await apiFetch<{ success: boolean; data: VerifyPaymentResult }>("/api/billing/razorpay/verify", {
       method: "POST",

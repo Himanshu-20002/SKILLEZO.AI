@@ -43,5 +43,31 @@ export class InterviewQuestionRepository extends BaseRepository<IInterviewQuesti
       sequence,
     });
   }
-}
 
+  /**
+   * Insert an adaptive follow-up question immediately after the current sequence,
+   * shifting all subsequent questions in the session by +1.
+   */
+  async insertFollowUpQuestion(
+    sessionId: string | Types.ObjectId,
+    afterSequence: number,
+    questionData: Partial<IInterviewQuestion>
+  ): Promise<IInterviewQuestion> {
+    const sId = new Types.ObjectId(sessionId.toString());
+
+    // 1. Shift all subsequent questions forward by 1
+    await this.model.updateMany(
+      { sessionId: sId, sequence: { $gt: afterSequence } },
+      { $inc: { sequence: 1 } }
+    );
+
+    // 2. Insert the follow-up at afterSequence + 1
+    const newQuestion = await this.model.create({
+      ...questionData,
+      sessionId: sId,
+      sequence: afterSequence + 1,
+    });
+
+    return newQuestion as IInterviewQuestion;
+  }
+}

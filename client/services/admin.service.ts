@@ -83,6 +83,52 @@ export interface PaginatedResult<T> {
   };
 }
 
+export interface AdminMonetizationConfig {
+  pricing: {
+    sprintPass7Day: {
+      amountInRupees: number;
+      amountInPaise: number;
+      isActive: boolean;
+      name: string;
+      description: string;
+    };
+    proMonthly: {
+      amountInRupees: number;
+      amountInPaise: number;
+      isActive: boolean;
+      name: string;
+      description: string;
+    };
+    proYearly: {
+      amountInRupees: number;
+      amountInPaise: number;
+      isActive: boolean;
+      name: string;
+      description: string;
+    };
+  };
+  interviewQuotas: {
+    freeMonthlySessions: number;
+    freeMaxQuestionsPerSession: number;
+    freeMaxAnswerSeconds: number;
+    lockModelAnswersForFree: boolean;
+    enableVoiceForFree: boolean;
+    enableVideoForFree: boolean;
+  };
+  resumeQuotas: {
+    freeMaxResumes: number;
+    freeMonthlyAtsScans: number;
+    lockDocxExportForFree: boolean;
+    lockCoverLetterAiForFree: boolean;
+    lockMultiJobTailoringForFree: boolean;
+  };
+  globalSettings: {
+    promoBannerActive: boolean;
+    promoBannerText: string;
+    updatedByAdminEmail?: string;
+  };
+}
+
 class AdminService {
   async getMetrics(): Promise<PlatformMetrics> {
     const res = await apiFetch<{ success: boolean; data: PlatformMetrics }>("/api/admin/metrics");
@@ -181,6 +227,36 @@ class AdminService {
     if (params.search) query.set("search", params.search);
 
     const res = await apiFetch<{ success: boolean; data: any }>(`/api/admin/resumes?${query.toString()}`);
+    return res.data;
+  }
+
+  async getMonetizationConfig(): Promise<AdminMonetizationConfig> {
+    const res = await apiFetch<{ success: boolean; data: AdminMonetizationConfig }>(
+      "/api/admin/monetization-config"
+    );
+    return res.data;
+  }
+
+  async updateMonetizationConfig(
+    payload: Partial<AdminMonetizationConfig>
+  ): Promise<AdminMonetizationConfig> {
+    const res = await apiFetch<{ success: boolean; data: AdminMonetizationConfig }>(
+      "/api/admin/monetization-config",
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }
+    );
+    return res.data;
+  }
+
+  async resetMonetizationConfig(): Promise<AdminMonetizationConfig> {
+    const res = await apiFetch<{ success: boolean; data: AdminMonetizationConfig }>(
+      "/api/admin/monetization-config/reset",
+      {
+        method: "POST",
+      }
+    );
     return res.data;
   }
 }

@@ -31,7 +31,7 @@ const tokenAccountSchema = new Schema<ITokenAccount>(
     totalAllowance: {
       type: Number,
       required: true,
-      default: 5000,
+      default: 1000,
       min: 0,
     },
     consumedTokens: {
@@ -43,7 +43,7 @@ const tokenAccountSchema = new Schema<ITokenAccount>(
     remainingTokens: {
       type: Number,
       required: true,
-      default: 5000,
+      default: 1000,
       min: 0,
       index: true,
     },

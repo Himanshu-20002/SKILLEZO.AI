@@ -32,3 +32,12 @@ export class InvalidSessionStateTransitionError extends AppError {
   }
 }
 
+export class InterviewInvalidStateError extends AppError {
+  constructor(message: string) {
+    super(
+      message,
+      HTTP_STATUS.BAD_REQUEST,
+      ERROR_CODES.VALIDATION_ERROR
+    );
+  }
+}
