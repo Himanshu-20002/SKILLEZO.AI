@@ -191,30 +191,61 @@ function areProjectTextsSubstantiallyEqual(strA: string, strB: string): boolean 
   return false;
 }
 
+export const PROJECT_ACTION_VERBS =
+  /^(?:built|engineered|developed|created|designed|implemented|architected|spearheaded|led|automated|deployed|integrated|optimized|configured|delivered|managed|formulated|administered|analyzed|scaled|streamlined|revamped|established|maintained|enhanced|resolved|executed|orchestrated|authored|secured|trained|mentored|produced|crafted|launched|refactored|migrated|constructed|programmed)\b/i;
+
 /**
  * Normalizes project description and bullets for unified rendering in both DOM and PDF export.
  * - Extracts clean distinct bullet items (max 4).
  * - Strips leading bullet characters.
  * - Avoids duplicate summary if description is just a concatenation or duplicate of bullets.
+ * - Unifies action-verb descriptions with bullets so the first accomplishment is never orphaned as a bare paragraph.
  */
 export function cleanProjectContent(proj: ResumeProjectItem): CleanedProjectContent {
   const rawDesc = proj.description?.trim() || '';
   const rawBullets = (proj.bullets || []).map((b) => b.trim()).filter(Boolean);
 
-  let cleanBullets: string[] = [];
+  let bulletCandidates: string[] = [];
   if (rawBullets.length > 0) {
     if (rawBullets.length === 1 && (rawBullets[0].includes('•') || rawBullets[0].includes('\n'))) {
-      cleanBullets = splitBullets(rawBullets[0]);
+      bulletCandidates = splitBullets(rawBullets[0]);
     } else {
-      cleanBullets = rawBullets.flatMap(splitBullets);
+      bulletCandidates = rawBullets.flatMap(splitBullets);
     }
-  } else if (rawDesc) {
-    cleanBullets = splitBullets(rawDesc);
+  }
+
+  let cleanSummary: string | null = null;
+
+  if (rawDesc) {
+    const isBulletList = rawDesc.includes('•') || rawDesc.startsWith('-') || rawDesc.includes('\n•');
+    const isAnyBulletDuplicate = bulletCandidates.some((b) => areProjectTextsSubstantiallyEqual(b, rawDesc));
+    const allBulletsJoined = bulletCandidates.join(' ');
+    const isConcatDuplicate = areProjectTextsSubstantiallyEqual(allBulletsJoined, rawDesc);
+    const isDuplicate = isAnyBulletDuplicate || isConcatDuplicate;
+
+    if (!isDuplicate) {
+      const cleanDescText = cleanBulletText(rawDesc);
+      const isActionAchievement =
+        isBulletList ||
+        PROJECT_ACTION_VERBS.test(cleanDescText) ||
+        (bulletCandidates.length > 0 && cleanDescText.length > 80);
+
+      if (isActionAchievement) {
+        // Treat description as leading bullet point(s) rather than an orphan unbulleted paragraph
+        const descBullets = splitBullets(rawDesc);
+        bulletCandidates = [...descBullets, ...bulletCandidates];
+      } else {
+        // Genuine short overview summary (e.g. "A personal portfolio website...")
+        cleanSummary = rawDesc;
+      }
+    }
+  } else if (bulletCandidates.length === 0 && rawDesc) {
+    bulletCandidates = splitBullets(rawDesc);
   }
 
   // Deduplicate and cap at max 4 bullets
   const seen = new Set<string>();
-  cleanBullets = cleanBullets
+  const cleanBullets = bulletCandidates
     .map(cleanBulletText)
     .filter((b) => {
       const lower = b.toLowerCase();
@@ -223,20 +254,6 @@ export function cleanProjectContent(proj: ResumeProjectItem): CleanedProjectCont
       return true;
     })
     .slice(0, 4);
-
-  // Only show description as summary if it's NOT a bullet list and NOT a duplicate of bullets
-  let cleanSummary: string | null = null;
-  if (rawDesc) {
-    const isBulletList = rawDesc.includes('•') || rawDesc.startsWith('-') || rawDesc.includes('\n•');
-    const isAnyBulletDuplicate = cleanBullets.some((b) => areProjectTextsSubstantiallyEqual(b, rawDesc));
-    const allBulletsJoined = cleanBullets.join(' ');
-    const isConcatDuplicate = areProjectTextsSubstantiallyEqual(allBulletsJoined, rawDesc);
-    const isDuplicate = isAnyBulletDuplicate || isConcatDuplicate;
-
-    if (!isBulletList && !isDuplicate) {
-      cleanSummary = rawDesc;
-    }
-  }
 
   return { cleanSummary, cleanBullets };
 }

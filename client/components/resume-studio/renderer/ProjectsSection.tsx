@@ -163,7 +163,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = React.memo(({
                   className={`${template.bulletStyle} text-slate-700 dark:text-slate-300 ${lineHeightClass}`}
                 >
                   {cleanBullets.map((bullet, idx) => (
-                    <li key={idx}>
+                    <li key={idx} className="leading-relaxed">
                       {onUpdateProjects ? (
                         <InlineText
                           as="span"

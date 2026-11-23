@@ -110,6 +110,32 @@ describe('Resume Content Normalizer & Deduplication', () => {
         'Achieved 100 Lighthouse performance score',
       ]);
     });
+
+    it('unifies action-verb descriptions with separate bullets into unified bullet points without orphan summaries', () => {
+      const guardOpsProject: ResumeProjectItem = {
+        id: 'proj-guardops',
+        title: 'GuardOps',
+        description:
+          'Built a role-based PPE Workforce Safety Platform for admin and supervisor operations. Implemented role-based authentication, PPE violation tracking, and automated alert escalation.',
+        bullets: [
+          'Created a simulated IoT camera webhook API and CSV reporting for PPE compliance management.',
+        ],
+        technologies: ['Next.js', 'TypeScript', 'Drizzle ORM'],
+      };
+
+      const { cleanSummary, cleanBullets } = cleanProjectContent(guardOpsProject);
+
+      // Description must NOT be an orphan unbulleted summary!
+      expect(cleanSummary).toBeNull();
+      // Both accomplishments must be unified as clean bullet items
+      expect(cleanBullets).toHaveLength(2);
+      expect(cleanBullets[0]).toBe(
+        'Built a role-based PPE Workforce Safety Platform for admin and supervisor operations. Implemented role-based authentication, PPE violation tracking, and automated alert escalation.'
+      );
+      expect(cleanBullets[1]).toBe(
+        'Created a simulated IoT camera webhook API and CSV reporting for PPE compliance management.'
+      );
+    });
   });
 
   describe('CATEGORY_LABELS', () => {

@@ -641,11 +641,14 @@ export class ResumeParserService {
         .filter((s) => s.length > 0);
 
       const startsWithBullet = /^[•\u2022\u25E6\u25AA\*\-]/.test(rawJoined.trim());
+      const startsWithActionVerb = /^(?:built|engineered|developed|created|designed|implemented|architected|spearheaded|led|automated|deployed|integrated|optimized|configured|delivered|managed|formulated|administered|analyzed|scaled|streamlined|revamped|established|maintained|enhanced|resolved|executed|orchestrated|authored|secured|trained|mentored|produced|crafted|launched|refactored|migrated|constructed|programmed)\b/i.test(
+        rawSegments[0].replace(/^[•\u2022\u25E6\u25AA\*\-·]\s*/, "").trim()
+      );
       let summary: string | null = null;
       let bulletItems: string[] = [];
 
-      // If text doesn't start with bullet, first segment is a clean introductory summary (<= 2 lines)
-      if (!startsWithBullet && rawSegments.length > 1) {
+      // If text doesn't start with bullet AND does not start with an action verb, first segment is a clean introductory summary (<= 2 lines)
+      if (!startsWithBullet && !startsWithActionVerb && rawSegments.length > 1) {
         summary = rawSegments[0].replace(/\s+/g, " ").slice(0, 250);
         bulletItems = rawSegments.slice(1);
       } else {
