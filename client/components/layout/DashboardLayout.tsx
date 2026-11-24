@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { MobileSidebar } from './MobileSidebar';
+import { DashboardFooter } from './DashboardFooter';
 import { useSession, authClient } from '@/lib/auth-client';
 import { apiFetch } from '@/lib/api';
 import { Lock, LogOut } from 'lucide-react';
@@ -207,11 +208,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
         {/* Main View Area */}
         <main
-          className={`flex-1 p-4 sm:p-6 lg:p-8 transition-all duration-300 ${
+          className={`flex-1 flex flex-col justify-between p-4 sm:p-6 lg:p-8 transition-all duration-300 ${
             collapsed ? 'md:ml-20' : 'md:ml-64'
           }`}
         >
-          <div className="max-w-7xl mx-auto space-y-6">{children}</div>
+          <div className="max-w-7xl mx-auto space-y-6 w-full flex-1">{children}</div>
+          <DashboardFooter />
         </main>
 
         {/* Global Floating AI Career Coach Assistant Widget */}
