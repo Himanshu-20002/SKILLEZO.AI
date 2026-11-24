@@ -122,6 +122,7 @@ export default function DashboardPage() {
           resumesCount={resumesCount}
           verifiedSkillsCount={verifiedSkillsCount}
           hasProfileGoal={Boolean(profile?.targetRole || profile?.headline)}
+          completionPercentage={profile?.completionPercentage}
           onReplayTour={ftux.replayTour}
           onOpenWelcome={ftux.openWelcomeModal}
         />

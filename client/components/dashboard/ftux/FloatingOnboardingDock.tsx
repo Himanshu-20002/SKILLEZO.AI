@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -17,6 +17,7 @@ import {
   Shield,
   Sparkles,
   ArrowUpRight,
+  X,
 } from 'lucide-react';
 
 export interface OnboardingMilestone {
@@ -33,6 +34,8 @@ interface FloatingOnboardingDockProps {
   resumesCount?: number;
   verifiedSkillsCount?: number;
   hasProfileGoal?: boolean;
+  completionPercentage?: number;
+  isCleared?: boolean;
   onReplayTour: () => void;
   onOpenWelcome: () => void;
 }
@@ -42,10 +45,35 @@ export function FloatingOnboardingDock({
   resumesCount = 0,
   verifiedSkillsCount = 0,
   hasProfileGoal = false,
+  completionPercentage,
+  isCleared = false,
   onReplayTour,
   onOpenWelcome,
 }: FloatingOnboardingDockProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isDismissed, setIsDismissed] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (localStorage.getItem('skillezo_guide_dismissed') === 'true') {
+        setIsDismissed(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('skillezo_guide_dismissed', 'true');
+      } catch (e) {
+        console.warn('Failed to save guide dismissal state:', e);
+      }
+    }
+  };
 
   // Compute live milestones based on user real profile state
   const milestones: OnboardingMilestone[] = [
@@ -86,12 +114,19 @@ export function FloatingOnboardingDock({
   const completedCount = milestones.filter((m) => m.isCompleted).length;
   const progressPercent = Math.round((completedCount / milestones.length) * 100);
 
-  // Hide dock while spotlight tour modal is actively guiding
-  if (isTourActive) return null;
+  // Auto-hide when user clears onboarding level (100% complete) or manually dismissed
+  const isLevelCleared =
+    isCleared ||
+    progressPercent >= 100 ||
+    (completionPercentage !== undefined && completionPercentage >= 100);
+
+  if (isTourActive || isDismissed || isLevelCleared) {
+    return null;
+  }
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-40 select-none"
+      className="fixed bottom-22 right-6 sm:bottom-6 sm:right-24 z-40 select-none"
       data-testid="floating-onboarding-dock"
     >
       <AnimatePresence>
@@ -120,13 +155,23 @@ export function FloatingOnboardingDock({
                 </div>
               </div>
 
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1 rounded-md text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                aria-label="Collapse onboarding guide"
-              >
-                <ChevronDown className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1 rounded-md text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  aria-label="Collapse onboarding guide"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleDismiss}
+                  className="p-1 rounded-md text-white/40 hover:text-rose-400 hover:bg-white/10 transition-colors cursor-pointer"
+                  aria-label="Dismiss guide permanently"
+                  title="Dismiss guide"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Progress Bar */}
@@ -181,7 +226,7 @@ export function FloatingOnboardingDock({
               ))}
             </div>
 
-            {/* Bottom Actions: Replay Tour & Welcome Modal */}
+            {/* Bottom Actions: Replay Tour & Dismiss */}
             <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
               <button
                 onClick={() => {
@@ -196,15 +241,11 @@ export function FloatingOnboardingDock({
               </button>
 
               <button
-                onClick={() => {
-                  setIsOpen(false);
-                  onOpenWelcome();
-                }}
-                data-testid="dock-open-welcome-btn"
-                className="inline-flex items-center gap-1 text-[#3D5AFE] hover:text-[#3D5AFE]/80 font-semibold cursor-pointer"
+                onClick={handleDismiss}
+                data-testid="dock-dismiss-btn"
+                className="inline-flex items-center gap-1 text-white/40 hover:text-white transition-colors cursor-pointer text-[11px]"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Superpowers</span>
+                <span>Dismiss Guide</span>
               </button>
             </div>
           </motion.div>

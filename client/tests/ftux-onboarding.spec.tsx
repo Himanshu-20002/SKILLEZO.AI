@@ -301,5 +301,58 @@ describe('First-Time User Experience (FTUX) Test Suite', () => {
 
       expect(onReplay).toHaveBeenCalledTimes(1);
     });
+
+    it('automatically disappears when user clears level (100% completion or cleared flag)', () => {
+      const { rerender } = render(
+        <FloatingOnboardingDock
+          resumesCount={1}
+          verifiedSkillsCount={1}
+          hasProfileGoal={true}
+          completionPercentage={100}
+          onReplayTour={vi.fn()}
+          onOpenWelcome={vi.fn()}
+        />
+      );
+
+      // Should be hidden because completionPercentage is 100%
+      expect(screen.queryByTestId('floating-onboarding-dock')).toBeNull();
+
+      rerender(
+        <FloatingOnboardingDock
+          resumesCount={1}
+          verifiedSkillsCount={0}
+          hasProfileGoal={false}
+          isCleared={true}
+          onReplayTour={vi.fn()}
+          onOpenWelcome={vi.fn()}
+        />
+      );
+
+      // Should be hidden because isCleared is true
+      expect(screen.queryByTestId('floating-onboarding-dock')).toBeNull();
+    });
+
+    it('disappears when candidate clicks dismiss guide', () => {
+      render(
+        <FloatingOnboardingDock
+          resumesCount={1}
+          verifiedSkillsCount={0}
+          hasProfileGoal={false}
+          onReplayTour={vi.fn()}
+          onOpenWelcome={vi.fn()}
+        />
+      );
+
+      // Open drawer
+      fireEvent.click(screen.getByTestId('dock-trigger-btn'));
+      expect(screen.getByTestId('onboarding-dock-drawer')).toBeDefined();
+
+      // Click dismiss
+      fireEvent.click(screen.getByTestId('dock-dismiss-btn'));
+
+      // Dock disappears
+      expect(screen.queryByTestId('floating-onboarding-dock')).toBeNull();
+      expect(localStorage.getItem('skillezo_guide_dismissed')).toBe('true');
+    });
   });
 });
