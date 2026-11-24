@@ -43,7 +43,7 @@ export function Navbar({ onGetScore }: NavbarProps) {
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-[#0B1130]/85 backdrop-blur-md border-b border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.35)] py-3"
+          ? "bg-[#0B1130]/90 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.5)] py-3 border-none"
           : "bg-transparent py-5"
       }`}
       data-testid="navbar"
@@ -150,7 +150,7 @@ export function Navbar({ onGetScore }: NavbarProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden overflow-hidden bg-[#0B1130]/95 backdrop-blur-xl border-t border-white/10 mt-3"
+            className="lg:hidden overflow-hidden bg-[#0B1130]/95 backdrop-blur-xl shadow-2xl mt-3"
             data-testid="mobile-menu"
           >
             <div className="px-6 py-6 flex flex-col gap-3">
