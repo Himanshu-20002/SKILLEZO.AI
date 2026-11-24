@@ -6,16 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   HelpCircle,
   MessageSquare,
-  Share2,
-  Globe,
-  Mail,
   X,
   Send,
-  Check,
-  Sparkles,
-  ExternalLink,
-  Shield,
+  Mail,
   BookOpen,
+  Shield,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -25,13 +21,6 @@ export function DashboardFooter() {
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackType, setFeedbackType] = useState<'improvement' | 'bug' | 'feature'>('improvement');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleShare = () => {
-    if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText(window.location.origin);
-      toast.success('Link copied to clipboard! Share with your network.');
-    }
-  };
 
   const handleFeedbackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,118 +41,47 @@ export function DashboardFooter() {
   return (
     <>
       <footer
-        className="mt-12 sm:mt-16 border-t border-slate-200/80 dark:border-white/[0.08] pt-8 pb-10 transition-colors select-none"
+        className="mt-10 sm:mt-14 border-t border-slate-200/70 dark:border-white/[0.06] pt-6 pb-6 select-none transition-colors"
         data-testid="dashboard-footer"
       >
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pr-0 lg:pr-24">
           {/* Corporate Attribution & Pedigree */}
-          <div className="space-y-1.5 text-center lg:text-left max-w-2xl">
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-2.5 gap-y-1 text-xs text-slate-500 dark:text-[#8A90A6]">
-              <span className="font-semibold text-slate-800 dark:text-white/90">
-                © {new Date().getFullYear()} Skillezo.
-              </span>
-              <span>All rights reserved.</span>
-            </div>
-
-            <p className="text-[11px] leading-relaxed text-slate-500/80 dark:text-[#8A90A6]/75">
-              Skillezo is a product of{' '}
-              <span className="font-medium text-slate-700 dark:text-white/70">SKILLEDHYRE LABS</span>, the
-              innovation and technology division of{' '}
-              <span className="font-medium text-slate-700 dark:text-white/70">SKILLEDHYRE</span> — a unit of{' '}
-              <span className="font-medium text-slate-700 dark:text-white/70 tracking-wide">
+          <div className="space-y-1 text-center sm:text-left">
+            <p className="text-xs font-medium text-slate-700 dark:text-white/80">
+              © {new Date().getFullYear()}{' '}
+              <span className="font-semibold text-slate-900 dark:text-white">Skillezo</span>. All rights
+              reserved.
+            </p>
+            <p className="text-[11px] text-slate-500 dark:text-white/40 leading-relaxed">
+              A product of{' '}
+              <span className="font-medium text-slate-600 dark:text-white/60">SKILLEDHYRE LABS</span>, a unit
+              of{' '}
+              <span className="font-medium text-slate-600 dark:text-white/60">
                 DEVAADYA TECHNOLOGIES PRIVATE LIMITED
-              </span>.
+              </span>
+              .
             </p>
           </div>
 
-          {/* Quick Legal Links, Help, Feedback & Action Icons */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-            {/* Legal Links */}
-            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-[#8A90A6]">
-              <Link
-                href="/privacy"
-                className="hover:text-[#3D5AFE] dark:hover:text-[#00D9C0] transition-colors"
-              >
-                Privacy
-              </Link>
-              <span className="text-slate-300 dark:text-white/20">•</span>
-              <Link
-                href="/terms"
-                className="hover:text-[#3D5AFE] dark:hover:text-[#00D9C0] transition-colors"
-              >
-                Terms
-              </Link>
-              <span className="text-slate-300 dark:text-white/20">•</span>
-              <Link
-                href="/security"
-                className="hover:text-[#3D5AFE] dark:hover:text-[#00D9C0] transition-colors"
-              >
-                Security
-              </Link>
-            </div>
+          {/* Clean Help & Feedback Action Buttons */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => setHelpOpen(true)}
+              data-testid="footer-help-btn"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-700 dark:text-white/80 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer shadow-xs"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-[#3D5AFE] dark:text-[#00D9C0]" />
+              <span>Help</span>
+            </button>
 
-            {/* Help & Feedback Interactive Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setHelpOpen(true)}
-                data-testid="footer-help-btn"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-white/80 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/10 transition-colors cursor-pointer"
-              >
-                <HelpCircle className="w-3.5 h-3.5 text-[#3D5AFE] dark:text-[#00D9C0]" />
-                <span>Help</span>
-              </button>
-
-              <button
-                onClick={() => setFeedbackOpen(true)}
-                data-testid="footer-feedback-btn"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-white/80 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/10 transition-colors cursor-pointer"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-[#3D5AFE] dark:text-[#00D9C0]" />
-                <span>Feedback</span>
-              </button>
-            </div>
-
-            {/* Icon Bar */}
-            <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-white/10 pl-3">
-              <button
-                onClick={handleShare}
-                data-testid="footer-share-btn"
-                className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] text-slate-500 dark:text-[#8A90A6] hover:text-[#3D5AFE] dark:hover:text-white hover:border-[#3D5AFE]/40 dark:hover:border-[#00D9C0]/50 transition-colors cursor-pointer"
-                title="Share Skillezo"
-                aria-label="Share platform link"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
-
-              <Link
-                href="/"
-                target="_blank"
-                rel="noreferrer"
-                className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] text-slate-500 dark:text-[#8A90A6] hover:text-[#3D5AFE] dark:hover:text-white hover:border-[#3D5AFE]/40 dark:hover:border-[#00D9C0]/50 transition-colors cursor-pointer"
-                title="Visit Skillezo Homepage"
-                aria-label="Visit Homepage"
-              >
-                <Globe className="w-3.5 h-3.5" />
-              </Link>
-
-              <button
-                onClick={() => setFeedbackOpen(true)}
-                className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] text-slate-500 dark:text-[#8A90A6] hover:text-[#3D5AFE] dark:hover:text-white hover:border-[#3D5AFE]/40 dark:hover:border-[#00D9C0]/50 transition-colors cursor-pointer"
-                title="Send Feedback"
-                aria-label="Send Feedback"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-              </button>
-
-              <a
-                href="mailto:support@skillezo.com"
-                className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] text-slate-500 dark:text-[#8A90A6] hover:text-[#3D5AFE] dark:hover:text-white hover:border-[#3D5AFE]/40 dark:hover:border-[#00D9C0]/50 transition-colors cursor-pointer"
-                title="Email Support (support@skillezo.com)"
-                aria-label="Contact Support"
-              >
-                <Mail className="w-3.5 h-3.5" />
-              </a>
-            </div>
+            <button
+              onClick={() => setFeedbackOpen(true)}
+              data-testid="footer-feedback-btn"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-700 dark:text-white/80 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer shadow-xs"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-[#3D5AFE] dark:text-[#00D9C0]" />
+              <span>Feedback</span>
+            </button>
           </div>
         </div>
       </footer>

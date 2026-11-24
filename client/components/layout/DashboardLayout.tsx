@@ -212,8 +212,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             collapsed ? 'md:ml-20' : 'md:ml-64'
           }`}
         >
-          <div className="max-w-7xl mx-auto space-y-6 w-full flex-1">{children}</div>
-          <DashboardFooter />
+          <div className="max-w-7xl mx-auto space-y-6 w-full flex-1">
+            {children}
+            <DashboardFooter />
+          </div>
         </main>
 
         {/* Global Floating AI Career Coach Assistant Widget */}

@@ -9,16 +9,22 @@ describe('DashboardFooter Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders corporate attribution, copyright and legal links', () => {
+  it('renders corporate attribution, copyright and action buttons without privacy/terms/security links', () => {
     render(<DashboardFooter />);
 
     expect(screen.getByTestId('dashboard-footer')).toBeDefined();
     expect(screen.getByText(/All rights reserved/i)).toBeDefined();
     expect(screen.getByText(/SKILLEDHYRE LABS/i)).toBeDefined();
     expect(screen.getByText(/DEVAADYA TECHNOLOGIES PRIVATE LIMITED/i)).toBeDefined();
-    expect(screen.getByText('Privacy')).toBeDefined();
-    expect(screen.getByText('Terms')).toBeDefined();
-    expect(screen.getByText('Security')).toBeDefined();
+
+    // Verify Help & Feedback buttons are present
+    expect(screen.getByTestId('footer-help-btn')).toBeDefined();
+    expect(screen.getByTestId('footer-feedback-btn')).toBeDefined();
+
+    // Verify Privacy, Terms, and Security links are removed as requested
+    expect(screen.queryByText('Privacy')).toBeNull();
+    expect(screen.queryByText('Terms')).toBeNull();
+    expect(screen.queryByText('Security')).toBeNull();
   });
 
   it('opens and closes the Help dialog on button click', async () => {
