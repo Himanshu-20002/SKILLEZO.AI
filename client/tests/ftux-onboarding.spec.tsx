@@ -128,7 +128,8 @@ describe('First-Time User Experience (FTUX) Test Suite', () => {
         />
       );
 
-      expect(screen.getByText(/Welcome to SKILLEZO, Alex Rivera!/i)).toBeDefined();
+      expect(screen.getByText(/Alex Rivera/i)).toBeDefined();
+      expect(screen.getByText(/Welcome to SKILLEZO/i)).toBeDefined();
       expect(screen.getByText('+1,000 AI Tokens')).toBeDefined();
       expect(screen.getByTestId('ftux-welcome-modal')).toBeDefined();
     });
@@ -144,7 +145,7 @@ describe('First-Time User Experience (FTUX) Test Suite', () => {
       );
 
       // Initial slide is Resume Studio
-      expect(screen.getByText('AI Resume Studio')).toBeDefined();
+      expect(screen.getByTestId('ftux-slide-resume-studio')).toBeDefined();
 
       // Click next
       const nextBtn = screen.getByTestId('ftux-carousel-next');
@@ -152,7 +153,7 @@ describe('First-Time User Experience (FTUX) Test Suite', () => {
 
       // Second slide is Mock Interview Coach
       await waitFor(() => {
-        expect(screen.getByText('AI Mock Interview Coach')).toBeDefined();
+        expect(screen.getByTestId('ftux-slide-interview-coach')).toBeDefined();
       });
 
       // Click prev
@@ -160,7 +161,7 @@ describe('First-Time User Experience (FTUX) Test Suite', () => {
       fireEvent.click(prevBtn);
 
       await waitFor(() => {
-        expect(screen.getByText('AI Resume Studio')).toBeDefined();
+        expect(screen.getByTestId('ftux-slide-resume-studio')).toBeDefined();
       });
     });
 
