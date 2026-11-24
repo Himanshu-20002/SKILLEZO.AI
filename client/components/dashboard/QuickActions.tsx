@@ -81,7 +81,7 @@ const actionMetadataMap: Record<string, ActionMetadata> = {
 
 export const QuickActions: React.FC = () => {
   return (
-    <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.4)] flex flex-col justify-between h-full lg:h-[450px]">
+    <div id="quick-actions-panel" className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.4)] flex flex-col justify-between h-full lg:h-[450px]">
       <div className="flex flex-col h-full justify-between">
         <div className="shrink-0">
           <CardHeader

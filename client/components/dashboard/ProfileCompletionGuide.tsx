@@ -125,6 +125,7 @@ export const ProfileCompletionGuide: React.FC<ProfileCompletionGuideProps> = ({
 
   return (
     <div
+      id="profile-completion-guide"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={`group rounded-3xl bg-gradient-to-br from-white/90 via-indigo-50/40 to-white/90 dark:from-slate-900/80 dark:via-indigo-950/20 dark:to-slate-900/80 border backdrop-blur-xl p-6 sm:p-7 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded

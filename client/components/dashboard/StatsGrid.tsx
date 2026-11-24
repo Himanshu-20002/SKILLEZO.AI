@@ -127,7 +127,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
 
   if (loading && metrics.length === 0) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div id="stats-grid-overview" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((id) => (
           <div
             key={id}
@@ -139,7 +139,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div id="stats-grid-overview" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {metrics.map((metric) => (
         <StatCard key={metric.id} metric={metric} />
       ))}
