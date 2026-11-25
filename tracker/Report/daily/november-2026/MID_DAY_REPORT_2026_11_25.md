@@ -16,7 +16,12 @@ Key accomplishments of this session include:
 2. **Event-Driven Onboarding Checklist Automation:** Wired dynamic state hooks connecting user actions directly to the onboarding engine, automatically marking checklist items complete when candidates upload a resume, finish a mock interview response, or pass a skill verification assessment.
 3. **100% Completion Celebration & Reward Moment:** Built a gamified completion celebration modal with celebratory confetti particles, unlocking an exclusive "Job-Ready Explorer" milestone badge and bonus token incentives upon completing all 4 orientation milestones.
 4. **Persistent Onboarding State Synchronization:** Integrated dual-layer storage synchronizing candidate onboarding progress between local cache and backend profile metadata, preventing guide re-triggering across multiple devices.
-5. **Quality Assurance & Verification:** Monorepo integrity confirmed with passing automated test suites and **0 TypeScript strict compilation errors**.
+5. **Cinematic Ultra-Glassmorphism Welcome Modal:** Engineered an expansive, widescreen welcome modal (`FtuxWelcomeModal.tsx`) featuring multi-layer backdrop blurs, animated plasma gradient orbs, a shimmering +1,000 Free AI Tokens card, and interactive superpower tabs.
+6. **Zero-CLS Carousel Layout Shift Remediation:** Fixed dynamic height jumps across carousel slides by locking container dimensions (`min-h-[290px] sm:min-h-[240px]`), establishing smooth cross-fade transitions and hover-pause mechanics for zero layout shifts.
+
+7. **Clean Unified Dashboard Footer & Support Hub:** Integrated `DashboardFooter.tsx` inside the `max-w-7xl` container across all dashboard pages via `DashboardLayout.tsx`, featuring corporate attribution, interactive Help and Feedback dialogs, and a clean borderless layout aligned with dashboard cards.
+
+8.  **Quality Assurance & Verification:** Monorepo integrity confirmed with passing automated test suites (16/16 FTUX tests, 3/3 footer tests) and **0 TypeScript strict compilation errors**.
 
 ---
 
@@ -64,15 +69,47 @@ Key accomplishments of this session include:
 
 ---
 
+### 4. Ultra-Glassmorphism Welcome Modal & Zero-CLS Carousel Optimization
+- **File Enhanced:** [`client/components/dashboard/ftux/FtuxWelcomeModal.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/dashboard/ftux/FtuxWelcomeModal.tsx)
+- **Visual Design & Atmosphere:**
+  - Expanded modal layout to widescreen dimensions (`max-w-4xl xl:max-w-5xl`) with rich multi-layer backdrop blurs, top specular neon edge accent, and ambient floating plasma orbs.
+  - Designed an eye-catching `+1,000 AI Tokens` reward card with animated light sweep and pulsing status badge.
+- **Layout Shift Elimination (CLS = 0):**
+  - Locked carousel container dimensions (`min-h-[290px] sm:min-h-[240px]`), cross-fading slide transitions, and added mouse-hover auto-pause.
+  - Embedded direct superpower selector tabs (`Resume Studio`, `Mock Interview`, `Career GPS`) for instant, shift-free navigation.
+
+---
+
+### 5. Floating Onboarding Dock Collision Remediation & Level Auto-Dismiss
+- **File Enhanced:** [`client/components/dashboard/ftux/FloatingOnboardingDock.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/dashboard/ftux/FloatingOnboardingDock.tsx)
+- **Collision Resolution:**
+  - Resolved bottom-right overlap with the AI Career Coach bot widget (`bottom-6 right-6`) by repositioning the dock to `fixed bottom-22 right-6 sm:bottom-6 sm:right-24` (side-by-side with 16px gap on desktop, stacked cleanly above on mobile).
+- **Auto-Dismiss & Manual Controls:**
+  - Built automatic unmounting logic once the user clears onboarding milestones (`progressPercent >= 100`) or achieves complete profile readiness (`completionPercentage >= 100`).
+  - Added a permanent dismissal option (`X` icon and *"Dismiss Guide"* action) backed by `localStorage` persistence.
+
+---
+
+### 6. Clean Unified Dashboard Footer & Support Tools
+- **Files Enhanced:**
+  - [`client/components/layout/DashboardFooter.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/layout/DashboardFooter.tsx)
+  - [`client/components/layout/DashboardLayout.tsx`](file:///x:/projects/next.js/office-Project/SKILLEZO.AI/client/components/layout/DashboardLayout.tsx)
+- **Design & Layout Alignment:**
+  - Embedded inside `<div className="max-w-7xl mx-auto space-y-6 w-full flex-1">` so the footer aligns with dashboard cards rather than sprawling awkwardly to screen edges.
+  - Stripped out cluttered legal links (`Privacy`, `Terms`, `Security`) and auxiliary icon squares per user request.
+  - Added clean rounded pill buttons for **Help & Resources** and **Feedback** submission modals with `lg:pr-24` clearance to avoid crowding the floating assistant bot.
+
+---
+
 ## 🧪 Verification & Quality Assurance Summary
 
-| Test Area | Target Suite | Status | Metrics |
-| :--- | :--- | :---: | :--- |
-| **FTUX Onboarding & Lifecycle** | `client/tests/ftux-onboarding.spec.tsx` | 🟢 Passed | 16 / 16 tests passing |
-| **Dashboard Footer & Dialogs** | `client/tests/dashboard-footer.spec.tsx` | 🟢 Passed | 3 / 3 tests passing |
-| **Resume Normalizer & Parser** | `client/tests/resume-content.spec.ts` | 🟢 Passed | 16 / 16 tests passing |
-| **Client TypeScript Strict Check** | `cd client; npx tsc --noEmit` | 🟢 Passed | **0 errors** |
-| **Server TypeScript Strict Check** | `cd server; npx tsc --noEmit` | 🟢 Passed | **0 errors** |
+| Test Area                          | Target Suite                             |  Status  | Metrics               |
+| :--------------------------------- | :--------------------------------------- | :------: | :-------------------- |
+| **FTUX Onboarding & Lifecycle**    | `client/tests/ftux-onboarding.spec.tsx`  | 🟢 Passed | 16 / 16 tests passing |
+| **Dashboard Footer & Dialogs**     | `client/tests/dashboard-footer.spec.tsx` | 🟢 Passed | 3 / 3 tests passing   |
+| **Resume Normalizer & Parser**     | `client/tests/resume-content.spec.ts`    | 🟢 Passed | 16 / 16 tests passing |
+| **Client TypeScript Strict Check** | `cd client; npx tsc --noEmit`            | 🟢 Passed | **0 errors**          |
+| **Server TypeScript Strict Check** | `cd server; npx tsc --noEmit`            | 🟢 Passed | **0 errors**          |
 
 ---
 
